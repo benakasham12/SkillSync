@@ -10,13 +10,15 @@ from datetime import datetime
 from flask import current_app, has_app_context
 from werkzeug.security import generate_password_hash, check_password_hash
 
-DB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'skillsync.db')
+DB_PATH = '/tmp/skillsync.db' if os.environ.get('VERCEL') else os.path.join(os.path.dirname(os.path.dirname(__file__)), 'skillsync.db')
 
 
 def get_db(db_path=None):
     """Obtain a SQLite connection with foreign keys enabled and row factory set to sqlite3.Row."""
     if not db_path and has_app_context() and current_app and 'DATABASE' in current_app.config:
         db_path = current_app.config['DATABASE']
+    if not db_path and os.environ.get('VERCEL'):
+        db_path = '/tmp/skillsync.db'
     path = db_path or DB_PATH
     conn = sqlite3.connect(path)
     conn.row_factory = sqlite3.Row

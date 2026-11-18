@@ -10,7 +10,13 @@ from app.models import init_db, query_db
 def create_app(db_path=None, test_config=None):
     app = Flask(__name__)
     app.config['SECRET_KEY'] = 'skillsync-bmsit-cse13-secret-key-2026'
-    app.config['DATABASE'] = db_path or os.path.join(os.path.dirname(os.path.dirname(__file__)), 'skillsync.db')
+
+    if os.environ.get('VERCEL'):
+        default_db = '/tmp/skillsync.db'
+    else:
+        default_db = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'skillsync.db')
+
+    app.config['DATABASE'] = db_path or default_db
 
     if test_config:
         app.config.update(test_config)
