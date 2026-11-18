@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block title %}Course Projects - SkillSync{% endblock %}
+
+{% block content %}
+<!-- Header & Context Banner -->
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Course Projects & Teams</h1>
+    <p class="page-subtitle">Discover project ideas, review required skills, and form balanced teams beyond your friend circle.</p>
+  </div>
+  {% if current_user_id %}
+    <a href="{{ url_for('projects.create_project') }}" class="btn btn-primary">+ Post New Project</a>
+  {% endif %}
+</div>
+
+<!-- Filter Bar -->
+<div class="card" style="padding: 1rem 1.25rem; margin-bottom: 1.5rem;">
+  <form method="GET" action="{{ url_for('projects.list_projects') }}" style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end;">
+    <div style="flex: 2; min-width: 200px;">
+      <label class="form-label" style="margin-bottom: 0.25rem;">Search</label>
+      <input type="text" name="q" class="form-control" placeholder="Search title or description..." value="{{ search_q }}">
+    </div>
+
+    <div style="flex: 1; min-width: 180px;">
+      <label class="form-label" style="margin-bottom: 0.25rem;">Course Context</label>
+      <input type="text" name="course" class="form-control" placeholder="e.g. IDT, Web Lab" value="{{ course_filter }}">
+    </div>
+
+    <div style="flex: 1; min-width: 180px;">
+      <label class="form-label" style="margin-bottom: 0.25rem;">Required Skill</label>
+      <select name="skill" class="form-control">
+        <option value="">All Skills</option>
+        {% for sk in all_skills %}
+          <option value="{{ sk.name }}" {% if skill_filter == sk.name %}selected{% endif %}>{{ sk.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <button type="submit" class="btn btn-secondary">Filter</button>
+      {% if search_q or course_filter or skill_filter %}
+        <a href="{{ url_for('projects.list_projects') }}" class="btn btn-secondary" style="margin-left: 0.25rem;">Reset</a>
+      {% endif %}
+    </div>
+  </form>
+</div>
+
+<!-- Projects Grid -->
+{% if projects %}
+  <div class="grid-2">
+    {% for p in projects %}
+      <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+            <span class="badge badge-{{ p.status }}">{{ p.status }}</span>
+            <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">
+              Team: {{ p.current_team_count }} / {{ p.team_size_max }} members
+            </span>
+          </div>
+
+          <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.25rem;">
+            <a href="{{ url_for('projects.project_detail', project_id=p.id) }}" style="color: var(--text);">
+              {{ p.title }}
+            </a>
+          </h3>
+
+          <div style="font-size: 0.8rem; color: var(--primary); font-weight: 600; margin-bottom: 0.75rem;">
+            &#128218; {{ p.course_context }}
+          </div>
+
+          <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1rem; line-height: 1.4;">
+            {{ p.description[:140] }}{% if p.description and p.description|length > 140 %}...{% endif %}
+          </p>
+
+          <!-- Required Skills -->
+          <div style="margin-bottom: 1rem;">
+            <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 600; color: var(--text-muted); margin-bottom: 0.35rem;">
+              Required Skills
+            </div>
+            <div class="skill-tags">
+              {% for req in p.requirements %}
+                <span class="badge {% if req.priority == 'must-have' %}badge-must-have{% else %}badge-preferred{% endif %}" style="text-transform: none;">
+                  {{ req.skill_name }} ({{ req.priority }})
+                </span>
+              {% endfor %}
+              {% if not p.requirements %}
+                <span style="font-size: 0.8rem; color: var(--text-muted); font-style: italic;">No required skills specified yet.</span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <div style="border-top: 1px solid var(--border); padding-top: 0.85rem; margin-top: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
+          <div style="font-size: 0.8rem; color: var(--text-muted);">
+            Owner: <strong>{{ p.owner_name }}</strong> ({{ p.owner_branch }})
+          </div>
+          <div style="display: flex; gap: 0.5rem;">
+            {% if current_user_id == p.owner_id %}
+              <a href="{{ url_for('projects.match_candidates', project_id=p.id) }}" class="btn btn-primary btn-sm">Find Teammates</a>
+            {% endif %}
+            <a href="{{ url_for('projects.project_detail', project_id=p.id) }}" class="btn btn-secondary btn-sm">View Project</a>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="card" style="text-align: center; padding: 3rem 1.5rem;">
+    <h3 style="color: var(--text-muted); margin-bottom: 0.5rem;">No projects found</h3>
+    <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1.5rem;">
+      No projects matched your filters or no published projects exist yet.
+    </p>
+    {% if current_user_id %}
+      <a href="{{ url_for('projects.create_project') }}" class="btn btn-primary">Create the First Project</a>
+    {% endif %}
+  </div>
+{% endif %}
+{% endblock %}

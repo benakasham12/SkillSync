@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Sign In - SkillSync{% endblock %}
+
+{% block content %}
+<div style="max-width: 900px; margin: 0 auto;">
+  <div class="grid-2">
+    <!-- Login Form -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Sign In</h2>
+      </div>
+      <form method="POST" action="{{ url_for('auth.login') }}">
+        <input type="hidden" name="next" value="{{ next or '' }}">
+        
+        <div class="form-group">
+          <label class="form-label" for="email">Institutional Email</label>
+          <input type="email" id="email" name="email" class="form-control" placeholder="name@bmsit.in" value="{{ email or '' }}" required autofocus>
+          <div class="form-hint">Approved BMSIT&M cohort email address.</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="password">Password</label>
+          <input type="password" id="password" name="password" class="form-control" placeholder="••••••••" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Sign In</button>
+      </form>
+
+      <div style="margin-top: 1.5rem; text-align: center; font-size: 0.9rem; color: var(--text-muted);">
+        Don't have an account? <a href="{{ url_for('auth.register') }}">Register here</a>.
+      </div>
+    </div>
+
+    <!-- Demo Personas Quick-Login -->
+    <div class="card" style="background: var(--surface-alt);">
+      <div class="card-header">
+        <h2 class="card-title">Demo Personas (1-Click Login)</h2>
+      </div>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+        Click any teammate or role to instantly switch sessions for testing matching, project creation, and team coverage.
+      </p>
+
+      <div style="display: flex; flex-direction: column; gap: 0.65rem;">
+        {% if demo_users %}
+          {% for u in demo_users %}
+            <a href="{{ url_for('auth.switch_user', email=u.email) }}" class="btn btn-secondary" style="justify-content: space-between; text-align: left; background: var(--surface);">
+              <div>
+                <strong>{{ u.display_name or u.email }}</strong>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">{{ u.email }} &bull; {{ u.section or u.role }}</div>
+              </div>
+              <span class="badge {% if u.role == 'admin' %}badge-must-have{% else %}badge-preferred{% endif %}">{{ u.role }}</span>
+            </a>
+          {% endfor %}
+        {% else %}
+          <p style="font-size: 0.85rem;">Run <code>python seed.py</code> to generate demo students.</p>
+        {% endif %}
+      </div>
+      <div style="margin-top: 1rem; font-size: 0.75rem; color: var(--text-muted);">
+        Default password for seeded accounts is <code>password123</code> (admin is <code>admin123</code>).
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

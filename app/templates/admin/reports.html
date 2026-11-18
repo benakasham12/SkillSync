@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Moderation Queue - SkillSync{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Moderation Queue (FR-13)</h1>
+    <p class="page-subtitle">Review reports submitted by students regarding profiles or projects.</p>
+  </div>
+  <div style="display: flex; gap: 0.5rem;">
+    <a href="{{ url_for('admin.list_reports', status='pending') }}" class="btn {% if current_filter == 'pending' %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">Pending</a>
+    <a href="{{ url_for('admin.list_reports', status='resolved') }}" class="btn {% if current_filter == 'resolved' %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">Resolved</a>
+    <a href="{{ url_for('admin.list_reports', status='dismissed') }}" class="btn {% if current_filter == 'dismissed' %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">Dismissed</a>
+  </div>
+</div>
+
+<div class="card">
+  {% if reports %}
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Reporter</th>
+            <th>Target</th>
+            <th>Reason</th>
+            <th>Created At</th>
+            <th>Status</th>
+            {% if current_filter == 'pending' %}
+              <th>Resolution Action</th>
+            {% endif %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in reports %}
+            <tr>
+              <td>#{{ r.id }}</td>
+              <td>
+                <strong>{{ r.reporter_name }}</strong>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">{{ r.reporter_email }}</div>
+              </td>
+              <td>
+                <span class="badge badge-preferred">{{ r.target_type }} #{{ r.target_id }}</span>
+              </td>
+              <td style="font-size: 0.85rem; max-width: 250px;">{{ r.reason }}</td>
+              <td style="font-size: 0.8rem; color: var(--text-muted);">{{ r.created_at[:16] }}</td>
+              <td><span class="badge badge-{{ r.status }}">{{ r.status }}</span></td>
+              {% if current_filter == 'pending' %}
+                <td>
+                  <form method="POST" action="{{ url_for('admin.resolve_report', report_id=r.id) }}" style="display: flex; flex-direction: column; gap: 0.35rem;">
+                    <input type="text" name="admin_notes" class="form-control" placeholder="Resolution notes" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">
+                    <div style="display: flex; gap: 0.25rem;">
+                      <select name="take_action" class="form-control" style="font-size: 0.75rem; padding: 0.25rem;">
+                        <option value="none">No penalty</option>
+                        {% if r.target_type == 'profile' %}
+                          <option value="deactivate_user">Deactivate Profile</option>
+                        {% elif r.target_type == 'project' %}
+                          <option value="close_project">Close Project</option>
+                        {% endif %}
+                      </select>
+                      <button type="submit" name="action" value="resolve" class="btn btn-success btn-sm" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;">Resolve</button>
+                      <button type="submit" name="action" value="dismiss" class="btn btn-secondary btn-sm" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;">Dismiss</button>
+                    </div>
+                  </form>
+                </td>
+              {% endif %}
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p style="text-align: center; color: var(--text-muted); padding: 2rem 0;">No {{ current_filter }} reports found.</p>
+  {% endif %}
+</div>
+{% endblock %}

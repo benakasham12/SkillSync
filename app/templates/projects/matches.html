@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+{% block title %}Matching Teammates - {{ project.title }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.25rem;">
+      <a href="{{ url_for('projects.project_detail', project_id=project.id) }}">&larr; Back to Project Overview</a>
+    </div>
+    <h1 class="page-title">Ranked Candidate Recommendations</h1>
+    <p class="page-subtitle">
+      Explainable matching for <strong>{{ project.title }}</strong> &bull; Match Score = 0.65 &times; Skill + 0.25 &times; Availability + 0.10 &times; Interest
+    </p>
+  </div>
+  <div>
+    <span class="badge badge-published" style="padding: 0.5rem 0.85rem;">
+      Team: {{ coverage.current_team_size }} / {{ project.team_size_max }} members
+    </span>
+  </div>
+</div>
+
+<div class="grid-2" style="grid-template-columns: 280px 1fr; align-items: start;">
+  <!-- Left Sidebar: Filters (PRD FR-09) -->
+  <div class="card" style="position: sticky; top: 80px;">
+    <div class="card-header">
+      <h2 class="card-title" style="font-size: 1rem;">Filter Candidates (FR-09)</h2>
+    </div>
+
+    <form method="GET" action="{{ url_for('projects.match_candidates', project_id=project.id) }}">
+      <div class="form-group">
+        <label class="form-label" for="skill_id">Has Specific Skill</label>
+        <select id="skill_id" name="skill_id" class="form-control">
+          <option value="">All Skills</option>
+          {% for sk in all_skills %}
+            <option value="{{ sk.id }}" {% if filters.skill_id == sk.id|string %}selected{% endif %}>{{ sk.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="section">Section</label>
+        <input type="text" id="section" name="section" class="form-control" placeholder="e.g. CSE-13" value="{{ filters.section or '' }}">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="min_score">Minimum Match Score</label>
+        <input type="number" id="min_score" name="min_score" class="form-control" placeholder="e.g. 50" min="0" max="100" value="{{ filters.min_score or '' }}">
+      </div>
+
+      <div class="form-group">
+        <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; cursor: pointer;">
+          <input type="checkbox" name="fills_gap_only" value="1" {% if filters.fills_gap_only %}checked{% endif %}>
+          <span><strong>Only show candidates who fill an unmet team gap</strong></span>
+        </label>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-sm" style="width: 100%;">Apply Filters</button>
+      {% if filters.skill_id or filters.section or filters.min_score or filters.fills_gap_only %}
+        <a href="{{ url_for('projects.match_candidates', project_id=project.id) }}" class="btn btn-secondary btn-sm" style="width: 100%; margin-top: 0.5rem;">Reset Filters</a>
+      {% endif %}
+    </form>
+  </div>
+
+  <!-- Right: Ranked Match Cards (PRD FR-07, FR-08) -->
+  <div>
+    {% if candidates %}
+      <div style="margin-bottom: 1rem; font-size: 0.85rem; color: var(--text-muted); display: flex; justify-content: space-between;">
+        <span>Found <strong>{{ candidates|length }} eligible candidates</strong> ranked by composite fit.</span>
+        <span>Deterministic ordering</span>
+      </div>
+
+      {% for cand in candidates %}
+        <div class="match-card {% if cand.fills_unmet_team_gap %}fills-gap{% endif %}">
+          <!-- Card Top Header -->
+          <div class="match-header">
+            <div>
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <h3 style="font-size: 1.25rem; font-weight: 700;">
+                  <a href="{{ url_for('profile.view_student_profile', target_user_id=cand.user_id) }}">
+                    {{ cand.display_name }}
+                  </a>
+                </h3>
+                {% if cand.fills_unmet_team_gap %}
+                  <span class="badge badge-published" style="text-transform: none;">
+                    &#127919; Fills Missing Team Skill
+                  </span>
+                {% endif %}
+              </div>
+
+              <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.2rem;">
+                {{ cand.branch }} &bull; {{ cand.year }} &bull; Section {{ cand.section }} &bull; USN: {{ cand.usn or 'N/A' }}
+              </div>
+            </div>
+
+            <!-- Total Match Score Display -->
+            <div class="match-score-badge">
+              <div class="match-score-number">{{ cand.match_score }}%</div>
+              <div class="match-score-label">Match Fit</div>
+            </div>
+          </div>
+
+          <!-- Explainable Score Breakdown Row (PRD FR-08) -->
+          <div class="breakdown-row">
+            <div class="breakdown-item">
+              <span style="color: var(--text-muted);">Skill Fit (65% wt)</span>
+              <strong>{{ cand.skill_fit }}%</strong>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">{{ cand.matched_skills|length }} matched skills</div>
+            </div>
+
+            <div class="breakdown-item">
+              <span style="color: var(--text-muted);">Availability (25% wt)</span>
+              {% if cand.has_availability_data %}
+                <strong>{{ cand.availability_fit }}%</strong>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">{{ cand.overlap_count }} overlapping slots</div>
+              {% else %}
+                <strong style="color: var(--warning);">N/A</strong>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">Not enough data</div>
+              {% endif %}
+            </div>
+
+            <div class="breakdown-item">
+              <span style="color: var(--text-muted);">Interests (10% wt)</span>
+              {% if cand.has_interest_data %}
+                <strong>{{ cand.interest_fit }}%</strong>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">{{ cand.shared_interests|length }} shared tags</div>
+              {% else %}
+                <strong style="color: var(--warning);">N/A</strong>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">No shared tags</div>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- Matched Capabilities -->
+          <div style="margin-bottom: 0.75rem;">
+            <div style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.25rem;">
+              Matched Project Skills:
+            </div>
+            <div class="skill-tags">
+              {% for m in cand.matched_skills %}
+                <span class="skill-pill matched">
+                  &#10003; {{ m.name }}
+                  <span class="badge badge-{{ m.proficiency }}">{{ m.proficiency }}</span>
+                  <span style="font-size: 0.7rem; color: var(--text-muted);">({{ m.priority }})</span>
+                </span>
+              {% endfor %}
+              {% if not cand.matched_skills %}
+                <span style="font-size: 0.8rem; color: var(--text-muted); font-style: italic;">No required project skills reported.</span>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- Missing Requirements Warning (PRD Section 6.2 Safeguards) -->
+          {% if cand.missing_must_haves %}
+            <div style="margin-bottom: 0.75rem;">
+              <div style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--danger); margin-bottom: 0.25rem;">
+                &#9888; Uncovered Must-Have Requirements:
+              </div>
+              <div class="skill-tags">
+                {% for gap in cand.missing_must_haves %}
+                  <span class="skill-pill missing">&#10007; Missing: {{ gap }}</span>
+                {% endfor %}
+              </div>
+            </div>
+          {% endif %}
+
+          <!-- Availability Overlap -->
+          {% if cand.overlap_slots %}
+            <div style="margin-bottom: 0.75rem; font-size: 0.8rem; color: var(--text-muted);">
+              <strong>Common Working Slots:</strong>
+              {% for slot in cand.overlap_slots %}
+                <span class="badge" style="background: var(--surface-alt); border: 1px solid var(--border); color: var(--text); padding: 0.2rem 0.4rem; margin-right: 0.25rem;">
+                  {{ slot.day }}: {{ slot.time }}
+                </span>
+              {% endfor %}
+            </div>
+          {% endif %}
+
+          <!-- Card Bottom Actions -->
+          <div style="border-top: 1px solid var(--border); padding-top: 0.75rem; margin-top: 0.75rem; display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-size: 0.8rem; color: var(--text-muted);">
+              {% if cand.bio %}
+                "{{ cand.bio[:90] }}..."
+              {% endif %}
+            </div>
+
+            <div>
+              {% if cand.pending_invitation_id %}
+                <span class="badge badge-draft" style="padding: 0.45rem 0.75rem; font-size: 0.85rem;">
+                  &#9993; Invitation Pending
+                </span>
+              {% elif coverage.is_team_full %}
+                <span class="badge badge-closed" style="padding: 0.45rem 0.75rem; font-size: 0.85rem;">
+                  Team Full
+                </span>
+              {% else %}
+                <!-- Invite Form -->
+                <form method="POST" action="{{ url_for('invitations.send_invitation', project_id=project.id) }}" style="display: flex; gap: 0.5rem; align-items: center;">
+                  <input type="hidden" name="invitee_id" value="{{ cand.user_id }}">
+                  <input type="text" name="message" class="form-control" placeholder="Add message (optional)" style="width: 180px; padding: 0.35rem 0.6rem; font-size: 0.8rem;">
+                  <button type="submit" class="btn btn-primary btn-sm">&#9993; Invite to Team</button>
+                </form>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+
+    {% else %}
+      <div class="card" style="text-align: center; padding: 3rem 1.5rem;">
+        <h3 style="color: var(--text-muted); margin-bottom: 0.5rem;">No matching candidates found</h3>
+        <p style="font-size: 0.9rem; color: var(--text-muted);">
+          Try loosening your filter criteria or invite other students to complete their skill profile.
+        </p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

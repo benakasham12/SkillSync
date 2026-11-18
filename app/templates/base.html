@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}SkillSync - Student Skill & Team Finder{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+  <!-- Top Navigation -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="{{ url_for('projects.list_projects') }}" class="brand">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+          <circle cx="9" cy="7" r="4"></circle>
+          <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+        </svg>
+        SkillSync
+        <span class="tagline">BMSIT&M CSE 13</span>
+      </a>
+
+      <ul class="nav-links">
+        <li><a href="{{ url_for('projects.list_projects') }}" class="{% if request.endpoint == 'projects.list_projects' %}active{% endif %}">Projects</a></li>
+        
+        {% if current_user_id %}
+          <li><a href="{{ url_for('projects.create_project') }}" class="{% if request.endpoint == 'projects.create_project' %}active{% endif %}">+ Post Project</a></li>
+          <li><a href="{{ url_for('profile.edit_profile') }}" class="{% if request.endpoint == 'profile.edit_profile' %}active{% endif %}">My Profile</a></li>
+          <li>
+            <a href="{{ url_for('invitations.list_invitations') }}" class="{% if request.endpoint == 'invitations.list_invitations' %}active{% endif %}">
+              Invitations
+              {% if unread_invites_count > 0 %}
+                <span class="badge-count">{{ unread_invites_count }}</span>
+              {% endif %}
+            </a>
+          </li>
+          {% if current_user_role in ['admin', 'coordinator'] %}
+            <li><a href="{{ url_for('admin.dashboard') }}" class="{% if 'admin' in request.endpoint %}active{% endif %}">Coordinator Analytics</a></li>
+          {% endif %}
+        {% endif %}
+      </ul>
+
+      <div class="user-menu">
+        {% if current_user_id %}
+          <!-- Persona quick switcher for convenience -->
+          <div style="font-size: 0.85rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.5rem;">
+            <span>Logged in as: <strong>{{ current_user_name or 'User' }}</strong></span>
+            <div class="user-avatar" title="{{ current_user_email }}">{{ (current_user_name or 'U')[:1] }}</div>
+            <a href="{{ url_for('auth.logout') }}" class="btn btn-secondary btn-sm">Log out</a>
+          </div>
+        {% else %}
+          <a href="{{ url_for('auth.login') }}" class="btn btn-secondary btn-sm">Sign In</a>
+          <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-sm">Register</a>
+        {% endif %}
+      </div>
+    </div>
+  </nav>
+
+  <!-- Flash Alerts -->
+  <main class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-container">
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">
+              <span>{{ message }}</span>
+              <button onclick="this.parentElement.style.display='none'" style="background:none; border:none; cursor:pointer; font-size:1.1rem; line-height:1;">&times;</button>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container" style="padding: 0.5rem 1.5rem;">
+      <p><strong>Student Skill & Project Team Finder</strong> &bull; Innovation & Design Thinking (IDT) Project &bull; BMSIT&M CSE 13</p>
+      <p style="margin-top: 0.25rem;">Team: Harsh Tiwari, Benaka Sham, Goral Chhabra, Akansha</p>
+    </div>
+  </footer>
+
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

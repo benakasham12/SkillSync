@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Coordinator Analytics & Success Metrics - SkillSync{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Pilot Analytics & Product Metrics</h1>
+    <p class="page-subtitle">Based on PRD Section 9: Tracking team formation, skill coverage and student adoption.</p>
+  </div>
+  <div>
+    <a href="{{ url_for('admin.list_reports') }}" class="btn btn-secondary btn-sm">Moderation Queue (FR-13)</a>
+  </div>
+</div>
+
+<!-- North Star Metric Card (PRD Section 9) -->
+<div class="card stat-card featured" style="margin-bottom: 2rem;">
+  <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <span class="badge badge-published" style="margin-bottom: 0.5rem;">PRD Proposed North Star Metric</span>
+      <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--text);">
+        Balanced Team Success Rate
+      </h2>
+      <p style="font-size: 0.9rem; color: var(--text-muted); max-width: 650px; margin-top: 0.25rem;">
+        Percentage of projects that reach target team size (at least minimum size) while covering <strong>100% of declared must-have skills</strong> before deadline.
+      </p>
+    </div>
+    <div style="text-align: right;">
+      <div class="stat-value" style="font-size: 3rem;">{{ metrics.north_star_metric }}%</div>
+      <div class="stat-label">{{ metrics.successful_projects }} of {{ metrics.evaluated_projects_count }} active projects satisfied</div>
+    </div>
+  </div>
+</div>
+
+<!-- Operational Funnel & Adoption Metrics Grid -->
+<div class="stats-grid">
+  <!-- Profile Completion Rate -->
+  <div class="stat-card">
+    <div class="stat-value">{{ metrics.profile_completion_rate }}%</div>
+    <div class="stat-label">Profile Completion Rate</div>
+    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.35rem;">
+      {{ metrics.match_ready_profiles }} of {{ metrics.total_users }} students match-ready
+    </div>
+  </div>
+
+  <!-- Project Publish Rate -->
+  <div class="stat-card">
+    <div class="stat-value">{{ metrics.project_publish_rate }}%</div>
+    <div class="stat-label">Project Publish Rate</div>
+    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.35rem;">
+      {{ metrics.published_projects }} published of {{ metrics.total_projects }} created
+    </div>
+  </div>
+
+  <!-- Must-Have Skill Coverage -->
+  <div class="stat-card">
+    <div class="stat-value">{{ metrics.overall_must_have_coverage_rate }}%</div>
+    <div class="stat-label">Must-Have Skill Coverage</div>
+    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.35rem;">
+      Across all active project requirements
+    </div>
+  </div>
+
+  <!-- Invitation Acceptance Rate -->
+  <div class="stat-card">
+    <div class="stat-value">{{ metrics.invitation_acceptance_rate }}%</div>
+    <div class="stat-label">Invitation Acceptance Rate</div>
+    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.35rem;">
+      {{ metrics.accepted_invites }} accepted / {{ metrics.declined_invites }} declined ({{ metrics.total_invitations }} sent)
+    </div>
+  </div>
+</div>
+
+<!-- Recent Event Stream (PRD Section 9.1 Minimum Event Tracking) -->
+<div class="card">
+  <div class="card-header">
+    <h2 class="card-title">Live Audit & Product Event Stream (Section 9.1)</h2>
+  </div>
+
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Timestamp</th>
+          <th>Event Name</th>
+          <th>Actor</th>
+          <th>Target</th>
+          <th>Metadata</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for evt in metrics.recent_events %}
+          <tr>
+            <td style="font-size: 0.8rem; color: var(--text-muted);">{{ evt.created_at }}</td>
+            <td><code>{{ evt.event_name }}</code></td>
+            <td style="font-size: 0.85rem;">{{ evt.actor_email or 'System' }}</td>
+            <td style="font-size: 0.85rem;">{{ evt.target_type }} #{{ evt.target_id }}</td>
+            <td style="font-size: 0.75rem; color: var(--text-muted); font-family: monospace;">{{ evt.metadata_json or '-' }}</td>
+          </tr>
+        {% endfor %}
+        {% if not metrics.recent_events %}
+          <tr>
+            <td colspan="5" style="text-align: center; color: var(--text-muted);">No events logged yet.</td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

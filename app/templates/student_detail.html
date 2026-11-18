@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}{{ profile.display_name }} - SkillSync{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">{{ profile.display_name }}</h1>
+    <p class="page-subtitle">{{ profile.branch }} &bull; {{ profile.year }} &bull; {{ profile.section }} &bull; {{ profile.institution }}</p>
+  </div>
+  <div>
+    <a href="{{ request.referrer or url_for('projects.list_projects') }}" class="btn btn-secondary btn-sm">&larr; Back</a>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div>
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Profile Overview</h2>
+      </div>
+      <p style="margin-bottom: 1rem; color: var(--text);">{{ profile.bio or 'No bio provided.' }}</p>
+
+      <div style="border-top: 1px solid var(--border); padding-top: 1rem; margin-top: 1rem;">
+        <h3 style="font-size: 0.95rem; margin-bottom: 0.5rem; color: var(--text-muted);">Contact Details (FR-12 Privacy Guard)</h3>
+        {% if can_view_contact %}
+          <p><strong>Email:</strong> <a href="mailto:{{ target_user.email }}">{{ target_user.email }}</a></p>
+        {% else %}
+          <p style="font-size: 0.85rem; color: var(--text-muted); background: var(--surface-alt); padding: 0.5rem 0.75rem; border-radius: var(--radius);">
+            &#128274; Direct contact information is protected and will become visible once an invitation between you and this student is accepted.
+          </p>
+        {% endif %}
+      </div>
+
+      {% if profile.github_url or profile.linkedin_url or profile.portfolio_url %}
+        <div style="border-top: 1px solid var(--border); padding-top: 1rem; margin-top: 1rem;">
+          <h3 style="font-size: 0.95rem; margin-bottom: 0.5rem; color: var(--text-muted);">External Portfolios (Self-reported)</h3>
+          <ul style="list-style: none; display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.9rem;">
+            {% if profile.github_url %}
+              <li>&#128187; <a href="{{ profile.github_url }}" target="_blank" rel="noopener">GitHub: {{ profile.github_url }}</a></li>
+            {% endif %}
+            {% if profile.linkedin_url %}
+              <li>&#128188; <a href="{{ profile.linkedin_url }}" target="_blank" rel="noopener">LinkedIn: {{ profile.linkedin_url }}</a></li>
+            {% endif %}
+            {% if profile.portfolio_url %}
+              <li>&#127760; <a href="{{ profile.portfolio_url }}" target="_blank" rel="noopener">Portfolio: {{ profile.portfolio_url }}</a></li>
+            {% endif %}
+          </ul>
+        </div>
+      {% endif %}
+
+      <!-- Basic Report Action (FR-13) -->
+      <div style="border-top: 1px solid var(--border); padding-top: 1rem; margin-top: 1.5rem;">
+        <details>
+          <summary style="font-size: 0.8rem; color: var(--danger); cursor: pointer;">Report this profile</summary>
+          <form method="POST" action="{{ url_for('admin.submit_report') }}" style="margin-top: 0.5rem;">
+            <input type="hidden" name="target_type" value="profile">
+            <input type="hidden" name="target_id" value="{{ target_user.id }}">
+            <div class="form-group">
+              <textarea name="reason" class="form-control" placeholder="Describe issue (inappropriate content, inaccurate details, etc.)" required style="font-size: 0.85rem; min-height: 60px;"></textarea>
+            </div>
+            <button type="submit" class="btn btn-outline-danger btn-sm">Submit Report to Coordinators</button>
+          </form>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <!-- Skills -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Skills & Self-Reported Proficiency</h2>
+      </div>
+      {% if skills %}
+        <div class="skill-tags">
+          {% for sk in skills %}
+            <span class="skill-pill">
+              <strong>{{ sk.skill_name }}</strong>
+              <span class="badge badge-{{ sk.proficiency }}">{{ sk.proficiency }}</span>
+            </span>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p style="font-size: 0.85rem; color: var(--text-muted);">No skills declared yet.</p>
+      {% endif %}
+    </div>
+
+    <!-- Availability -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Available Time Blocks</h2>
+      </div>
+      {% if slots %}
+        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+          {% for sl in slots %}
+            <span class="badge" style="background: var(--surface-alt); color: var(--text); border: 1px solid var(--border); padding: 0.35rem 0.6rem;">
+              {{ sl.day_of_week }}: {{ sl.time_block }}
+            </span>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p style="font-size: 0.85rem; color: var(--text-muted);">No availability data provided.</p>
+      {% endif %}
+    </div>
+
+    <!-- Interests -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Shared Interests</h2>
+      </div>
+      {% if interests %}
+        <div class="skill-tags">
+          {% for it in interests %}
+            <span class="badge" style="background: var(--primary-light); color: var(--primary); padding: 0.35rem 0.6rem;">{{ it.interest_name }}</span>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p style="font-size: 0.85rem; color: var(--text-muted);">No interests specified.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+{% block title %}My Student Profile - SkillSync{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Student Profile & Capabilities</h1>
+    <p class="page-subtitle">Describe your skills, availability and interests to be recommended for course project teams.</p>
+  </div>
+  <div>
+    {% if is_match_ready %}
+      <span class="badge badge-published" style="font-size: 0.85rem; padding: 0.5rem 0.85rem;">
+        &#10003; Match-Ready Profile
+      </span>
+    {% else %}
+      <span class="badge badge-draft" style="font-size: 0.85rem; padding: 0.5rem 0.85rem;">
+        &#9888; Incomplete Profile (Not Match-Ready)
+      </span>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Match Readiness Banner -->
+{% if not is_match_ready %}
+  <div class="alert alert-warning">
+    <div>
+      <strong>Your profile is not yet match-ready!</strong> To be recommended to project owners, ensure:
+      <ul style="margin-top: 0.35rem; margin-left: 1.5rem; font-size: 0.85rem;">
+        <li>Full Name, Branch and Year are filled</li>
+        <li>At least 1 skill is added to your profile ({{ my_skills|length }} added so far)</li>
+        <li>At least 1 weekly availability block is selected ({{ my_slots|length }} selected so far)</li>
+      </ul>
+    </div>
+  </div>
+{% endif %}
+
+<div class="grid-2">
+  <!-- Left Column: Basic Info & Portfolio -->
+  <div>
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Academic & Identity Information</h2>
+      </div>
+      <form method="POST" action="{{ url_for('profile.edit_profile') }}">
+        <input type="hidden" name="action" value="update_basic">
+
+        <div class="form-group">
+          <label class="form-label" for="display_name">Full Name *</label>
+          <input type="text" id="display_name" name="display_name" class="form-control" value="{{ profile.display_name }}" required>
+        </div>
+
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label" for="usn">USN</label>
+            <input type="text" id="usn" name="usn" class="form-control" value="{{ profile.usn or '' }}">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="section">Section</label>
+            <input type="text" id="section" name="section" class="form-control" value="{{ profile.section or '' }}">
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label" for="branch">Branch</label>
+            <input type="text" id="branch" name="branch" class="form-control" value="{{ profile.branch or 'CSE' }}" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="year">Year</label>
+            <input type="text" id="year" name="year" class="form-control" value="{{ profile.year or '1st Year' }}" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="bio">Bio & Project Goals</label>
+          <textarea id="bio" name="bio" class="form-control" placeholder="What kind of projects do you want to build? What are your strengths?">{{ profile.bio or '' }}</textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">External Portfolio Links (FR-14 &bull; Optional)</label>
+          <input type="url" name="github_url" class="form-control" style="margin-bottom: 0.5rem;" placeholder="GitHub URL (https://github.com/...)" value="{{ profile.github_url or '' }}">
+          <input type="url" name="linkedin_url" class="form-control" style="margin-bottom: 0.5rem;" placeholder="LinkedIn URL (https://linkedin.com/in/...)" value="{{ profile.linkedin_url or '' }}">
+          <input type="url" name="portfolio_url" class="form-control" placeholder="Personal Portfolio URL" value="{{ profile.portfolio_url or '' }}">
+          <div class="form-hint">Note: Links are labelled as self-reported and unverified.</div>
+        </div>
+
+        <!-- Privacy Controls (FR-12 & Section 13) -->
+        <div style="border-top: 1px solid var(--border); padding-top: 1rem; margin-top: 1rem;">
+          <h3 style="font-size: 1rem; margin-bottom: 0.75rem;">Privacy & Visibility (FR-12)</h3>
+          
+          <div class="form-group">
+            <label class="form-label">Profile Visibility</label>
+            <div style="display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.9rem;">
+              <label>
+                <input type="radio" name="visibility" value="cohort_only" {% if profile.visibility == 'cohort_only' %}checked{% endif %}>
+                <strong>Cohort Only (Recommended)</strong> &bull; Only BMSIT&M classmates can discover you
+              </label>
+              <label>
+                <input type="radio" name="visibility" value="public" {% if profile.visibility == 'public' %}checked{% endif %}>
+                <strong>Public</strong> &bull; Visible across entire platform
+              </label>
+              <label>
+                <input type="radio" name="visibility" value="private" {% if profile.visibility == 'private' %}checked{% endif %}>
+                <strong>Private</strong> &bull; Exclude me from automatic match suggestions
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; cursor: pointer;">
+              <input type="checkbox" name="show_contact_after_accept" value="1" {% if profile.show_contact_after_accept %}checked{% endif %}>
+              <span>Hide email and direct contact details until an invitation is accepted</span>
+            </label>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Save Profile Info</button>
+      </form>
+    </div>
+
+    <!-- Account Status Toggle -->
+    <div class="card" style="border-color: #fed7aa;">
+      <div class="card-header">
+        <h3 class="card-title" style="font-size: 1rem;">Profile Availability Status</h3>
+      </div>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+        Current status: <strong>{{ user.status|capitalize }}</strong>. Deactivating your profile temporarily excludes you from match suggestions without losing your skills or schedule.
+      </p>
+      <form method="POST" action="{{ url_for('profile.edit_profile') }}">
+        <input type="hidden" name="action" value="toggle_status">
+        <button type="submit" class="btn {% if user.status == 'active' %}btn-outline-danger{% else %}btn-success{% endif %} btn-sm">
+          {% if user.status == 'active' %}Deactivate Profile{% else %}Activate Profile{% endif %}
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Right Column: Skills, Availability & Interests -->
+  <div>
+    <!-- Skills Management (FR-03) -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Skills & Self-Reported Proficiency (FR-03)</h2>
+      </div>
+      
+      <!-- Existing Skills List -->
+      {% if my_skills %}
+        <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.25rem;">
+          {% for sk in my_skills %}
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0.75rem; background: var(--surface-alt); border-radius: var(--radius);">
+              <div>
+                <strong>{{ sk.skill_name }}</strong>
+                <span class="badge badge-{{ sk.proficiency }}" style="margin-left: 0.5rem;">{{ sk.proficiency }}</span>
+                <span style="font-size: 0.75rem; color: var(--text-muted); margin-left: 0.5rem;">(Self-reported)</span>
+              </div>
+              <form method="POST" action="{{ url_for('profile.edit_profile') }}" style="display: inline;">
+                <input type="hidden" name="action" value="remove_skill">
+                <input type="hidden" name="skill_id" value="{{ sk.skill_id }}">
+                <button type="submit" class="btn btn-outline-danger btn-sm" style="padding: 0.15rem 0.45rem;">&times; Remove</button>
+              </form>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">No skills added yet. Select a skill from the list below.</p>
+      {% endif %}
+
+      <!-- Add Skill Form -->
+      <form method="POST" action="{{ url_for('profile.edit_profile') }}" style="border-top: 1px solid var(--border); padding-top: 1rem;">
+        <input type="hidden" name="action" value="add_skill">
+        <div class="grid-2">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" for="skill_id">Select Skill</label>
+            <select id="skill_id" name="skill_id" class="form-control" required>
+              <option value="" disabled selected>-- Choose skill --</option>
+              {% for sk in all_skills %}
+                <option value="{{ sk.id }}">{{ sk.name }} ({{ sk.category }})</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" for="proficiency">Proficiency</label>
+            <select id="proficiency" name="proficiency" class="form-control">
+              <option value="beginner">Beginner</option>
+              <option value="intermediate" selected>Intermediate</option>
+              <option value="advanced">Advanced</option>
+            </select>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-secondary btn-sm" style="margin-top: 0.75rem;">+ Add Skill</button>
+      </form>
+    </div>
+
+    <!-- Weekly Availability Grid (FR-04) -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Weekly Availability Schedule (FR-04)</h2>
+      </div>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+        Check the time blocks you can dedicate to course project collaboration. Overlapping blocks compute the 25% Availability Fit score.
+      </p>
+
+      <form method="POST" action="{{ url_for('profile.edit_profile') }}">
+        <input type="hidden" name="action" value="update_availability">
+
+        <div class="table-responsive">
+          <table class="availability-matrix">
+            <thead>
+              <tr>
+                <th style="width: 140px;">Day</th>
+                {% for block in time_blocks %}
+                  <th>{{ block }}</th>
+                {% endfor %}
+              </tr>
+            </thead>
+            <tbody>
+              {% for day in days %}
+                <tr>
+                  <td style="font-weight: 600; text-align: left; background: var(--surface-alt);">{{ day }}</td>
+                  {% for block in time_blocks %}
+                    {% set key = day ~ '|' ~ block %}
+                    <td>
+                      <label class="slot-checkbox-label">
+                        <input type="checkbox" name="slots" value="{{ key }}" {% if key in my_slots %}checked{% endif %}>
+                      </label>
+                    </td>
+                  {% endfor %}
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-sm" style="margin-top: 1rem;">Save Availability Schedule</button>
+      </form>
+    </div>
+
+    <!-- Interests & Domains (FR-04) -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Interests & Domains (10% Match Signal)</h2>
+      </div>
+      <form method="POST" action="{{ url_for('profile.edit_profile') }}">
+        <input type="hidden" name="action" value="update_interests">
+        
+        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem;">
+          {% for interest in all_interests %}
+            <label class="skill-pill" style="cursor: pointer; background: {% if interest.id in my_interest_ids %}var(--primary-light){% else %}var(--surface-alt){% endif %}; border-color: {% if interest.id in my_interest_ids %}var(--primary){% else %}var(--border){% endif %};">
+              <input type="checkbox" name="interest_ids" value="{{ interest.id }}" {% if interest.id in my_interest_ids %}checked{% endif %}>
+              <span>{{ interest.name }}</span>
+            </label>
+          {% endfor %}
+        </div>
+
+        <button type="submit" class="btn btn-secondary btn-sm">Save Interests</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

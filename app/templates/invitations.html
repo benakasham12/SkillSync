@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}Team Invitations - SkillSync{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Team Invitations & Requests</h1>
+    <p class="page-subtitle">Review incoming project invitations or monitor invitations you've sent for your projects.</p>
+  </div>
+</div>
+
+<div class="grid-2">
+  <!-- Left: Received Invitations -->
+  <div>
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Incoming Invitations ({% set pending_cnt = incoming|selectattr('status', 'equalto', 'pending')|list|length %}{{ pending_cnt }} pending)</h2>
+      </div>
+
+      {% if incoming %}
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+          {% for inv in incoming %}
+            <div class="card" style="margin-bottom: 0; background: {% if inv.status == 'pending' %}var(--surface){% else %}var(--surface-alt){% endif %}; border-left: 4px solid {% if inv.status == 'pending' %}var(--primary){% elif inv.status == 'accepted' %}var(--success){% else %}var(--danger){% endif %};">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+                <h3 style="font-size: 1.1rem; font-weight: 700;">
+                  <a href="{{ url_for('projects.project_detail', project_id=inv.project_id) }}">{{ inv.project_title }}</a>
+                </h3>
+                <span class="badge badge-{{ inv.status }}">{{ inv.status }}</span>
+              </div>
+
+              <div style="font-size: 0.8rem; color: var(--primary); font-weight: 600; margin-bottom: 0.5rem;">
+                {{ inv.course_context }} &bull; Invited by <strong>{{ inv.inviter_name }}</strong>
+              </div>
+
+              {% if inv.message %}
+                <div style="font-size: 0.85rem; font-style: italic; background: var(--surface-alt); padding: 0.5rem 0.75rem; border-radius: var(--radius); margin-bottom: 0.75rem;">
+                  "{{ inv.message }}"
+                </div>
+              {% endif %}
+
+              <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+                Sent on {{ inv.created_at[:10] }}
+                {% if inv.responded_at %}
+                  &bull; Responded on {{ inv.responded_at[:10] }}
+                {% endif %}
+              </div>
+
+              <!-- Action buttons for pending invitations (PRD FR-10) -->
+              {% if inv.status == 'pending' %}
+                <div style="display: flex; gap: 0.5rem; border-top: 1px solid var(--border); padding-top: 0.75rem;">
+                  <form method="POST" action="{{ url_for('invitations.respond_invitation', invitation_id=inv.id) }}" style="display: inline;">
+                    <input type="hidden" name="action" value="accept">
+                    <button type="submit" class="btn btn-success btn-sm">&#10003; Accept Invitation</button>
+                  </form>
+                  <form method="POST" action="{{ url_for('invitations.respond_invitation', invitation_id=inv.id) }}" style="display: inline;">
+                    <input type="hidden" name="action" value="decline">
+                    <button type="submit" class="btn btn-outline-danger btn-sm">&#10007; Decline</button>
+                  </form>
+                  <a href="{{ url_for('projects.project_detail', project_id=inv.project_id) }}" class="btn btn-secondary btn-sm" style="margin-left: auto;">View Project</a>
+                </div>
+              {% else %}
+                <div style="font-size: 0.8rem; color: var(--text-muted);">
+                  Status: <strong>{{ inv.status|capitalize }}</strong>.
+                </div>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p style="font-size: 0.9rem; color: var(--text-muted); text-align: center; padding: 2rem 0;">
+          No incoming invitations yet. Make sure your profile is match-ready so project owners can discover you!
+        </p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Right: Sent Invitations (Project Owner) -->
+  <div>
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Sent Invitations (Your Projects)</h2>
+      </div>
+
+      {% if outgoing %}
+        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+          {% for inv in outgoing %}
+            <div style="padding: 0.75rem 1rem; background: var(--surface-alt); border-radius: var(--radius); display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div style="font-weight: 600;">
+                  Invited <strong>{{ inv.invitee_name }}</strong>
+                </div>
+                <div style="font-size: 0.8rem; color: var(--text-muted);">
+                  Project: <a href="{{ url_for('projects.project_detail', project_id=inv.project_id) }}">{{ inv.project_title }}</a> &bull; {{ inv.created_at[:10] }}
+                </div>
+              </div>
+              <span class="badge badge-{{ inv.status }}">{{ inv.status }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p style="font-size: 0.9rem; color: var(--text-muted); text-align: center; padding: 2rem 0;">
+          You haven't sent any invitations yet. Post a project and explore candidate recommendations!
+        </p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

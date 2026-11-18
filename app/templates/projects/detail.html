@@ -1,0 +1,268 @@
+{% extends "base.html" %}
+{% block title %}{{ project.title }} - SkillSync{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.35rem;">
+      <span class="badge badge-{{ project.status }}">{{ project.status }}</span>
+      <span style="font-size: 0.85rem; color: var(--primary); font-weight: 600;">&#128218; {{ project.course_context }}</span>
+    </div>
+    <h1 class="page-title">{{ project.title }}</h1>
+    <p class="page-subtitle">Created by <strong>{{ project.owner_name }}</strong> &bull; Target team: {{ project.team_size_min }} to {{ project.team_size_max }} members</p>
+  </div>
+
+  <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+    {% if is_owner %}
+      {% if project.status == 'draft' %}
+        <form method="POST" action="{{ url_for('projects.publish_project', project_id=project.id) }}" style="display: inline;">
+          <button type="submit" class="btn btn-success">&#128640; Publish Project</button>
+        </form>
+      {% elif project.status == 'published' %}
+        <a href="{{ url_for('projects.match_candidates', project_id=project.id) }}" class="btn btn-primary">&#128065; Find Teammate Matches</a>
+        <form method="POST" action="{{ url_for('projects.close_project', project_id=project.id) }}" style="display: inline;" onsubmit="return confirm('Are you sure you want to close this project? Team formation will be marked finalized.');">
+          <button type="submit" class="btn btn-secondary">Close Project</button>
+        </form>
+      {% endif %}
+    {% endif %}
+  </div>
+</div>
+
+<!-- Project Skill Coverage Meter (PRD FR-11) -->
+<div class="card coverage-box">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+    <div>
+      <h2 style="font-size: 1.15rem; font-weight: 700;">Team Skill Coverage (FR-11)</h2>
+      <p style="font-size: 0.85rem; color: var(--text-muted);">
+        Visual representation of requirements covered by accepted team members.
+      </p>
+    </div>
+    <div style="text-align: right;">
+      <span style="font-size: 1.5rem; font-weight: 800; color: {% if coverage.must_have_coverage_pct == 100.0 %}var(--success){% else %}var(--warning){% endif %};">
+        {{ coverage.must_have_covered }} / {{ coverage.must_have_count }}
+      </span>
+      <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Must-Haves Covered</div>
+    </div>
+  </div>
+
+  <div class="progress-bar-container">
+    <div class="progress-bar-fill" style="width: {{ coverage.must_have_coverage_pct }}%;"></div>
+  </div>
+
+  <div style="display: flex; justify-content: space-between; font-size: 0.85rem;">
+    <span>
+      {% if coverage.all_must_haves_covered %}
+        <span style="color: var(--success); font-weight: 600;">&#10003; All must-have skill requirements are covered by current team members!</span>
+      {% else %}
+        <span style="color: var(--danger); font-weight: 600;">&#9888; Gaps detected in must-have skills. Use Match Finder to locate classmates with complementary skills.</span>
+      {% endif %}
+    </span>
+    <span style="color: var(--text-muted);">
+      Overall Requirements: <strong>{{ coverage.total_covered }} / {{ coverage.total_requirements }} ({{ coverage.overall_coverage_pct }}%)</strong>
+    </span>
+  </div>
+</div>
+
+<div class="grid-2">
+  <!-- Left Column: Requirements & Details -->
+  <div>
+    <!-- Requirements Breakdown Table -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Required Capabilities & Coverage Status</h2>
+      </div>
+
+      {% if coverage.requirements %}
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Skill</th>
+                <th>Priority</th>
+                <th>Weight</th>
+                <th>Coverage Status</th>
+                {% if is_owner and project.status == 'draft' %}
+                  <th>Action</th>
+                {% endif %}
+              </tr>
+            </thead>
+            <tbody>
+              {% for req in coverage.requirements %}
+                <tr>
+                  <td>
+                    <strong>{{ req.skill_name }}</strong>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">{{ req.category }}</div>
+                  </td>
+                  <td>
+                    <span class="badge {% if req.priority == 'must-have' %}badge-must-have{% else %}badge-preferred{% endif %}">
+                      {{ req.priority }}
+                    </span>
+                  </td>
+                  <td>{{ req.weight }}</td>
+                  <td>
+                    {% if req.is_covered %}
+                      <div style="color: var(--success); font-weight: 600; font-size: 0.85rem;">
+                        &#10003; Covered by:
+                      </div>
+                      <div style="font-size: 0.75rem;">
+                        {% for mem in req.covered_by %}
+                          <div>&bull; {{ mem.display_name }} ({{ mem.proficiency }})</div>
+                        {% endfor %}
+                      </div>
+                    {% else %}
+                      <span class="badge badge-must-have" style="text-transform: none; font-size: 0.75rem;">
+                        &#9888; Uncovered Gap
+                      </span>
+                    {% endif %}
+                  </td>
+                  {% if is_owner and project.status == 'draft' %}
+                    <td>
+                      <form method="POST" action="{{ url_for('projects.update_requirements', project_id=project.id) }}" style="display:inline;">
+                        <input type="hidden" name="action" value="remove">
+                        <input type="hidden" name="skill_id" value="{{ req.skill_id }}">
+                        <button type="submit" class="btn btn-outline-danger btn-sm" style="padding: 0.15rem 0.45rem;">&times;</button>
+                      </form>
+                    </td>
+                  {% endif %}
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+          No skill requirements declared yet. Projects cannot be published until at least one required skill is added.
+        </p>
+      {% endif %}
+
+      <!-- Add Requirement Form (visible to Owner) -->
+      {% if is_owner %}
+        <form method="POST" action="{{ url_for('projects.update_requirements', project_id=project.id) }}" style="border-top: 1px solid var(--border); padding-top: 1rem; margin-top: 1rem;">
+          <input type="hidden" name="action" value="add">
+          <h3 style="font-size: 0.95rem; margin-bottom: 0.75rem;">+ Add Skill Requirement (FR-06)</h3>
+          
+          <div class="grid-2">
+            <div class="form-group" style="margin-bottom: 0.5rem;">
+              <label class="form-label">Skill Catalog</label>
+              <select name="skill_id" class="form-control" required>
+                <option value="" disabled selected>-- Select skill --</option>
+                {% for sk in all_skills %}
+                  <option value="{{ sk.id }}">{{ sk.name }} ({{ sk.category }})</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0.5rem;">
+              <label class="form-label">Priority</label>
+              <select name="priority" class="form-control">
+                <option value="must-have" selected>Must-have (Weight 3.0)</option>
+                <option value="preferred">Preferred (Weight 1.0)</option>
+              </select>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-secondary btn-sm" style="margin-top: 0.5rem;">Add Required Skill</button>
+        </form>
+      {% endif %}
+    </div>
+
+    <!-- Description & Schedule Notes -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Project Overview & Schedule</h2>
+      </div>
+      <p style="line-height: 1.6; margin-bottom: 1rem;">{{ project.description or 'No detailed description.' }}</p>
+
+      {% if project.schedule_notes %}
+        <div style="background: var(--surface-alt); padding: 0.75rem 1rem; border-radius: var(--radius); margin-bottom: 1rem;">
+          <strong>Commitment & Notes:</strong> {{ project.schedule_notes }}
+        </div>
+      {% endif %}
+
+      {% if slots %}
+        <div style="margin-top: 0.75rem;">
+          <div style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.35rem;">Desired Availability Blocks:</div>
+          <div style="display: flex; flex-wrap: wrap; gap: 0.35rem;">
+            {% for sl in slots %}
+              <span class="badge" style="background: var(--surface-alt); border: 1px solid var(--border); color: var(--text); padding: 0.25rem 0.5rem;">
+                {{ sl.day_of_week }}: {{ sl.time_block }}
+              </span>
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
+
+      <!-- Report Project Action -->
+      <div style="border-top: 1px solid var(--border); padding-top: 1rem; margin-top: 1.5rem;">
+        <details>
+          <summary style="font-size: 0.8rem; color: var(--danger); cursor: pointer;">Report project (FR-13)</summary>
+          <form method="POST" action="{{ url_for('admin.submit_report') }}" style="margin-top: 0.5rem;">
+            <input type="hidden" name="target_type" value="project">
+            <input type="hidden" name="target_id" value="{{ project.id }}">
+            <div class="form-group">
+              <textarea name="reason" class="form-control" placeholder="Reason for report..." required style="font-size: 0.85rem; min-height: 60px;"></textarea>
+            </div>
+            <button type="submit" class="btn btn-outline-danger btn-sm">Submit Report</button>
+          </form>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Column: Current Team Roster & Pending Invites -->
+  <div>
+    <!-- Team Roster -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Accepted Team Members ({{ coverage.current_team_size }} / {{ project.team_size_max }})</h2>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+        {% for mem in coverage.members %}
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: var(--surface-alt); border-radius: var(--radius);">
+            <div>
+              <div style="font-weight: 600;">
+                <a href="{{ url_for('profile.view_student_profile', target_user_id=mem.user_id) }}">
+                  {{ mem.display_name }}
+                </a>
+                <span class="badge {% if mem.role == 'owner' %}badge-must-have{% else %}badge-preferred{% endif %}" style="margin-left: 0.35rem;">
+                  {{ mem.role }}
+                </span>
+              </div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">
+                USN: {{ mem.usn or 'N/A' }} &bull; Contact: {{ mem.email }}
+              </div>
+            </div>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">
+              Joined: {{ mem.joined_at[:10] }}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Pending Invitations (Owner View) -->
+    {% if is_owner and pending_invites %}
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">Pending Invitations ({{ pending_invites|length }})</h2>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+          {% for inv in pending_invites %}
+            <div style="padding: 0.65rem 0.85rem; background: var(--surface-alt); border-radius: var(--radius); display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <strong>{{ inv.invitee_name }}</strong> ({{ inv.section }})
+                <div style="font-size: 0.75rem; color: var(--text-muted);">Sent on {{ inv.created_at[:10] }}</div>
+                {% if inv.message %}
+                  <div style="font-size: 0.8rem; font-style: italic; color: var(--text-muted); margin-top: 0.2rem;">"{{ inv.message }}"</div>
+                {% endif %}
+              </div>
+              <span class="badge badge-draft">Awaiting Response</span>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

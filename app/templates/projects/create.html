@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}Post New Project - SkillSync{% endblock %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 0 auto;">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Post a New Course Project</h1>
+      <p class="page-subtitle">Describe your assignment or project idea. You will add required skills in the next step before publishing.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <form method="POST" action="{{ url_for('projects.create_project') }}">
+      <div class="form-group">
+        <label class="form-label" for="title">Project Title *</label>
+        <input type="text" id="title" name="title" class="form-control" placeholder="e.g. Smart Campus Navigation System" required autofocus>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="course_context">Course Context / Assignment</label>
+        <input type="text" id="course_context" name="course_context" class="form-control" value="Innovation & Design Thinking (IDT)">
+        <div class="form-hint">Course, hackathon or club initiative.</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="description">Project Description & Objectives</label>
+        <textarea id="description" name="description" class="form-control" rows="4" placeholder="Explain the problem your project solves, high-level technology ideas, and what you aim to achieve."></textarea>
+      </div>
+
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label" for="team_size_min">Minimum Team Size</label>
+          <input type="number" id="team_size_min" name="team_size_min" class="form-control" value="2" min="1" max="10" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="team_size_max">Maximum Team Size</label>
+          <input type="number" id="team_size_max" name="team_size_max" class="form-control" value="4" min="1" max="10" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="schedule_notes">Schedule & Commitment Expectations</label>
+        <input type="text" id="schedule_notes" name="schedule_notes" class="form-control" placeholder="e.g. 4-6 hours weekly; meet on Discord / BMSIT Lab">
+      </div>
+
+      <!-- Desired Schedule Slots (for 25% Availability Fit) -->
+      <div class="form-group" style="border-top: 1px solid var(--border); padding-top: 1rem; margin-top: 1rem;">
+        <label class="form-label">Preferred Collaboration Time Blocks (Availability Fit)</label>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+          Select the slots when your team will meet or code together. Candidates who share these slots receive up to 25% Availability Fit.
+        </p>
+
+        <div class="table-responsive">
+          <table class="availability-matrix">
+            <thead>
+              <tr>
+                <th style="width: 140px;">Day</th>
+                {% for block in time_blocks %}
+                  <th>{{ block }}</th>
+                {% endfor %}
+              </tr>
+            </thead>
+            <tbody>
+              {% for day in days %}
+                <tr>
+                  <td style="font-weight: 600; text-align: left; background: var(--surface-alt);">{{ day }}</td>
+                  {% for block in time_blocks %}
+                    {% set key = day ~ '|' ~ block %}
+                    <td>
+                      <label class="slot-checkbox-label">
+                        <input type="checkbox" name="slots" value="{{ key }}">
+                      </label>
+                    </td>
+                  {% endfor %}
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Desired Interests / Domains (for 10% Interest Fit) -->
+      <div class="form-group" style="border-top: 1px solid var(--border); padding-top: 1rem; margin-top: 1rem;">
+        <label class="form-label">Project Domain & Interests (10% Match Signal)</label>
+        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+          {% for interest in all_interests %}
+            <label class="skill-pill" style="cursor: pointer; background: var(--surface-alt);">
+              <input type="checkbox" name="interest_ids" value="{{ interest.id }}">
+              <span>{{ interest.name }}</span>
+            </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
+        <a href="{{ url_for('projects.list_projects') }}" class="btn btn-secondary">Cancel</a>
+        <button type="submit" class="btn btn-primary">Save Draft & Add Skills &rarr;</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
