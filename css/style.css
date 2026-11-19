@@ -143,19 +143,11 @@ a:hover {
 .brand-name {
   font-weight: 800;
   font-size: 1.25rem;
+  line-height: 1.2;
   background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-}
-.brand-badge {
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: var(--primary);
-  background: var(--primary-light);
-  border: 1px solid rgba(59, 130, 246, 0.2);
-  padding: 0.15rem 0.5rem;
-  border-radius: 9999px;
-  letter-spacing: 0.02em;
+  letter-spacing: -0.02em;
 }
 
 /* Nav links & actions */

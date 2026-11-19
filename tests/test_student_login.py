@@ -42,6 +42,8 @@ def test_student_login_page_renders_design_and_fields(client):
     assert "Welcome Back to SkillSync!" in html
     assert "Your team, your skills, your next big idea" in html
     assert "collab-illustration-svg" in html or "svg" in html
+    assert "auth-brand-name" in html
+    assert "brand-badge" not in html
 
     # Right Section Form elements
     assert "Student Login" in html

@@ -72,6 +72,14 @@ def test_landing_page_renders_successfully(client):
     assert "hero-preview-wrapper" not in html
     assert "mockup-candidate-card" not in html
 
+    # Verify removal of college/department badges next to SkillSync logo and hero section
+    navbar_and_hero = html.split('<footer')[0]
+    assert "BMSIT&amp;M CSE 13" not in navbar_and_hero
+    assert "brand-badge" not in html
+    assert "Student Skill &amp; Project Team Finder &bull; BMSIT&amp;M IDT" not in html
+    assert "Student Skill &amp; Project Team Finder" in html
+    assert '<span class="brand-name">SkillSync</span>' in html
+
 
 def test_projects_directory_route(client):
     """Verify '/projects' route continues to serve the projects directory."""
