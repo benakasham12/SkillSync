@@ -141,6 +141,10 @@ def respond_invitation(invitation_id):
             VALUES (?, ?, 'member', CURRENT_TIMESTAMP)
         """, (project_id, user_id))
 
+        # Add to project group chat
+        from app.routes.messages import add_student_to_project_group
+        add_student_to_project_group(project_id, user_id)
+
         # Update invitation status
         execute_db("""
             UPDATE invitations

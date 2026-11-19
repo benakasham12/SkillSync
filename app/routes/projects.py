@@ -380,6 +380,10 @@ def create_project():
             VALUES (?, ?, 'owner', CURRENT_TIMESTAMP)
         """, (proj_id, user_id))
 
+        # Initialize project group chat
+        from app.routes.messages import get_or_create_project_group
+        get_or_create_project_group(proj_id)
+
         # Save required skills
         save_project_skills(proj_id, skills_data, category)
 
@@ -759,6 +763,10 @@ def review_application(project_id, app_id):
             WHERE id = ?
         """, (app_id,))
 
+        # Add to project group chat
+        from app.routes.messages import add_student_to_project_group
+        add_student_to_project_group(project_id, app_record['applicant_id'])
+
         log_event('application_accepted', actor_id=user_id, target_type='application', target_id=app_id)
         flash('Application accepted! Student has been added to the team roster.', 'success')
 
@@ -789,6 +797,10 @@ def remove_team_member(project_id, member_id):
 
     execute_db("DELETE FROM team_members WHERE project_id = ? AND user_id = ?", (project_id, member_id))
     execute_db("UPDATE project_applications SET application_status = 'withdrawn' WHERE project_id = ? AND applicant_id = ?", (project_id, member_id))
+
+    # Revoke group chat access
+    from app.routes.messages import remove_student_from_project_group
+    remove_student_from_project_group(project_id, member_id)
 
     flash('Team member removed from the project.', 'info')
     return redirect(url_for('projects.project_detail', project_id=project_id))

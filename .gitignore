@@ -7,3 +7,5 @@ __pycache__/
 *.db-journal
 instance/
 .env
+app/static/uploads/attachments/*
+!app/static/uploads/attachments/.gitkeep

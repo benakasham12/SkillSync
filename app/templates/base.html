@@ -53,6 +53,13 @@
             {% if current_user_id %}
               <li><a href="{{ url_for('projects.create_project') }}" class="nav-item {% if request.endpoint == 'projects.create_project' %}active{% endif %}">+ Create Project</a></li>
               <li><a href="{{ url_for('projects.my_projects') }}" class="nav-item {% if request.endpoint == 'projects.my_projects' %}active{% endif %}">My Projects</a></li>
+              <li>
+                <a href="{{ url_for('messages.inbox') }}" class="nav-item {% if 'messages' in request.endpoint %}active{% endif %}" id="navMessagesLink">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="vertical-align: -2px; margin-right: 4px;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                  <span>Messages</span>
+                  <span class="badge-count" id="navUnreadMessagesBadge" {% if unread_messages_count == 0 %}style="display: none;"{% endif %}>{{ unread_messages_count if unread_messages_count > 0 else '' }}</span>
+                </a>
+              </li>
               <li><a href="{{ url_for('profile.edit_profile') }}" class="nav-item {% if request.endpoint == 'profile.edit_profile' %}active{% endif %}">My Profile</a></li>
               <li>
                 <a href="{{ url_for('invitations.list_invitations') }}" class="nav-item {% if request.endpoint == 'invitations.list_invitations' %}active{% endif %}">

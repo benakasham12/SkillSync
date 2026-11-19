@@ -32,6 +32,7 @@ def create_app(db_path=None, test_config=None):
     from app.routes.invitations import invitations_bp
     from app.routes.admin import admin_bp
     from app.routes.api import api_bp
+    from app.routes.messages import messages_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(profile_bp)
@@ -39,12 +40,14 @@ def create_app(db_path=None, test_config=None):
     app.register_blueprint(invitations_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(api_bp)
+    app.register_blueprint(messages_bp)
 
     # Global template context processor
     @app.context_processor
     def inject_user_context():
         uid = session.get('user_id')
         unread_invites_count = 0
+        unread_messages_count = 0
         user_name = session.get('user_name')
         user_email = session.get('user_email')
         user_role = session.get('user_role')
@@ -52,6 +55,17 @@ def create_app(db_path=None, test_config=None):
         if uid:
             res = query_db("SELECT COUNT(*) as cnt FROM invitations WHERE invitee_id = ? AND status = 'pending'", (uid,), one=True)
             unread_invites_count = res['cnt'] if res else 0
+
+            res_m = query_db("""
+                SELECT COUNT(*) as cnt
+                FROM messages m
+                JOIN conversation_participants cp ON m.conversation_id = cp.conversation_id
+                WHERE cp.student_id = ?
+                  AND cp.membership_status = 'active'
+                  AND m.sender_id != ?
+                  AND m.id > COALESCE(cp.last_read_message_id, 0)
+            """, (uid, uid), one=True)
+            unread_messages_count = res_m['cnt'] if res_m else 0
 
             if not user_name:
                 prof = query_db("SELECT display_name FROM student_profiles WHERE user_id = ?", (uid,), one=True)
@@ -69,7 +83,8 @@ def create_app(db_path=None, test_config=None):
             'current_user_name': user_name or 'User',
             'current_user_email': user_email,
             'current_user_role': user_role,
-            'unread_invites_count': unread_invites_count
+            'unread_invites_count': unread_invites_count,
+            'unread_messages_count': unread_messages_count
         }
 
     return app

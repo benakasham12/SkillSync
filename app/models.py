@@ -214,6 +214,59 @@ def init_db(db_path=None):
         UNIQUE(project_id, applicant_id)
     );
 
+    -- Conversations (Direct & Project Group Chats)
+    CREATE TABLE IF NOT EXISTS conversations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        conversation_type TEXT NOT NULL, -- 'direct', 'project_group'
+        project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE,
+        conversation_name TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- Conversation Participants
+    CREATE TABLE IF NOT EXISTS conversation_participants (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        conversation_id INTEGER NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+        student_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        last_read_at TIMESTAMP,
+        last_read_message_id INTEGER DEFAULT 0,
+        membership_status TEXT DEFAULT 'active', -- 'active', 'removed', 'left'
+        UNIQUE(conversation_id, student_id)
+    );
+
+    -- Messages
+    CREATE TABLE IF NOT EXISTS messages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        conversation_id INTEGER NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+        sender_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        message_content TEXT NOT NULL,
+        message_type TEXT DEFAULT 'text', -- 'text', 'attachment', 'system'
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- Message Attachments
+    CREATE TABLE IF NOT EXISTS message_attachments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        message_id INTEGER NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+        file_name TEXT NOT NULL,
+        file_path TEXT NOT NULL,
+        file_type TEXT,
+        file_size INTEGER,
+        uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- Message Read Status
+    CREATE TABLE IF NOT EXISTS message_read_status (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        message_id INTEGER NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+        student_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        read_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(message_id, student_id)
+    );
+
     -- Indices for performance
     CREATE INDEX IF NOT EXISTS idx_student_skills_user ON student_skills(user_id);
     CREATE INDEX IF NOT EXISTS idx_student_skills_skill ON student_skills(skill_id);
@@ -223,6 +276,12 @@ def init_db(db_path=None):
     CREATE INDEX IF NOT EXISTS idx_audit_events_name ON audit_events(event_name);
     CREATE INDEX IF NOT EXISTS idx_project_applications_proj ON project_applications(project_id);
     CREATE INDEX IF NOT EXISTS idx_project_applications_applicant ON project_applications(applicant_id);
+    CREATE INDEX IF NOT EXISTS idx_conv_part_student ON conversation_participants(student_id, membership_status);
+    CREATE INDEX IF NOT EXISTS idx_conv_part_conv ON conversation_participants(conversation_id);
+    CREATE INDEX IF NOT EXISTS idx_messages_conv ON messages(conversation_id, created_at);
+    CREATE INDEX IF NOT EXISTS idx_messages_sender ON messages(sender_id);
+    CREATE INDEX IF NOT EXISTS idx_attachments_msg ON message_attachments(message_id);
+    CREATE INDEX IF NOT EXISTS idx_read_status_student ON message_read_status(student_id);
     """)
 
     # Safe column migrations for existing SQLite databases
@@ -234,7 +293,8 @@ def init_db(db_path=None):
         ('projects', 'collaboration_mode', "TEXT DEFAULT 'Hybrid'"),
         ('projects', 'availability', "TEXT DEFAULT 'Flexible'"),
         ('projects', 'additional_requirements', "TEXT"),
-        ('project_skill_requirements', 'proficiency_level', "TEXT DEFAULT 'intermediate'")
+        ('project_skill_requirements', 'proficiency_level', "TEXT DEFAULT 'intermediate'"),
+        ('conversation_participants', 'last_read_message_id', "INTEGER DEFAULT 0")
     ]
     for tbl, col, col_type in columns_to_add:
         try:
