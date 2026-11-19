@@ -65,8 +65,8 @@ $$\text{Match Score} = 0.65 \times \text{Skill Fit} + 0.25 \times \text{Availabi
 
 - **Backend:** Python 3.15, Flask 3.1, Werkzeug
 - **Database:** SQLite (`skillsync.db`) with foreign key constraints and index optimizations
-- **Frontend:** Semantic HTML5, CSS custom properties design system, responsive mobile-first layout, vanilla JavaScript
-- **Testing:** `pytest` (9 comprehensive unit and integration test suites covering all PRD specifications)
+- **Frontend:** Semantic HTML5, modern SaaS CSS design system (blue/purple/white gradients, glassmorphism, responsive mobile-first layout), vanilla JavaScript micro-interactions
+- **Testing:** `pytest` (11 comprehensive unit and integration test suites covering all PRD specifications and landing routes)
 
 ```
 SkillSync-1/
@@ -84,10 +84,13 @@ SkillSync-1/
 │   │   ├── admin.py          # Coordinator dashboard & moderation queue
 │   │   └── api.py            # Taxonomy endpoints
 │   ├── static/
-│   │   ├── css/style.css     # Responsive design system
-│   │   └── js/app.js         # Client-side notifications & helpers
+│   │   ├── css/style.css     # Modern SaaS design system (gradients, glassmorphism, responsive)
+│   │   └── js/app.js         # Mobile nav toggle & client-side micro-interactions
 │   └── templates/            # Jinja2 templates for all core user journeys
+│       ├── landing.html      # High-impact opening SaaS landing page
+│       └── base.html         # Sticky blurred navbar & comprehensive footer
 ├── tests/
+│   ├── test_landing.py       # Landing page & navigation route verification
 │   ├── test_matching.py      # PRD Section 6.3 worked example verification
 │   ├── test_coverage.py      # Team skill coverage and gap filling
 │   ├── test_invitations.py   # Invitation lifecycle & duplicate safeguards
@@ -119,7 +122,7 @@ Simply double-click **`start.bat`** (or run `.\start.bat` in command prompt / te
 # 2. Seed or Reset the Database
 python seed.py
 
-# 3. Run the Automated Test Suite (9 Tests)
+# 3. Run the Automated Test Suite (11 Tests)
 python -m pytest -v
 
 # 4. Start Web Server

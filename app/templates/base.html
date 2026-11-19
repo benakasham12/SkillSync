@@ -3,62 +3,93 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}SkillSync - Student Skill & Team Finder{% endblock %}</title>
+  <title>{% block title %}SkillSync - Find Your Perfect Team. Build Something Amazing.{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
 
-  <!-- Top Navigation -->
-  <nav class="navbar">
-    <div class="nav-container">
-      <a href="{{ url_for('projects.list_projects') }}" class="brand">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
-          <circle cx="9" cy="7" r="4"></circle>
-          <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
-          <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-        </svg>
-        SkillSync
-        <span class="tagline">BMSIT&M CSE 13</span>
-      </a>
-
-      <ul class="nav-links">
-        <li><a href="{{ url_for('projects.list_projects') }}" class="{% if request.endpoint == 'projects.list_projects' %}active{% endif %}">Projects</a></li>
-        
-        {% if current_user_id %}
-          <li><a href="{{ url_for('projects.create_project') }}" class="{% if request.endpoint == 'projects.create_project' %}active{% endif %}">+ Post Project</a></li>
-          <li><a href="{{ url_for('profile.edit_profile') }}" class="{% if request.endpoint == 'profile.edit_profile' %}active{% endif %}">My Profile</a></li>
-          <li>
-            <a href="{{ url_for('invitations.list_invitations') }}" class="{% if request.endpoint == 'invitations.list_invitations' %}active{% endif %}">
-              Invitations
-              {% if unread_invites_count > 0 %}
-                <span class="badge-count">{{ unread_invites_count }}</span>
-              {% endif %}
-            </a>
-          </li>
-          {% if current_user_role in ['admin', 'coordinator'] %}
-            <li><a href="{{ url_for('admin.dashboard') }}" class="{% if 'admin' in request.endpoint %}active{% endif %}">Coordinator Analytics</a></li>
-          {% endif %}
-        {% endif %}
-      </ul>
-
-      <div class="user-menu">
-        {% if current_user_id %}
-          <!-- Persona quick switcher for convenience -->
-          <div style="font-size: 0.85rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.5rem;">
-            <span>Logged in as: <strong>{{ current_user_name or 'User' }}</strong></span>
-            <div class="user-avatar" title="{{ current_user_email }}">{{ (current_user_name or 'U')[:1] }}</div>
-            <a href="{{ url_for('auth.logout') }}" class="btn btn-secondary btn-sm">Log out</a>
+  <!-- Sticky Modern Navigation Bar -->
+  <header class="site-header">
+    <nav class="navbar" id="navbar">
+      <div class="nav-container">
+        <!-- Logo & Brand -->
+        <a href="{{ url_for('projects.landing') }}" class="brand" aria-label="SkillSync Home">
+          <div class="brand-logo-glow">
+            <svg class="brand-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
           </div>
-        {% else %}
-          <a href="{{ url_for('auth.login') }}" class="btn btn-secondary btn-sm">Sign In</a>
-          <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-sm">Register</a>
-        {% endif %}
-      </div>
-    </div>
-  </nav>
+          <div class="brand-text-group">
+            <span class="brand-name">SkillSync</span>
+            <span class="brand-badge">BMSIT&amp;M CSE 13</span>
+          </div>
+        </a>
 
-  <!-- Flash Alerts -->
+        <!-- Mobile Navigation Toggle -->
+        <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation menu" aria-expanded="false">
+          <svg class="icon-open" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+          <svg class="icon-close" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+
+        <!-- Navigation Links -->
+        <div class="nav-collapse" id="navCollapse">
+          <ul class="nav-links">
+            <li><a href="{{ url_for('projects.landing') }}" class="nav-item {% if request.endpoint == 'projects.landing' %}active{% endif %}">Home</a></li>
+            <li><a href="{{ url_for('projects.landing') }}#features" class="nav-item">Features</a></li>
+            <li><a href="{{ url_for('projects.landing') }}#how-it-works" class="nav-item">How It Works</a></li>
+            <li><a href="{{ url_for('projects.landing') }}#about" class="nav-item">About Us</a></li>
+            <li><a href="{{ url_for('projects.list_projects') }}" class="nav-item {% if request.endpoint == 'projects.list_projects' %}active{% endif %}">Projects</a></li>
+            
+            {% if current_user_id %}
+              <li><a href="{{ url_for('projects.create_project') }}" class="nav-item {% if request.endpoint == 'projects.create_project' %}active{% endif %}">+ Post Project</a></li>
+              <li><a href="{{ url_for('profile.edit_profile') }}" class="nav-item {% if request.endpoint == 'profile.edit_profile' %}active{% endif %}">My Profile</a></li>
+              <li>
+                <a href="{{ url_for('invitations.list_invitations') }}" class="nav-item {% if request.endpoint == 'invitations.list_invitations' %}active{% endif %}">
+                  Invitations
+                  {% if unread_invites_count > 0 %}
+                    <span class="badge-count">{{ unread_invites_count }}</span>
+                  {% endif %}
+                </a>
+              </li>
+              {% if current_user_role in ['admin', 'coordinator'] %}
+                <li><a href="{{ url_for('admin.dashboard') }}" class="nav-item {% if 'admin' in request.endpoint %}active{% endif %}">Coordinator Analytics</a></li>
+              {% endif %}
+            {% endif %}
+          </ul>
+
+          <!-- User Actions / CTA Menu -->
+          <div class="nav-actions">
+            {% if current_user_id %}
+              <div class="nav-user-pill">
+                <div class="user-avatar" title="{{ current_user_email }}">{{ (current_user_name or 'U')[:1] }}</div>
+                <span class="user-name-text">{{ current_user_name or 'User' }}</span>
+                <a href="{{ url_for('auth.logout') }}" class="btn btn-secondary btn-sm">Log out</a>
+              </div>
+            {% else %}
+              <a href="{{ url_for('auth.login') }}" class="btn btn-ghost btn-sm">Login</a>
+              <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-sm btn-nav-cta">Get Started</a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Page Body & Layout -->
+  {% block layout %}
   <main class="container">
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
@@ -75,12 +106,99 @@
 
     {% block content %}{% endblock %}
   </main>
+  {% endblock layout %}
 
-  <!-- Footer -->
-  <footer>
-    <div class="container" style="padding: 0.5rem 1.5rem;">
-      <p><strong>Student Skill & Project Team Finder</strong> &bull; Innovation & Design Thinking (IDT) Project &bull; BMSIT&M CSE 13</p>
-      <p style="margin-top: 0.25rem;">Team: Harsh Tiwari, Benaka Sham, Goral Chhabra, Akansha</p>
+  <!-- Comprehensive SaaS Footer -->
+  <footer class="site-footer">
+    <div class="footer-container">
+      <div class="footer-top-grid">
+        <!-- Col 1: Brand & Overview -->
+        <div class="footer-col brand-col">
+          <a href="{{ url_for('projects.landing') }}" class="brand" style="margin-bottom: 0.75rem;">
+            <div class="brand-logo-glow">
+              <svg class="brand-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              </svg>
+            </div>
+            <div class="brand-text-group">
+              <span class="brand-name">SkillSync</span>
+              <span class="brand-badge">BMSIT&amp;M</span>
+            </div>
+          </a>
+          <p class="footer-desc">
+            An intelligent project teammate discovery platform designed for BMSIT&amp;M students. Connect through verified skills, complementary schedules, and shared project goals.
+          </p>
+          <div class="footer-badge-pill">
+            <span class="pulse-dot"></span>
+            <span>Innovation &amp; Design Thinking (IDT) &bull; CSE 13</span>
+          </div>
+        </div>
+
+        <!-- Col 2: Navigation Links -->
+        <div class="footer-col">
+          <h4 class="footer-heading">Platform</h4>
+          <ul class="footer-links-list">
+            <li><a href="{{ url_for('projects.landing') }}">Home</a></li>
+            <li><a href="{{ url_for('projects.landing') }}#features">Features</a></li>
+            <li><a href="{{ url_for('projects.landing') }}#how-it-works">How It Works</a></li>
+            <li><a href="{{ url_for('projects.list_projects') }}">Browse Projects</a></li>
+            <li><a href="{{ url_for('projects.landing') }}#about">About Us</a></li>
+          </ul>
+        </div>
+
+        <!-- Col 3: Student Tools -->
+        <div class="footer-col">
+          <h4 class="footer-heading">Student Access</h4>
+          <ul class="footer-links-list">
+            {% if current_user_id %}
+              <li><a href="{{ url_for('projects.create_project') }}">Post a Project</a></li>
+              <li><a href="{{ url_for('profile.edit_profile') }}">Edit My Profile</a></li>
+              <li><a href="{{ url_for('invitations.list_invitations') }}">Manage Invitations</a></li>
+              <li><a href="{{ url_for('auth.logout') }}">Log out</a></li>
+            {% else %}
+              <li><a href="{{ url_for('auth.login') }}">Student Login</a></li>
+              <li><a href="{{ url_for('auth.register') }}">Create an Account</a></li>
+              <li><a href="{{ url_for('projects.list_projects') }}">Open Roles</a></li>
+            {% endif %}
+          </ul>
+        </div>
+
+        <!-- Col 4: Institutional Attribution & Contacts -->
+        <div class="footer-col">
+          <h4 class="footer-heading">Institution &amp; Contact</h4>
+          <p class="footer-info-item">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+            <span>BMS Institute of Technology &amp; Management, Avalahalli, Doddaballapur Main Road, Yelahanka, Bengaluru 560064</span>
+          </p>
+          <p class="footer-info-item">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+            <span>skillsync.bmsit@gmail.com</span>
+          </p>
+          <div class="footer-socials">
+            <a href="https://github.com/benakasham12/SkillSync" target="_blank" rel="noopener noreferrer" class="social-icon-btn" aria-label="GitHub Repository" title="SkillSync GitHub">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
+            </a>
+            <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" class="social-icon-btn" aria-label="LinkedIn" title="LinkedIn Profile">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
+            </a>
+            <a href="https://bmsit.ac.in" target="_blank" rel="noopener noreferrer" class="social-icon-btn" aria-label="BMSIT Official Website" title="BMSIT&M Official">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-divider"></div>
+
+      <div class="footer-bottom-bar">
+        <p class="copyright-text">&copy; 2026 <strong>SkillSync</strong> &bull; Innovation &amp; Design Thinking (IDT) &bull; BMSIT&amp;M CSE 13</p>
+        <p class="team-credits">
+          Engineering Project Team: <span>Harsh Tiwari</span>, <span>Benaka Sham</span>, <span>Goral Chhabra</span>, <span>Akansha</span>
+        </p>
+      </div>
     </div>
   </footer>
 

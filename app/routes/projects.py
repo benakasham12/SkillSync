@@ -21,6 +21,46 @@ TIME_BLOCKS = [
 
 
 @projects_bp.route('/')
+def landing():
+    """Renders the modern SkillSync opening landing page."""
+    # Query up to 3 featured published projects for the live preview
+    try:
+        featured_projects = query_db("""
+            SELECT p.*, sp.display_name as owner_name, sp.branch as owner_branch, sp.year as owner_year,
+                   (SELECT COUNT(*) FROM team_members WHERE project_id = p.id) + 1 as current_team_count
+            FROM projects p
+            JOIN users u ON p.owner_id = u.id
+            JOIN student_profiles sp ON u.id = sp.user_id
+            WHERE p.status = 'published'
+            ORDER BY p.created_at DESC
+            LIMIT 3
+        """)
+
+        for p in featured_projects:
+            reqs = query_db("""
+                SELECT psr.*, s.name as skill_name, s.category as skill_category
+                FROM project_skill_requirements psr
+                JOIN skills s ON psr.skill_id = s.id
+                WHERE psr.project_id = ?
+            """, (p['id'],))
+            p['requirements'] = reqs
+
+        total_projects = query_db("SELECT COUNT(*) as count FROM projects WHERE status = 'published'", one=True)
+        total_skills = query_db("SELECT COUNT(*) as count FROM skills", one=True)
+        total_students = query_db("SELECT COUNT(*) as count FROM student_profiles WHERE is_match_ready = 1", one=True)
+
+        stats = {
+            'projects_count': total_projects['count'] if total_projects else 0,
+            'skills_count': total_skills['count'] if total_skills else 0,
+            'students_count': total_students['count'] if total_students else 0
+        }
+    except Exception:
+        featured_projects = []
+        stats = {'projects_count': 0, 'skills_count': 0, 'students_count': 0}
+
+    return render_template('landing.html', featured_projects=featured_projects, stats=stats)
+
+
 @projects_bp.route('/projects')
 def list_projects():
     """List open and published projects, along with current user's owned projects."""
