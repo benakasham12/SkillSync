@@ -1,0 +1,334 @@
+{
+  "skills_catalog": [
+    {"name": "HTML/CSS/JavaScript", "category": "Frontend"},
+    {"name": "React", "category": "Frontend"},
+    {"name": "Tailwind CSS", "category": "Frontend"},
+    {"name": "Vue.js", "category": "Frontend"},
+    {"name": "Python", "category": "Backend"},
+    {"name": "Flask", "category": "Backend"},
+    {"name": "Node.js/Express", "category": "Backend"},
+    {"name": "Java/Spring Boot", "category": "Backend"},
+    {"name": "REST API Design", "category": "Backend"},
+    {"name": "Database Modeling", "category": "Database"},
+    {"name": "SQLite/PostgreSQL", "category": "Database"},
+    {"name": "MongoDB", "category": "Database"},
+    {"name": "UI/UX", "category": "Design"},
+    {"name": "Figma", "category": "Design"},
+    {"name": "Wireframing & Prototyping", "category": "Design"},
+    {"name": "Machine Learning", "category": "Data/AI"},
+    {"name": "Data Analysis/Pandas", "category": "Data/AI"},
+    {"name": "Prompt Engineering", "category": "Data/AI"},
+    {"name": "Git/GitHub", "category": "Tools"},
+    {"name": "Docker", "category": "Tools"},
+    {"name": "Testing/QA", "category": "Tools"},
+    {"name": "Presentation", "category": "Soft Skills"},
+    {"name": "Project Management", "category": "Soft Skills"},
+    {"name": "Technical Writing", "category": "Soft Skills"},
+    {"name": "IoT & Hardware", "category": "Tools"}
+  ],
+  "interests_catalog": [
+    {"name": "Web Development", "category": "Technology"},
+    {"name": "Artificial Intelligence", "category": "Technology"},
+    {"name": "Design & Creative", "category": "Design"},
+    {"name": "Mobile Applications", "category": "Technology"},
+    {"name": "IoT & Hardware", "category": "Hardware"},
+    {"name": "Open Source Software", "category": "Community"},
+    {"name": "Social Impact", "category": "Mission"},
+    {"name": "FinTech", "category": "Domain"},
+    {"name": "EdTech & Learning", "category": "Domain"},
+    {"name": "Healthcare Tech", "category": "Domain"}
+  ],
+  "time_blocks": [
+    "Morning (9AM-12PM)",
+    "Afternoon (1PM-4PM)",
+    "Evening (5PM-8PM)",
+    "Night (8PM-11PM)"
+  ],
+  "days": [
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday"
+  ],
+  "admin_account": {
+    "email": "faculty@bmsit.in",
+    "password": "admin123",
+    "role": "admin"
+  },
+  "default_student_password": "password123",
+  "students": [
+    {
+      "email": "benaka@bmsit.in",
+      "display_name": "Benaka Sham",
+      "usn": "1BY26CS013",
+      "branch": "CSE",
+      "year": "1st Year",
+      "section": "CSE-13",
+      "bio": "Full-stack developer focused on Python/Flask and robust data modeling. Passionate about requirement-first architectures.",
+      "github_url": "https://github.com/benakasham",
+      "linkedin_url": "https://linkedin.com/in/benakasham",
+      "portfolio_url": "https://benakasham.dev",
+      "visibility": "public",
+      "skills": [
+        {"name": "Python", "proficiency": "advanced"},
+        {"name": "Flask", "proficiency": "advanced"},
+        {"name": "Database Modeling", "proficiency": "intermediate"},
+        {"name": "REST API Design", "proficiency": "advanced"},
+        {"name": "Git/GitHub", "proficiency": "advanced"}
+      ],
+      "interests": ["Web Development", "Artificial Intelligence", "EdTech & Learning"],
+      "availability": [
+        {"day": "Monday", "block": "Evening (5PM-8PM)"},
+        {"day": "Wednesday", "block": "Evening (5PM-8PM)"},
+        {"day": "Friday", "block": "Evening (5PM-8PM)"},
+        {"day": "Saturday", "block": "Morning (9AM-12PM)"},
+        {"day": "Saturday", "block": "Afternoon (1PM-4PM)"}
+      ]
+    },
+    {
+      "email": "harsh@bmsit.in",
+      "display_name": "Harsh Tiwari",
+      "usn": "1BY26CS028",
+      "branch": "CSE",
+      "year": "1st Year",
+      "section": "CSE-13",
+      "bio": "Backend engineer & ML enthusiast. Love writing fast APIs and training applied computer vision models.",
+      "github_url": "https://github.com/harshtiwari",
+      "linkedin_url": "https://linkedin.com/in/harshtiwari",
+      "portfolio_url": null,
+      "visibility": "cohort_only",
+      "skills": [
+        {"name": "Python", "proficiency": "advanced"},
+        {"name": "Machine Learning", "proficiency": "intermediate"},
+        {"name": "Data Analysis/Pandas", "proficiency": "intermediate"},
+        {"name": "SQLite/PostgreSQL", "proficiency": "intermediate"},
+        {"name": "Git/GitHub", "proficiency": "intermediate"}
+      ],
+      "interests": ["Artificial Intelligence", "Web Development", "Social Impact"],
+      "availability": [
+        {"day": "Tuesday", "block": "Evening (5PM-8PM)"},
+        {"day": "Thursday", "block": "Evening (5PM-8PM)"},
+        {"day": "Saturday", "block": "Afternoon (1PM-4PM)"},
+        {"day": "Sunday", "block": "Morning (9AM-12PM)"}
+      ]
+    },
+    {
+      "email": "goral@bmsit.in",
+      "display_name": "Goral Chhabra",
+      "usn": "1BY26CS025",
+      "branch": "CSE",
+      "year": "1st Year",
+      "section": "CSE-13",
+      "bio": "UI/UX Designer and Frontend creator. Obsessed with intuitive interaction design, wireframes, and design systems in Figma.",
+      "github_url": "https://github.com/goralchhabra",
+      "linkedin_url": "https://linkedin.com/in/goralchhabra",
+      "portfolio_url": "https://goral.design",
+      "visibility": "public",
+      "skills": [
+        {"name": "UI/UX", "proficiency": "advanced"},
+        {"name": "Figma", "proficiency": "advanced"},
+        {"name": "Wireframing & Prototyping", "proficiency": "advanced"},
+        {"name": "HTML/CSS/JavaScript", "proficiency": "intermediate"},
+        {"name": "Tailwind CSS", "proficiency": "intermediate"}
+      ],
+      "interests": ["Design & Creative", "Web Development", "EdTech & Learning"],
+      "availability": [
+        {"day": "Monday", "block": "Evening (5PM-8PM)"},
+        {"day": "Wednesday", "block": "Evening (5PM-8PM)"},
+        {"day": "Saturday", "block": "Morning (9AM-12PM)"},
+        {"day": "Saturday", "block": "Afternoon (1PM-4PM)"}
+      ]
+    },
+    {
+      "email": "akansha@bmsit.in",
+      "display_name": "Akansha",
+      "usn": "1BY26CS005",
+      "branch": "CSE",
+      "year": "1st Year",
+      "section": "CSE-13",
+      "bio": "QA engineer and technical writer. Specializing in test automation, relational databases and project documentation.",
+      "github_url": "https://github.com/akansha-cs",
+      "linkedin_url": "https://linkedin.com/in/akansha",
+      "portfolio_url": null,
+      "visibility": "public",
+      "skills": [
+        {"name": "Testing/QA", "proficiency": "advanced"},
+        {"name": "SQLite/PostgreSQL", "proficiency": "advanced"},
+        {"name": "Technical Writing", "proficiency": "advanced"},
+        {"name": "Presentation", "proficiency": "intermediate"},
+        {"name": "Git/GitHub", "proficiency": "intermediate"}
+      ],
+      "interests": ["EdTech & Learning", "Open Source Software", "Social Impact"],
+      "availability": [
+        {"day": "Monday", "block": "Evening (5PM-8PM)"},
+        {"day": "Friday", "block": "Evening (5PM-8PM)"},
+        {"day": "Saturday", "block": "Morning (9AM-12PM)"},
+        {"day": "Sunday", "block": "Afternoon (1PM-4PM)"}
+      ]
+    },
+    {
+      "email": "priya@bmsit.in",
+      "display_name": "Priya Sharma",
+      "usn": "1BY26CS052",
+      "branch": "CSE",
+      "year": "1st Year",
+      "section": "CSE-13",
+      "bio": "Product manager and pitch enthusiast. Experience pitching IDT projects, creating slide decks and user research.",
+      "github_url": null,
+      "linkedin_url": "https://linkedin.com/in/priyasharma",
+      "portfolio_url": null,
+      "visibility": "public",
+      "skills": [
+        {"name": "Presentation", "proficiency": "advanced"},
+        {"name": "Project Management", "proficiency": "advanced"},
+        {"name": "UI/UX", "proficiency": "intermediate"},
+        {"name": "Wireframing & Prototyping", "proficiency": "intermediate"}
+      ],
+      "interests": ["Design & Creative", "EdTech & Learning", "Social Impact"],
+      "availability": [
+        {"day": "Wednesday", "block": "Evening (5PM-8PM)"},
+        {"day": "Thursday", "block": "Evening (5PM-8PM)"},
+        {"day": "Saturday", "block": "Afternoon (1PM-4PM)"},
+        {"day": "Sunday", "block": "Morning (9AM-12PM)"}
+      ]
+    },
+    {
+      "email": "rohan@bmsit.in",
+      "display_name": "Rohan Kulkarni",
+      "usn": "1BY26CS064",
+      "branch": "CSE",
+      "year": "1st Year",
+      "section": "CSE-13",
+      "bio": "Hardware, IoT, and embedded firmware developer. Building smart campus sensors and microcontroller integrations.",
+      "github_url": "https://github.com/rohankulkarni",
+      "linkedin_url": "https://linkedin.com/in/rohankulkarni",
+      "portfolio_url": null,
+      "visibility": "cohort_only",
+      "skills": [
+        {"name": "IoT & Hardware", "proficiency": "advanced"},
+        {"name": "Python", "proficiency": "intermediate"},
+        {"name": "REST API Design", "proficiency": "intermediate"},
+        {"name": "Git/GitHub", "proficiency": "intermediate"}
+      ],
+      "interests": ["IoT & Hardware", "Healthcare Tech", "Open Source Software"],
+      "availability": [
+        {"day": "Monday", "block": "Evening (5PM-8PM)"},
+        {"day": "Tuesday", "block": "Evening (5PM-8PM)"},
+        {"day": "Saturday", "block": "Morning (9AM-12PM)"}
+      ]
+    },
+    {
+      "email": "ananya@bmsit.in",
+      "display_name": "Ananya Rao",
+      "usn": "1BY26CS010",
+      "branch": "CSE",
+      "year": "1st Year",
+      "section": "CSE-13",
+      "bio": "Data analyst passionate about statistics, data cleaning, and compelling visualizations in Python and SQL.",
+      "github_url": "https://github.com/ananyarao",
+      "linkedin_url": "https://linkedin.com/in/ananyarao",
+      "portfolio_url": null,
+      "visibility": "public",
+      "skills": [
+        {"name": "Data Analysis/Pandas", "proficiency": "advanced"},
+        {"name": "SQLite/PostgreSQL", "proficiency": "intermediate"},
+        {"name": "Python", "proficiency": "intermediate"},
+        {"name": "Presentation", "proficiency": "intermediate"}
+      ],
+      "interests": ["Artificial Intelligence", "Healthcare Tech", "Social Impact"],
+      "availability": [
+        {"day": "Wednesday", "block": "Evening (5PM-8PM)"},
+        {"day": "Friday", "block": "Evening (5PM-8PM)"},
+        {"day": "Saturday", "block": "Morning (9AM-12PM)"},
+        {"day": "Sunday", "block": "Morning (9AM-12PM)"}
+      ]
+    },
+    {
+      "email": "rahul@bmsit.in",
+      "display_name": "Rahul Verma",
+      "usn": "1BY26CS058",
+      "branch": "CSE",
+      "year": "1st Year",
+      "section": "CSE-13",
+      "bio": "Frontend developer building responsive SPAs with React, Tailwind CSS, and state management.",
+      "github_url": "https://github.com/rahulverma",
+      "linkedin_url": "https://linkedin.com/in/rahulverma",
+      "portfolio_url": null,
+      "visibility": "public",
+      "skills": [
+        {"name": "React", "proficiency": "advanced"},
+        {"name": "Tailwind CSS", "proficiency": "advanced"},
+        {"name": "HTML/CSS/JavaScript", "proficiency": "advanced"},
+        {"name": "Git/GitHub", "proficiency": "intermediate"}
+      ],
+      "interests": ["Web Development", "Open Source Software", "Design & Creative"],
+      "availability": [
+        {"day": "Monday", "block": "Evening (5PM-8PM)"},
+        {"day": "Thursday", "block": "Evening (5PM-8PM)"},
+        {"day": "Saturday", "block": "Morning (9AM-12PM)"},
+        {"day": "Saturday", "block": "Afternoon (1PM-4PM)"}
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "owner_email": "benaka@bmsit.in",
+      "title": "Student Skill & Project Team Finder (SkillSync)",
+      "description": "An Innovation & Design Thinking platform that matches classmates through complementary skills, availability and shared interests before committing to teams.",
+      "course_context": "Innovation & Design Thinking (IDT)",
+      "team_size_min": 3,
+      "team_size_max": 4,
+      "schedule_notes": "Looking to collaborate on weekday evenings and Saturday mornings.",
+      "status": "published",
+      "requirements": [
+        {"skill_name": "Python", "priority": "must-have", "weight": 3.0},
+        {"skill_name": "UI/UX", "priority": "must-have", "weight": 2.0},
+        {"skill_name": "Presentation", "priority": "preferred", "weight": 1.0},
+        {"skill_name": "Testing/QA", "priority": "preferred", "weight": 2.0}
+      ],
+      "availability_slots": [
+        {"day": "Monday", "block": "Evening (5PM-8PM)"},
+        {"day": "Wednesday", "block": "Evening (5PM-8PM)"},
+        {"day": "Saturday", "block": "Morning (9AM-12PM)"}
+      ],
+      "interests": ["Web Development", "EdTech & Learning"]
+    },
+    {
+      "owner_email": "rohan@bmsit.in",
+      "title": "Smart Campus Sensor Network & Navigation",
+      "description": "Deploying IoT sensors across BMSIT&M campus for real-time room occupancy and ambient monitoring with web dashboard.",
+      "course_context": "Innovation & Design Thinking (IDT)",
+      "team_size_min": 2,
+      "team_size_max": 3,
+      "schedule_notes": "Weekend work preferred.",
+      "status": "published",
+      "requirements": [
+        {"skill_name": "IoT & Hardware", "priority": "must-have", "weight": 3.0},
+        {"skill_name": "React", "priority": "must-have", "weight": 3.0},
+        {"skill_name": "REST API Design", "priority": "preferred", "weight": 2.0}
+      ],
+      "availability_slots": [
+        {"day": "Saturday", "block": "Morning (9AM-12PM)"}
+      ],
+      "interests": ["IoT & Hardware"]
+    },
+    {
+      "owner_email": "harsh@bmsit.in",
+      "title": "Class Attendance with Facial Recognition (Draft)",
+      "description": "Edge AI model to automate lab attendance with edge cameras.",
+      "course_context": "Computer Vision Lab",
+      "team_size_min": 2,
+      "team_size_max": 4,
+      "schedule_notes": "Bi-weekly sync.",
+      "status": "draft",
+      "requirements": [
+        {"skill_name": "Machine Learning", "priority": "must-have", "weight": 3.0}
+      ],
+      "availability_slots": [],
+      "interests": []
+    }
+  ]
+}
