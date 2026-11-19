@@ -15,83 +15,296 @@
   <header class="site-header">
     <nav class="navbar" id="navbar">
       <div class="nav-container">
-        <!-- Logo & Brand -->
-        <a href="{{ url_for('projects.landing') }}" class="brand" aria-label="SkillSync Home">
-          <div class="brand-logo-glow">
-            <svg class="brand-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
-              <circle cx="9" cy="7" r="4"></circle>
-              <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
-              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+        <!-- Left: Hamburger button + Logo & Brand -->
+        <div class="nav-left">
+          <button class="btn-hamburger" id="sidebarToggleBtn" aria-label="Open navigation menu" aria-controls="githubSidebar" aria-expanded="false" title="Open Navigation Menu">
+            <svg class="hamburger-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
             </svg>
-          </div>
-          <span class="brand-name">SkillSync</span>
-        </a>
+          </button>
 
-        <!-- Mobile Navigation Toggle -->
-        <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation menu" aria-expanded="false">
-          <svg class="icon-open" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="3" y1="12" x2="21" y2="12"></line>
-            <line x1="3" y1="6" x2="21" y2="6"></line>
-            <line x1="3" y1="18" x2="21" y2="18"></line>
-          </svg>
-          <svg class="icon-close" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
+          <a href="{{ url_for('projects.landing') }}" class="brand" aria-label="SkillSync Home">
+            <div class="brand-logo-glow">
+              <svg class="brand-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              </svg>
+            </div>
+            <span class="brand-name">SkillSync</span>
+          </a>
+        </div>
 
-        <!-- Navigation Links -->
-        <div class="nav-collapse" id="navCollapse">
-          <ul class="nav-links">
-            <li><a href="{{ url_for('projects.landing') }}" class="nav-item {% if request.endpoint == 'projects.landing' %}active{% endif %}">Home</a></li>
-            <li><a href="{{ url_for('projects.landing') }}#features" class="nav-item">Features</a></li>
-            <li><a href="{{ url_for('projects.landing') }}#how-it-works" class="nav-item">How It Works</a></li>
-            <li><a href="{{ url_for('projects.landing') }}#about" class="nav-item">About Us</a></li>
-            <li><a href="{{ url_for('projects.list_projects') }}" class="nav-item {% if request.endpoint == 'projects.list_projects' %}active{% endif %}">Projects</a></li>
-            
-            {% if current_user_id %}
-              <li><a href="{{ url_for('projects.create_project') }}" class="nav-item {% if request.endpoint == 'projects.create_project' %}active{% endif %}">+ Create Project</a></li>
-              <li><a href="{{ url_for('projects.my_projects') }}" class="nav-item {% if request.endpoint == 'projects.my_projects' %}active{% endif %}">My Projects</a></li>
-              <li>
-                <a href="{{ url_for('messages.inbox') }}" class="nav-item {% if 'messages' in request.endpoint %}active{% endif %}" id="navMessagesLink">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="vertical-align: -2px; margin-right: 4px;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-                  <span>Messages</span>
-                  <span class="badge-count" id="navUnreadMessagesBadge" {% if unread_messages_count == 0 %}style="display: none;"{% endif %}>{{ unread_messages_count if unread_messages_count > 0 else '' }}</span>
-                </a>
-              </li>
-              <li><a href="{{ url_for('profile.edit_profile') }}" class="nav-item {% if request.endpoint == 'profile.edit_profile' %}active{% endif %}">My Profile</a></li>
-              <li>
-                <a href="{{ url_for('invitations.list_invitations') }}" class="nav-item {% if request.endpoint == 'invitations.list_invitations' %}active{% endif %}">
-                  Invitations
-                  {% if unread_invites_count > 0 %}
-                    <span class="badge-count">{{ unread_invites_count }}</span>
-                  {% endif %}
-                </a>
-              </li>
-              {% if current_user_role in ['admin', 'coordinator'] %}
-                <li><a href="{{ url_for('admin.dashboard') }}" class="nav-item {% if 'admin' in request.endpoint %}active{% endif %}">Coordinator Analytics</a></li>
-              {% endif %}
-            {% endif %}
-          </ul>
+        <!-- Right: Messages shortcut + User Actions -->
+        <div class="nav-right">
+          {% if current_user_id %}
+            <!-- Messages direct shortcut with unread badge -->
+            <a href="{{ url_for('messages.inbox') }}" class="nav-icon-link {% if 'messages' in request.endpoint %}active{% endif %}" id="navMessagesLink" aria-label="Messages" title="Messages">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+              </svg>
+              <span class="badge-count nav-unread-badge" id="navUnreadMessagesBadge" {% if unread_messages_count == 0 %}style="display: none;"{% endif %}>{{ unread_messages_count if unread_messages_count > 0 else '' }}</span>
+            </a>
 
-          <!-- User Actions / CTA Menu -->
-          <div class="nav-actions">
-            {% if current_user_id %}
-              <div class="nav-user-pill">
-                <div class="user-avatar" title="{{ current_user_email }}">{{ (current_user_name or 'U')[:1] }}</div>
-                <span class="user-name-text">{{ current_user_name or 'User' }}</span>
-                <a href="{{ url_for('auth.logout') }}" class="btn btn-secondary btn-sm">Log out</a>
-              </div>
-            {% else %}
-              <a href="{{ url_for('auth.login') }}" class="btn btn-ghost btn-sm">Login</a>
-              <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-sm btn-nav-cta">Get Started</a>
-            {% endif %}
-          </div>
+            <!-- Student Profile Avatar Pill -->
+            <a href="{{ url_for('profile.edit_profile') }}" class="nav-user-pill" title="{{ current_user_name }} ({{ current_user_email }})">
+              <div class="user-avatar">{{ (current_user_name or 'U')[:1] }}</div>
+              <span class="user-name-text">{{ current_user_name or 'Student' }}</span>
+            </a>
+          {% else %}
+            <a href="{{ url_for('auth.login') }}" class="btn btn-ghost btn-sm">Login</a>
+            <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-sm btn-nav-cta">Get Started</a>
+          {% endif %}
         </div>
       </div>
     </nav>
   </header>
+
+  <!-- GitHub-Style Slide-Out Navigation Drawer & Backdrop -->
+  <div class="sidebar-backdrop" id="sidebarBackdrop" aria-hidden="true"></div>
+
+  <aside class="github-sidebar" id="githubSidebar" aria-label="Main Navigation Drawer" aria-hidden="true">
+    <!-- Sidebar Header -->
+    <div class="sidebar-header">
+      <a href="{{ url_for('projects.landing') }}" class="sidebar-brand" aria-label="SkillSync Home">
+        <div class="brand-logo-glow sidebar-glow">
+          <svg class="brand-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+        </div>
+        <span class="sidebar-brand-name">SkillSync</span>
+      </a>
+      <button class="sidebar-close-btn" id="sidebarCloseBtn" aria-label="Close navigation menu" title="Close Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Scrollable Navigation Container -->
+    <div class="sidebar-scrollable">
+      {% if current_user_id %}
+        <!-- Student Info Snippet -->
+        <div class="sidebar-user-card">
+          <div class="sidebar-user-avatar">{{ (current_user_name or 'U')[:1] }}</div>
+          <div class="sidebar-user-info">
+            <div class="sidebar-user-name">{{ current_user_name or 'Student' }}</div>
+            <div class="sidebar-user-email">{{ current_user_email }}</div>
+          </div>
+        </div>
+      {% endif %}
+
+      <!-- SECTION 1: MAIN NAVIGATION -->
+      <div class="sidebar-group">
+        <div class="sidebar-group-title">Main Navigation</div>
+        <ul class="sidebar-menu">
+          <li>
+            <a href="{{ url_for('projects.landing') }}" class="sidebar-link {% if request.endpoint == 'projects.landing' %}active{% endif %}">
+              <svg class="sidebar-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+              </svg>
+              <span>Home</span>
+            </a>
+          </li>
+          <li>
+            <a href="{{ url_for('projects.landing') }}#features" class="sidebar-link">
+              <svg class="sidebar-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7"></rect>
+                <rect x="14" y="3" width="7" height="7"></rect>
+                <rect x="14" y="14" width="7" height="7"></rect>
+                <rect x="3" y="14" width="7" height="7"></rect>
+              </svg>
+              <span>Features</span>
+            </a>
+          </li>
+          <li>
+            <a href="{{ url_for('projects.landing') }}#how-it-works" class="sidebar-link">
+              <svg class="sidebar-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+              </svg>
+              <span>How It Works</span>
+            </a>
+          </li>
+          <li>
+            <a href="{{ url_for('projects.landing') }}#about" class="sidebar-link">
+              <svg class="sidebar-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="16" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+              </svg>
+              <span>About Us</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <div class="sidebar-divider"></div>
+
+      <!-- SECTION 2: PROJECTS -->
+      <div class="sidebar-group">
+        <div class="sidebar-group-title">Projects</div>
+        <ul class="sidebar-menu">
+          <li>
+            <a href="{{ url_for('projects.list_projects') }}" class="sidebar-link {% if request.endpoint == 'projects.list_projects' %}active{% endif %}">
+              <svg class="sidebar-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                <polyline points="2 17 12 22 22 17"></polyline>
+                <polyline points="2 12 12 17 22 12"></polyline>
+              </svg>
+              <span>Explore Projects</span>
+            </a>
+          </li>
+          {% if current_user_id %}
+            <li>
+              <a href="{{ url_for('projects.create_project') }}" class="sidebar-link {% if request.endpoint == 'projects.create_project' %}active{% endif %}">
+                <svg class="sidebar-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="8" x2="12" y2="16"></line>
+                  <line x1="8" y1="12" x2="16" y2="12"></line>
+                </svg>
+                <span>Create New Project</span>
+              </a>
+            </li>
+            <li>
+              <a href="{{ url_for('projects.my_projects') }}" class="sidebar-link {% if request.endpoint == 'projects.my_projects' %}active{% endif %}">
+                <svg class="sidebar-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                  <line x1="8" y1="11" x2="8" y2="15"></line>
+                  <line x1="12" y1="11" x2="12" y2="13"></line>
+                  <line x1="16" y1="11" x2="16" y2="17"></line>
+                </svg>
+                <span>My Projects</span>
+              </a>
+            </li>
+            <li>
+              <a href="{{ url_for('invitations.list_invitations') }}" class="sidebar-link {% if request.endpoint == 'invitations.list_invitations' %}active{% endif %}">
+                <svg class="sidebar-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                  <polyline points="22,6 12,13 2,6"></polyline>
+                </svg>
+                <span>Invitations</span>
+                {% if unread_invites_count > 0 %}
+                  <span class="sidebar-badge">{{ unread_invites_count }}</span>
+                {% endif %}
+              </a>
+            </li>
+          {% endif %}
+        </ul>
+      </div>
+
+      <div class="sidebar-divider"></div>
+
+      <!-- SECTION 3: COMMUNICATION -->
+      <div class="sidebar-group">
+        <div class="sidebar-group-title">Communication</div>
+        <ul class="sidebar-menu">
+          {% if current_user_id %}
+            <li>
+              <a href="{{ url_for('messages.inbox') }}" class="sidebar-link {% if 'messages' in request.endpoint and request.args.get('filter') != 'projects' %}active{% endif %}" id="sidebarMessagesLink">
+                <svg class="sidebar-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+                <span>Messages</span>
+                <span class="sidebar-badge sidebar-badge-danger" id="sidebarUnreadBadge" {% if unread_messages_count == 0 %}style="display: none;"{% endif %}>{{ unread_messages_count if unread_messages_count > 0 else '' }}</span>
+              </a>
+            </li>
+            <li>
+              <a href="{{ url_for('messages.inbox', filter='projects') }}" class="sidebar-link {% if 'messages' in request.endpoint and request.args.get('filter') == 'projects' %}active{% endif %}">
+                <svg class="sidebar-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="9" cy="7" r="4"></circle>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+                <span>Project Group Chats</span>
+              </a>
+            </li>
+          {% else %}
+            <li>
+              <a href="{{ url_for('auth.login', next='/messages') }}" class="sidebar-link">
+                <svg class="sidebar-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+                <span>Messages</span>
+              </a>
+            </li>
+          {% endif %}
+        </ul>
+      </div>
+
+      <div class="sidebar-divider"></div>
+
+      <!-- SECTION 4: ACCOUNT -->
+      <div class="sidebar-group">
+        <div class="sidebar-group-title">Account</div>
+        <ul class="sidebar-menu">
+          {% if current_user_id %}
+            <li>
+              <a href="{{ url_for('profile.edit_profile') }}" class="sidebar-link {% if request.endpoint == 'profile.edit_profile' %}active{% endif %}">
+                <svg class="sidebar-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                <span>My Profile</span>
+              </a>
+            </li>
+            {% if current_user_role in ['admin', 'coordinator'] %}
+              <li>
+                <a href="{{ url_for('admin.dashboard') }}" class="sidebar-link {% if 'admin' in request.endpoint %}active{% endif %}">
+                  <svg class="sidebar-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="20" x2="18" y2="10"></line>
+                    <line x1="12" y1="20" x2="12" y2="4"></line>
+                    <line x1="6" y1="20" x2="6" y2="14"></line>
+                  </svg>
+                  <span>Coordinator Analytics</span>
+                </a>
+              </li>
+            {% endif %}
+            <li>
+              <a href="{{ url_for('auth.logout') }}" class="sidebar-link sidebar-link-danger">
+                <svg class="sidebar-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                  <polyline points="16 17 21 12 16 7"></polyline>
+                  <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+                <span>Logout</span>
+              </a>
+            </li>
+          {% else %}
+            <li>
+              <a href="{{ url_for('auth.login') }}" class="sidebar-link {% if request.endpoint == 'auth.login' %}active{% endif %}">
+                <svg class="sidebar-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                  <polyline points="10 17 15 12 10 7"></polyline>
+                  <line x1="15" y1="12" x2="3" y2="12"></line>
+                </svg>
+                <span>Student Login</span>
+              </a>
+            </li>
+            <li>
+              <a href="{{ url_for('auth.register') }}" class="sidebar-link {% if request.endpoint == 'auth.register' %}active{% endif %}">
+                <svg class="sidebar-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="8.5" cy="7" r="4"></circle>
+                  <line x1="20" y1="8" x2="20" y2="14"></line>
+                  <line x1="23" y1="11" x2="17" y2="11"></line>
+                </svg>
+                <span>Get Started / Register</span>
+              </a>
+            </li>
+          {% endif %}
+        </ul>
+      </div>
+    </div>
+  </aside>
 
   <!-- Page Body & Layout -->
   {% block layout %}

@@ -11,33 +11,68 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 6000);
   });
 
-  // 2. Mobile Navigation Toggle
-  const navToggle = document.getElementById('navToggle');
-  const navCollapse = document.getElementById('navCollapse');
+  // 2. GitHub-Style Slide-Out Sidebar Navigation
+  const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
+  const sidebarCloseBtn = document.getElementById('sidebarCloseBtn');
+  const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+  const githubSidebar = document.getElementById('githubSidebar');
 
-  if (navToggle && navCollapse) {
-    navToggle.addEventListener('click', (e) => {
+  const openSidebar = () => {
+    if (!githubSidebar) return;
+    githubSidebar.classList.add('is-open');
+    if (sidebarBackdrop) sidebarBackdrop.classList.add('is-visible');
+    document.body.classList.add('sidebar-lock-scroll');
+    if (sidebarToggleBtn) sidebarToggleBtn.setAttribute('aria-expanded', 'true');
+    githubSidebar.setAttribute('aria-hidden', 'false');
+    // Focus close button for accessibility
+    if (sidebarCloseBtn) sidebarCloseBtn.focus();
+  };
+
+  const closeSidebar = () => {
+    if (!githubSidebar) return;
+    githubSidebar.classList.remove('is-open');
+    if (sidebarBackdrop) sidebarBackdrop.classList.remove('is-visible');
+    document.body.classList.remove('sidebar-lock-scroll');
+    if (sidebarToggleBtn) {
+      sidebarToggleBtn.setAttribute('aria-expanded', 'false');
+      sidebarToggleBtn.focus();
+    }
+    githubSidebar.setAttribute('aria-hidden', 'true');
+  };
+
+  if (sidebarToggleBtn) {
+    sidebarToggleBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      const isOpen = navCollapse.classList.toggle('show');
-      navToggle.classList.toggle('open', isOpen);
-      navToggle.setAttribute('aria-expanded', isOpen);
+      openSidebar();
     });
+  }
 
-    const navItems = navCollapse.querySelectorAll('.nav-item, .btn');
-    navItems.forEach(item => {
-      item.addEventListener('click', () => {
-        navCollapse.classList.remove('show');
-        navToggle.classList.remove('open');
-        navToggle.setAttribute('aria-expanded', 'false');
+  if (sidebarCloseBtn) {
+    sidebarCloseBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeSidebar();
+    });
+  }
+
+  if (sidebarBackdrop) {
+    sidebarBackdrop.addEventListener('click', () => {
+      closeSidebar();
+    });
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && githubSidebar && githubSidebar.classList.contains('is-open')) {
+      closeSidebar();
+    }
+  });
+
+  // Close sidebar when clicking any navigation link inside it
+  if (githubSidebar) {
+    const sidebarLinks = githubSidebar.querySelectorAll('.sidebar-link');
+    sidebarLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        closeSidebar();
       });
-    });
-
-    document.addEventListener('click', (e) => {
-      if (!navCollapse.contains(e.target) && !navToggle.contains(e.target)) {
-        navCollapse.classList.remove('show');
-        navToggle.classList.remove('open');
-        navToggle.setAttribute('aria-expanded', 'false');
-      }
     });
   }
 
@@ -162,4 +197,32 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   });
+
+  // 7. Live Notification Badge Sync for Topbar and Sidebar
+  const navBadge = document.getElementById('navUnreadMessagesBadge');
+  const sidebarBadge = document.getElementById('sidebarUnreadBadge');
+  if (navBadge || sidebarBadge) {
+    const updateUnreadBadges = async () => {
+      try {
+        const res = await fetch('/api/messages/unread');
+        if (!res.ok) return;
+        const data = await res.json();
+        const count = data.total_unread || 0;
+        [navBadge, sidebarBadge].forEach(b => {
+          if (!b) return;
+          if (count > 0) {
+            b.textContent = count > 99 ? '99+' : count;
+            b.style.display = 'inline-flex';
+          } else {
+            b.textContent = '';
+            b.style.display = 'none';
+          }
+        });
+      } catch (e) {
+        // Silent catch for background polling
+      }
+    };
+    // Initial quick sync and periodic update every 10 seconds
+    setInterval(updateUnreadBadges, 10000);
+  }
 });
