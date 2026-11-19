@@ -1732,3 +1732,558 @@ textarea.form-control {
     justify-content: center;
   }
 }
+
+/* ==========================================================================
+   STUDENT AUTHENTICATION & LOGIN SYSTEM
+   ========================================================================== */
+.auth-page-wrapper {
+  position: relative;
+  overflow: hidden;
+  padding: 3.5rem 1.5rem 5rem 1.5rem;
+  background: linear-gradient(180deg, rgba(239, 246, 255, 0.7) 0%, rgba(248, 250, 252, 1) 100%);
+  min-height: calc(100vh - 160px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-container {
+  max-width: 1040px;
+  width: 100%;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+.auth-container-narrow {
+  max-width: 480px;
+  width: 100%;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+/* Two-Column Auth Card */
+.auth-card-two-col {
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2xl);
+  box-shadow: 0 25px 60px -15px rgba(99, 102, 241, 0.12), 0 10px 25px -5px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+  width: 100%;
+}
+
+/* Left Panel: Welcome & Illustration */
+.auth-left-panel {
+  background: linear-gradient(145deg, #f0f7ff 0%, #f5f3ff 50%, #eff6ff 100%);
+  border-right: 1px solid rgba(226, 232, 240, 0.85);
+  padding: 3.25rem 2.75rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.auth-left-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+.auth-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-decoration: none;
+  width: fit-content;
+}
+.auth-brand-name {
+  font-weight: 800;
+  font-size: 1.35rem;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+.auth-welcome-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.auth-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--primary);
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  width: fit-content;
+}
+.auth-main-heading {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.025em;
+  line-height: 1.25;
+}
+.auth-main-subtitle {
+  font-size: 0.98rem;
+  color: #475569;
+  line-height: 1.6;
+}
+
+.auth-illustration-container {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 0;
+}
+.collab-illustration-svg {
+  width: 100%;
+  max-width: 420px;
+  height: auto;
+  filter: drop-shadow(0 10px 25px rgba(99, 102, 241, 0.12));
+}
+
+.auth-institution-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  color: #64748b;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.7);
+  padding: 0.4rem 0.85rem;
+  border-radius: 8px;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  width: fit-content;
+}
+
+/* Right Panel: Student Login Form */
+.auth-right-panel {
+  padding: 3.25rem 2.75rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: #ffffff;
+}
+.auth-form-box {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.auth-header-group {
+  margin-bottom: 1.75rem;
+}
+.auth-title {
+  font-size: 1.85rem;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin-bottom: 0.35rem;
+}
+.auth-subtitle {
+  font-size: 0.95rem;
+  color: #64748b;
+}
+
+/* Input with icon & show/hide toggle */
+.input-icon-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+.input-icon {
+  position: absolute;
+  left: 1rem;
+  color: #94a3b8;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+.form-control.with-icon {
+  padding-left: 2.85rem;
+  height: 48px;
+  font-size: 0.95rem;
+  border-radius: var(--radius);
+  border: 1.5px solid var(--border);
+  transition: all 0.2s ease;
+  background: #ffffff;
+}
+.form-control.with-icon:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3.5px rgba(37, 99, 235, 0.15);
+  outline: none;
+}
+.form-control.with-toggle {
+  padding-right: 2.85rem;
+}
+.form-control.input-invalid {
+  border-color: var(--danger) !important;
+  background-color: #fef2f2;
+}
+.form-error-text {
+  font-size: 0.78rem;
+  color: var(--danger);
+  margin-top: 0.35rem;
+  font-weight: 500;
+}
+
+.btn-toggle-password {
+  position: absolute;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #94a3b8;
+  padding: 0.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: color 0.2s ease;
+  z-index: 2;
+}
+.btn-toggle-password:hover {
+  color: var(--primary);
+}
+
+/* Options Row */
+.auth-options-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 1rem 0 1.5rem 0;
+  font-size: 0.88rem;
+}
+.custom-checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  user-select: none;
+  color: #475569;
+  font-weight: 500;
+}
+.custom-checkbox-label input[type="checkbox"] {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+.auth-link-forgot {
+  color: var(--primary);
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+.auth-link-forgot:hover {
+  text-decoration: underline;
+  color: var(--primary-hover);
+}
+
+/* Submit Button */
+.btn-auth-submit {
+  width: 100%;
+  height: 48px;
+  font-size: 1rem;
+  font-weight: 700;
+  border-radius: var(--radius);
+  background: var(--primary-gradient);
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  box-shadow: 0 8px 20px -3px rgba(37, 99, 235, 0.4);
+  transition: all 0.25s ease;
+}
+.btn-auth-submit:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px -4px rgba(99, 102, 241, 0.5);
+  color: white;
+}
+.btn-auth-submit:disabled {
+  opacity: 0.75;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.spinner-icon {
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.btn-spinner-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Footer Prompt */
+.auth-switch-prompt {
+  text-align: center;
+  margin-top: 1.5rem;
+  font-size: 0.92rem;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+.auth-link-register {
+  color: var(--primary);
+  font-weight: 700;
+  text-decoration: none;
+}
+.auth-link-register:hover {
+  text-decoration: underline;
+  color: var(--primary-hover);
+}
+
+/* Demo Personas Accordion (For College Reviews) */
+.demo-personas-accordion {
+  margin-top: 1.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #f8fafc;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+.demo-accordion-toggle {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: none;
+  border: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #475569;
+  text-align: left;
+}
+.demo-accordion-toggle:hover {
+  background: #f1f5f9;
+}
+.demo-accordion-toggle .toggle-label-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--accent-indigo);
+}
+.demo-accordion-toggle .chevron-icon {
+  transition: transform 0.2s ease;
+}
+.demo-accordion-toggle.active .chevron-icon {
+  transform: rotate(180deg);
+}
+
+.demo-accordion-content {
+  padding: 0.85rem 1rem 1rem 1rem;
+  border-top: 1px solid var(--border);
+  background: #ffffff;
+}
+.demo-hint-text {
+  font-size: 0.78rem;
+  color: #64748b;
+  margin-bottom: 0.75rem;
+}
+.demo-personas-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+.demo-persona-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.2s ease;
+}
+.demo-persona-card:hover {
+  background: var(--primary-light);
+  border-color: #bfdbfe;
+  transform: translateX(2px);
+}
+.demo-card-left {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.demo-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--primary-gradient);
+  color: white;
+  font-weight: 700;
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.demo-info {
+  display: flex;
+  flex-direction: column;
+}
+.demo-info strong {
+  font-size: 0.825rem;
+  color: #0f172a;
+}
+.demo-info span {
+  font-size: 0.72rem;
+  color: #64748b;
+}
+.demo-role-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 0.15rem 0.45rem;
+  border-radius: 9999px;
+}
+.demo-role-badge.admin {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+.demo-role-badge.student {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+.demo-default-pw {
+  margin-top: 0.75rem;
+  font-size: 0.72rem;
+  color: #94a3b8;
+}
+.demo-default-pw code {
+  background: #f1f5f9;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  color: #0f172a;
+}
+
+/* Single Box Auth Pages (Forgot Password & Reset Password) */
+.auth-form-card.single-box {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2xl);
+  padding: 2.75rem 2.5rem;
+  box-shadow: 0 25px 60px -15px rgba(99, 102, 241, 0.12), 0 10px 25px -5px rgba(0, 0, 0, 0.04);
+  width: 100%;
+}
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #64748b;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+.back-link:hover {
+  color: var(--primary);
+}
+.auth-icon-badge {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: var(--primary-light);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+.dev-evaluation-box {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: var(--radius);
+}
+.dev-box-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.825rem;
+  color: #166534;
+  margin-bottom: 0.4rem;
+}
+.dev-box-text {
+  font-size: 0.78rem;
+  color: #15803d;
+  line-height: 1.5;
+  margin-bottom: 0.75rem;
+}
+
+/* Responsive Media Queries for Auth */
+@media (max-width: 900px) {
+  .auth-card-two-col {
+    grid-template-columns: 1fr;
+  }
+  .auth-left-panel {
+    padding: 2.5rem 1.75rem;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    align-items: center;
+    text-align: center;
+  }
+  .auth-eyebrow {
+    margin: 0 auto;
+  }
+  .auth-institution-pill {
+    margin: 0 auto;
+  }
+  .auth-right-panel {
+    padding: 2.5rem 1.75rem;
+  }
+  .collab-illustration-svg {
+    max-height: 200px;
+  }
+}
+
+@media (max-width: 480px) {
+  .auth-page-wrapper {
+    padding: 2rem 1rem 3rem 1rem;
+  }
+  .auth-main-heading {
+    font-size: 1.6rem;
+  }
+  .auth-title {
+    font-size: 1.5rem;
+  }
+  .auth-right-panel, .auth-left-panel {
+    padding: 2rem 1.25rem;
+  }
+  .auth-options-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  .auth-form-card.single-box {
+    padding: 2rem 1.25rem;
+  }
+}

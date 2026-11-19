@@ -66,7 +66,7 @@ $$\text{Match Score} = 0.65 \times \text{Skill Fit} + 0.25 \times \text{Availabi
 - **Backend:** Python 3.15, Flask 3.1, Werkzeug
 - **Database:** SQLite (`skillsync.db`) with foreign key constraints and index optimizations
 - **Frontend:** Semantic HTML5, modern SaaS CSS design system (blue/purple/white gradients, glassmorphism, responsive mobile-first layout), vanilla JavaScript micro-interactions
-- **Testing:** `pytest` (11 comprehensive unit and integration test suites covering all PRD specifications and landing routes)
+- **Testing:** `pytest` (17 comprehensive unit and integration test suites covering all PRD specifications, landing routes, and the student login & password reset system)
 
 ```
 SkillSync-1/
@@ -88,8 +88,12 @@ SkillSync-1/
 │   │   └── js/app.js         # Mobile nav toggle & client-side micro-interactions
 │   └── templates/            # Jinja2 templates for all core user journeys
 │       ├── landing.html      # High-impact opening SaaS landing page
+│       ├── login.html        # Modern two-column student login system
+│       ├── forgot_password.html # Secure student password reset request flow
+│       ├── reset_password.html  # Timed token-based password reset form
 │       └── base.html         # Sticky blurred navbar & comprehensive footer
 ├── tests/
+│   ├── test_student_login.py # Student authentication, validation & password reset
 │   ├── test_landing.py       # Landing page & navigation route verification
 │   ├── test_matching.py      # PRD Section 6.3 worked example verification
 │   ├── test_coverage.py      # Team skill coverage and gap filling
@@ -122,7 +126,7 @@ Simply double-click **`start.bat`** (or run `.\start.bat` in command prompt / te
 # 2. Seed or Reset the Database
 python seed.py
 
-# 3. Run the Automated Test Suite (11 Tests)
+# 3. Run the Automated Test Suite (17 Tests)
 python -m pytest -v
 
 # 4. Start Web Server

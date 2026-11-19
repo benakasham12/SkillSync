@@ -1,64 +1,300 @@
 {% extends "base.html" %}
-{% block title %}Sign In - SkillSync{% endblock %}
 
-{% block content %}
-<div style="max-width: 900px; margin: 0 auto;">
-  <div class="grid-2">
-    <!-- Login Form -->
-    <div class="card">
-      <div class="card-header">
-        <h2 class="card-title">Sign In</h2>
-      </div>
-      <form method="POST" action="{{ url_for('auth.login') }}">
-        <input type="hidden" name="next" value="{{ next or '' }}">
-        
-        <div class="form-group">
-          <label class="form-label" for="email">Institutional Email</label>
-          <input type="email" id="email" name="email" class="form-control" placeholder="name@bmsit.in" value="{{ email or '' }}" required autofocus>
-          <div class="form-hint">Approved BMSIT&M cohort email address.</div>
-        </div>
+{% block title %}Student Login - SkillSync{% endblock %}
 
-        <div class="form-group">
-          <label class="form-label" for="password">Password</label>
-          <input type="password" id="password" name="password" class="form-control" placeholder="••••••••" required>
-        </div>
+{% block layout %}
+<div class="auth-page-wrapper">
+  <!-- Glowing background ambient orbs -->
+  <div class="glow-orb orb-primary" style="top: -120px; left: -100px; opacity: 0.35;"></div>
+  <div class="glow-orb orb-secondary" style="bottom: -100px; right: -80px; opacity: 0.35;"></div>
 
-        <button type="submit" class="btn btn-primary" style="width: 100%;">Sign In</button>
-      </form>
-
-      <div style="margin-top: 1.5rem; text-align: center; font-size: 0.9rem; color: var(--text-muted);">
-        Don't have an account? <a href="{{ url_for('auth.register') }}">Register here</a>.
-      </div>
-    </div>
-
-    <!-- Demo Personas Quick-Login -->
-    <div class="card" style="background: var(--surface-alt);">
-      <div class="card-header">
-        <h2 class="card-title">Demo Personas (1-Click Login)</h2>
-      </div>
-      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
-        Click any teammate or role to instantly switch sessions for testing matching, project creation, and team coverage.
-      </p>
-
-      <div style="display: flex; flex-direction: column; gap: 0.65rem;">
-        {% if demo_users %}
-          {% for u in demo_users %}
-            <a href="{{ url_for('auth.switch_user', email=u.email) }}" class="btn btn-secondary" style="justify-content: space-between; text-align: left; background: var(--surface);">
-              <div>
-                <strong>{{ u.display_name or u.email }}</strong>
-                <div style="font-size: 0.75rem; color: var(--text-muted);">{{ u.email }} &bull; {{ u.section or u.role }}</div>
-              </div>
-              <span class="badge {% if u.role == 'admin' %}badge-must-have{% else %}badge-preferred{% endif %}">{{ u.role }}</span>
-            </a>
+  <div class="auth-container">
+    <!-- Flash Messages inside Auth Page -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-container" style="margin-bottom: 1.5rem; width: 100%;">
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">
+              <span>{{ message }}</span>
+              <button onclick="this.parentElement.style.display='none'" style="background:none; border:none; cursor:pointer; font-size:1.1rem; line-height:1;">&times;</button>
+            </div>
           {% endfor %}
-        {% else %}
-          <p style="font-size: 0.85rem;">Run <code>python seed.py</code> to generate demo students.</p>
-        {% endif %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <div class="auth-card-two-col">
+      <!-- LEFT SECTION: Branding, Hero Welcome & Collaboration Illustration -->
+      <div class="auth-left-panel">
+        <div class="auth-left-inner">
+          <!-- Logo & Brand Header -->
+          <a href="{{ url_for('projects.landing') }}" class="auth-brand" aria-label="SkillSync Homepage">
+            <div class="brand-logo-glow">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              </svg>
+            </div>
+            <div class="brand-text-group">
+              <span class="auth-brand-name">SkillSync</span>
+              <span class="brand-badge">BMSIT&amp;M</span>
+            </div>
+          </a>
+
+          <!-- Main Welcome Heading & Subtitle -->
+          <div class="auth-welcome-copy">
+            <span class="auth-eyebrow">
+              <span class="pulse-dot"></span> Student Team &amp; Skill Finder
+            </span>
+            <h1 class="auth-main-heading">Welcome Back to SkillSync!</h1>
+            <p class="auth-main-subtitle">
+              Your team, your skills, your next big idea. Sign in and continue building something amazing.
+            </p>
+          </div>
+
+          <!-- Modern SVG Illustration: Students Collaborating on Projects -->
+          <div class="auth-illustration-container">
+            <svg class="collab-illustration-svg" viewBox="0 0 460 280" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="illGradPrimary" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#2563eb" />
+                  <stop offset="50%" stop-color="#6366f1" />
+                  <stop offset="100%" stop-color="#8b5cf6" />
+                </linearGradient>
+                <linearGradient id="illGradCyan" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#38bdf8" />
+                  <stop offset="100%" stop-color="#2563eb" />
+                </linearGradient>
+                <linearGradient id="illGradSurface" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95" />
+                  <stop offset="100%" stop-color="#f8fafc" stop-opacity="0.9" />
+                </linearGradient>
+                <filter id="softShadow" x="-10%" y="-10%" width="120%" height="120%" filterUnits="userSpaceOnUse">
+                  <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#6366f1" flood-opacity="0.15" />
+                </filter>
+              </defs>
+
+              <!-- Central Collaboration Workspace Board -->
+              <rect x="70" y="35" width="320" height="195" rx="16" fill="url(#illGradSurface)" stroke="#e2e8f0" stroke-width="1.5" filter="url(#softShadow)" />
+
+              <!-- Board Header Chrome -->
+              <rect x="70" y="35" width="320" height="30" rx="16" fill="#f8fafc" />
+              <line x1="70" y1="65" x2="390" y2="65" stroke="#e2e8f0" stroke-width="1" />
+              <circle cx="88" cy="50" r="4" fill="#ef4444" />
+              <circle cx="102" cy="50" r="4" fill="#f59e0b" />
+              <circle cx="116" cy="50" r="4" fill="#10b981" />
+              <rect x="150" y="44" width="160" height="12" rx="6" fill="#e2e8f0" />
+
+              <!-- Code & Collaboration Kanban Columns inside Board -->
+              <rect x="88" y="78" width="85" height="135" rx="10" fill="#ffffff" stroke="#e2e8f0" />
+              <rect x="96" y="86" width="45" height="8" rx="4" fill="#6366f1" />
+              <rect x="96" y="102" width="69" height="34" rx="6" fill="#eff6ff" border="1px" />
+              <line x1="102" y1="112" x2="145" y2="112" stroke="#2563eb" stroke-width="2" stroke-linecap="round" />
+              <line x1="102" y1="122" x2="155" y2="122" stroke="#93c5fd" stroke-width="2" stroke-linecap="round" />
+              <rect x="96" y="144" width="69" height="34" rx="6" fill="#f0fdf4" />
+              <line x1="102" y1="154" x2="150" y2="154" stroke="#16a34a" stroke-width="2" stroke-linecap="round" />
+              <line x1="102" y1="164" x2="135" y2="164" stroke="#86efac" stroke-width="2" stroke-linecap="round" />
+
+              <!-- Middle Column: Match Engine Stats -->
+              <rect x="186" y="78" width="88" height="135" rx="10" fill="#ffffff" stroke="#e2e8f0" />
+              <rect x="194" y="86" width="55" height="8" rx="4" fill="#2563eb" />
+              <circle cx="230" cy="128" r="24" fill="none" stroke="#e2e8f0" stroke-width="5" />
+              <circle cx="230" cy="128" r="24" fill="none" stroke="url(#illGradPrimary)" stroke-width="5" stroke-dasharray="150" stroke-dashoffset="20" stroke-linecap="round" />
+              <text x="230" y="132" font-family="Plus Jakarta Sans, sans-serif" font-size="10" font-weight="800" fill="#2563eb" text-anchor="middle">95%</text>
+              <rect x="194" y="165" width="72" height="12" rx="4" fill="#eff6ff" />
+              <line x1="200" y1="171" x2="258" y2="171" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" />
+              <rect x="194" y="184" width="72" height="18" rx="4" fill="#f5f3ff" />
+              <text x="230" y="196" font-family="Plus Jakarta Sans, sans-serif" font-size="7.5" font-weight="700" fill="#6366f1" text-anchor="middle">Team Match</text>
+
+              <!-- Right Column: Student Avatars & Team Slots -->
+              <rect x="286" y="78" width="90" height="135" rx="10" fill="#ffffff" stroke="#e2e8f0" />
+              <rect x="294" y="86" width="45" height="8" rx="4" fill="#8b5cf6" />
+              <!-- Teammate 1 -->
+              <circle cx="308" cy="112" r="10" fill="url(#illGradPrimary)" />
+              <rect x="324" y="108" width="44" height="8" rx="3" fill="#cbd5e1" />
+              <!-- Teammate 2 -->
+              <circle cx="308" cy="138" r="10" fill="url(#illGradCyan)" />
+              <rect x="324" y="134" width="44" height="8" rx="3" fill="#cbd5e1" />
+              <!-- Teammate 3 -->
+              <circle cx="308" cy="164" r="10" fill="#8b5cf6" />
+              <rect x="324" y="160" width="44" height="8" rx="3" fill="#cbd5e1" />
+              <!-- Open Slot badge -->
+              <rect x="294" y="184" width="74" height="18" rx="4" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1" />
+              <text x="331" y="196" font-family="Plus Jakarta Sans, sans-serif" font-size="7.5" font-weight="700" fill="#059669" text-anchor="middle">&check; Team Assembled</text>
+
+              <!-- Student Left Silhouette / Avatar Collaborating -->
+              <g transform="translate(18, 110)">
+                <circle cx="32" cy="24" r="18" fill="url(#illGradPrimary)" />
+                <path d="M12 70 C12 48, 22 42, 32 42 C42 42, 52 48, 52 70 Z" fill="#3b82f6" />
+                <!-- Laptop -->
+                <rect x="28" y="52" width="34" height="22" rx="4" fill="#1e293b" />
+                <rect x="30" y="54" width="30" height="16" rx="2" fill="#38bdf8" />
+                <rect x="24" y="74" width="42" height="4" rx="2" fill="#94a3b8" />
+              </g>
+
+              <!-- Student Right Silhouette / Avatar Collaborating -->
+              <g transform="translate(380, 110)">
+                <circle cx="32" cy="24" r="18" fill="url(#illGradCyan)" />
+                <path d="M12 70 C12 48, 22 42, 32 42 C42 42, 52 48, 52 70 Z" fill="#6366f1" />
+                <!-- Tablet / Notebook -->
+                <rect x="6" y="50" width="30" height="24" rx="3" fill="#1e293b" />
+                <rect x="8" y="52" width="26" height="20" rx="2" fill="#a78bfa" />
+              </g>
+
+              <!-- Floating Tech Badges around students -->
+              <g transform="translate(40, 20)">
+                <rect width="68" height="22" rx="11" fill="#ffffff" stroke="#bfdbfe" stroke-width="1.2" filter="url(#softShadow)" />
+                <text x="34" y="15" font-family="Plus Jakarta Sans, sans-serif" font-size="9" font-weight="700" fill="#2563eb" text-anchor="middle">&lt;Python /&gt;</text>
+              </g>
+              <g transform="translate(345, 12)">
+                <rect width="76" height="22" rx="11" fill="#ffffff" stroke="#c7d2fe" stroke-width="1.2" filter="url(#softShadow)" />
+                <text x="38" y="15" font-family="Plus Jakarta Sans, sans-serif" font-size="9" font-weight="700" fill="#4f46e5" text-anchor="middle">&star; UI / UX</text>
+              </g>
+              <g transform="translate(200, 235)">
+                <rect width="105" height="24" rx="12" fill="#ffffff" stroke="#bbf7d0" stroke-width="1.2" filter="url(#softShadow)" />
+                <text x="52" y="16" font-family="Plus Jakarta Sans, sans-serif" font-size="9" font-weight="700" fill="#15803d" text-anchor="middle">&check; Schedule Synced</text>
+              </g>
+            </svg>
+          </div>
+
+          <!-- Institutional Trust Label -->
+          <div class="auth-institution-pill">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
+              <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
+            </svg>
+            <span>BMS Institute of Technology &amp; Management &bull; CSE 13</span>
+          </div>
+        </div>
       </div>
-      <div style="margin-top: 1rem; font-size: 0.75rem; color: var(--text-muted);">
-        Default password for seeded accounts is <code>password123</code> (admin is <code>admin123</code>).
+
+      <!-- RIGHT SECTION: Student Login Form -->
+      <div class="auth-right-panel">
+        <div class="auth-form-box">
+          <div class="auth-header-group">
+            <h2 class="auth-title">Student Login</h2>
+            <p class="auth-subtitle">Sign in to your SkillSync account.</p>
+          </div>
+
+          <!-- Login Form -->
+          <form method="POST" action="{{ url_for('auth.login') }}" id="studentLoginForm" novalidate>
+            <input type="hidden" name="next" value="{{ next or '' }}">
+
+            <!-- 1. Student Email Field -->
+            <div class="form-group">
+              <label class="form-label" for="email">Student Email</label>
+              <div class="input-icon-wrapper">
+                <span class="input-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                    <polyline points="22,6 12,13 2,6"></polyline>
+                  </svg>
+                </span>
+                <input type="email" id="email" name="email" class="form-control with-icon" 
+                       placeholder="Enter your college or registered email" 
+                       value="{{ email or '' }}" required autofocus autocomplete="email">
+              </div>
+              <div class="form-error-text" id="emailError"></div>
+            </div>
+
+            <!-- 2. Password Field with Show/Hide Toggle -->
+            <div class="form-group">
+              <label class="form-label" for="password">Password</label>
+              <div class="input-icon-wrapper">
+                <span class="input-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                  </svg>
+                </span>
+                <input type="password" id="password" name="password" class="form-control with-icon with-toggle" 
+                       placeholder="Enter your password" required autocomplete="current-password">
+                <button type="button" class="btn-toggle-password" id="togglePasswordBtn" title="Toggle password visibility" aria-label="Toggle password visibility">
+                  <!-- Eye Icon (hidden password) -->
+                  <svg class="icon-eye" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                  <!-- Eye-Off Icon (visible password) -->
+                  <svg class="icon-eye-off" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                  </svg>
+                </button>
+              </div>
+              <div class="form-error-text" id="passwordError"></div>
+            </div>
+
+            <!-- 3. Remember Me Checkbox & 4. Forgot Password Link -->
+            <div class="auth-options-row">
+              <label class="custom-checkbox-label" for="remember">
+                <input type="checkbox" id="remember" name="remember" value="1">
+                <span class="custom-checkbox-box"></span>
+                <span class="checkbox-caption">Remember Me</span>
+              </label>
+              <a href="{{ url_for('auth.forgot_password') }}" class="auth-link-forgot">Forgot Password?</a>
+            </div>
+
+            <!-- 5. Login Button with Loading State & Anti-Spam Lock -->
+            <button type="submit" class="btn btn-auth-submit" id="loginSubmitBtn">
+              <span class="btn-text-content">Sign In</span>
+              <span class="btn-spinner-content" id="loginSpinner" style="display: none;">
+                <svg class="spinner-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="32" stroke-linecap="round"></circle>
+                </svg>
+                <span>Signing In...</span>
+              </span>
+            </button>
+          </form>
+
+          <!-- Don't have an account? Create Student Account -->
+          <div class="auth-switch-prompt">
+            <span class="prompt-text">Don't have an account?</span>
+            <a href="{{ url_for('auth.register') }}" class="auth-link-register">
+              <strong>Create Student Account</strong> &rarr;
+            </a>
+          </div>
+
+          <!-- Reviewer & Demo Personas Accordion (For College Evaluation) -->
+          <div class="demo-personas-accordion">
+            <button type="button" class="demo-accordion-toggle" id="demoAccordionToggle" aria-expanded="false">
+              <div class="toggle-label-wrap">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                <span>Demo Accounts &bull; 1-Click Persona Switcher</span>
+              </div>
+              <svg class="chevron-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+
+            <div class="demo-accordion-content" id="demoAccordionContent" style="display: none;">
+              <p class="demo-hint-text">
+                For faculty evaluation &amp; pilot review: Click any persona below to fill credentials or switch instantly.
+              </p>
+              <div class="demo-personas-list">
+                {% if demo_users %}
+                  {% for u in demo_users %}
+                    <a href="{{ url_for('auth.switch_user', email=u.email) }}" class="demo-persona-card" title="Switch to {{ u.display_name }}">
+                      <div class="demo-card-left">
+                        <div class="demo-avatar">{{ (u.display_name or u.email)[:1] }}</div>
+                        <div class="demo-info">
+                          <strong>{{ u.display_name or u.email }}</strong>
+                          <span>{{ u.email }} &bull; {{ u.section or u.branch or u.role }}</span>
+                        </div>
+                      </div>
+                      <span class="demo-role-badge {% if u.role == 'admin' %}admin{% else %}student{% endif %}">{{ u.role }}</span>
+                    </a>
+                  {% endfor %}
+                {% endif %}
+              </div>
+              <div class="demo-default-pw">
+                Default password for test accounts is <code>password123</code> (admin is <code>admin123</code>).
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </div>
-{% endblock %}
+{% endblock layout %}
