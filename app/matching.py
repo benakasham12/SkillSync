@@ -300,7 +300,7 @@ def compute_team_skill_coverage(project_id, db_path=None):
     total_covered = 0
 
     for req in requirements:
-        is_must = req['priority'] == 'must-have'
+        is_must = req['priority'] in ['must-have', 'must_have', 'Must Have']
         if is_must:
             must_have_count += 1
 
@@ -326,7 +326,8 @@ def compute_team_skill_coverage(project_id, db_path=None):
             'skill_id': req['skill_id'],
             'skill_name': req['skill_name'],
             'category': req['skill_category'],
-            'priority': req['priority'],
+            'priority': 'must-have' if is_must else 'nice-to-have',
+            'proficiency_level': req.get('proficiency_level', 'intermediate'),
             'weight': req['weight'],
             'is_covered': covered,
             'covered_by': covered_by

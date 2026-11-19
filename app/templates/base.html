@@ -51,7 +51,8 @@
             <li><a href="{{ url_for('projects.list_projects') }}" class="nav-item {% if request.endpoint == 'projects.list_projects' %}active{% endif %}">Projects</a></li>
             
             {% if current_user_id %}
-              <li><a href="{{ url_for('projects.create_project') }}" class="nav-item {% if request.endpoint == 'projects.create_project' %}active{% endif %}">+ Post Project</a></li>
+              <li><a href="{{ url_for('projects.create_project') }}" class="nav-item {% if request.endpoint == 'projects.create_project' %}active{% endif %}">+ Create Project</a></li>
+              <li><a href="{{ url_for('projects.my_projects') }}" class="nav-item {% if request.endpoint == 'projects.my_projects' %}active{% endif %}">My Projects</a></li>
               <li><a href="{{ url_for('profile.edit_profile') }}" class="nav-item {% if request.endpoint == 'profile.edit_profile' %}active{% endif %}">My Profile</a></li>
               <li>
                 <a href="{{ url_for('invitations.list_invitations') }}" class="nav-item {% if request.endpoint == 'invitations.list_invitations' %}active{% endif %}">

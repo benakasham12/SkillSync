@@ -111,6 +111,13 @@ def init_db(db_path=None):
         owner_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         title TEXT NOT NULL,
         description TEXT,
+        category TEXT DEFAULT 'Other',
+        objectives TEXT,
+        technologies TEXT,
+        duration TEXT DEFAULT '2–3 Months',
+        collaboration_mode TEXT DEFAULT 'Hybrid',
+        availability TEXT DEFAULT 'Flexible',
+        additional_requirements TEXT,
         course_context TEXT DEFAULT 'Innovation & Design Thinking (IDT)',
         team_size_min INTEGER DEFAULT 2,
         team_size_max INTEGER DEFAULT 4,
@@ -126,6 +133,7 @@ def init_db(db_path=None):
         project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
         skill_id INTEGER NOT NULL REFERENCES skills(id) ON DELETE CASCADE,
         priority TEXT DEFAULT 'must-have', -- 'must-have', 'preferred'
+        proficiency_level TEXT DEFAULT 'intermediate', -- 'beginner', 'intermediate', 'advanced', 'expert'
         weight REAL DEFAULT 3.0,          -- must-have default: 3.0, preferred default: 1.0
         required_count INTEGER DEFAULT 1,
         UNIQUE(project_id, skill_id)
@@ -194,6 +202,18 @@ def init_db(db_path=None):
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
+    -- Project Applications (FR for Student Applications)
+    CREATE TABLE IF NOT EXISTS project_applications (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+        applicant_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        introduction TEXT,
+        application_status TEXT DEFAULT 'pending', -- 'pending', 'accepted', 'rejected', 'withdrawn'
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(project_id, applicant_id)
+    );
+
     -- Indices for performance
     CREATE INDEX IF NOT EXISTS idx_student_skills_user ON student_skills(user_id);
     CREATE INDEX IF NOT EXISTS idx_student_skills_skill ON student_skills(skill_id);
@@ -201,7 +221,26 @@ def init_db(db_path=None):
     CREATE INDEX IF NOT EXISTS idx_invitations_invitee ON invitations(invitee_id, status);
     CREATE INDEX IF NOT EXISTS idx_team_members_project ON team_members(project_id);
     CREATE INDEX IF NOT EXISTS idx_audit_events_name ON audit_events(event_name);
+    CREATE INDEX IF NOT EXISTS idx_project_applications_proj ON project_applications(project_id);
+    CREATE INDEX IF NOT EXISTS idx_project_applications_applicant ON project_applications(applicant_id);
     """)
+
+    # Safe column migrations for existing SQLite databases
+    columns_to_add = [
+        ('projects', 'category', "TEXT DEFAULT 'Other'"),
+        ('projects', 'objectives', "TEXT"),
+        ('projects', 'technologies', "TEXT"),
+        ('projects', 'duration', "TEXT DEFAULT '2–3 Months'"),
+        ('projects', 'collaboration_mode', "TEXT DEFAULT 'Hybrid'"),
+        ('projects', 'availability', "TEXT DEFAULT 'Flexible'"),
+        ('projects', 'additional_requirements', "TEXT"),
+        ('project_skill_requirements', 'proficiency_level', "TEXT DEFAULT 'intermediate'")
+    ]
+    for tbl, col, col_type in columns_to_add:
+        try:
+            cursor.execute(f"ALTER TABLE {tbl} ADD COLUMN {col} {col_type};")
+        except sqlite3.OperationalError:
+            pass
 
     conn.commit()
     conn.close()

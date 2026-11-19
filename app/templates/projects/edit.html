@@ -1,0 +1,355 @@
+{% extends "base.html" %}
+{% block title %}Edit {{ project.title }} - SkillSync{% endblock %}
+
+{% block content %}
+<div style="max-width: 900px; margin: 0 auto; padding-bottom: 3rem;">
+  <!-- Header -->
+  <div class="page-header" style="margin-bottom: 1.5rem;">
+    <div>
+      <div style="display: inline-flex; align-items: center; gap: 0.5rem; background: var(--primary-light); color: var(--primary); padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.8rem; font-weight: 600; margin-bottom: 0.5rem;">
+        <span>&#9998;</span> Edit Project
+      </div>
+      <h1 class="page-title">Edit Project Details</h1>
+      <p class="page-subtitle">Update project information, team capacity, and required skills for {{ project.title }}.</p>
+    </div>
+    <div style="display: flex; gap: 0.5rem;">
+      <a href="{{ url_for('projects.project_detail', project_id=project.id) }}" class="btn btn-secondary">
+        &larr; View Project
+      </a>
+    </div>
+  </div>
+
+  <form id="projectEditForm" method="POST" action="{{ url_for('projects.edit_project', project_id=project.id) }}">
+    <input type="hidden" id="skillsJsonInput" name="skills_json" value="">
+
+    <!-- Section A: Basic Info -->
+    <div class="card" style="padding: 2rem; margin-bottom: 1.5rem;">
+      <h2 style="font-size: 1.25rem; font-weight: 800; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem; margin-bottom: 1.25rem;">
+        1. Basic Project Information
+      </h2>
+
+      <div class="form-group">
+        <label class="form-label" for="projectTitle">Project Name <span style="color: var(--danger);">*</span></label>
+        <input type="text" id="projectTitle" name="title" class="form-control" value="{{ project.title }}" required>
+      </div>
+
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label" for="projectCategory">Project Category</label>
+          <select id="projectCategory" name="category" class="form-control">
+            {% for cat in categories %}
+              <option value="{{ cat }}" {% if project.category == cat %}selected{% endif %}>{{ cat }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="projectDuration">Expected Project Duration</label>
+          <select id="projectDuration" name="duration" class="form-control">
+            {% for dur in durations %}
+              <option value="{{ dur }}" {% if project.duration == dur %}selected{% endif %}>{{ dur }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="projectDesc">Project Description <span style="color: var(--danger);">*</span></label>
+        <textarea id="projectDesc" name="description" class="form-control" rows="4" required>{{ project.description }}</textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="projectObjectives">Project Objectives &amp; Milestones</label>
+        <textarea id="projectObjectives" name="objectives" class="form-control" rows="3">{{ project.objectives or '' }}</textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="projectTech">Technologies and Tools</label>
+        <input type="text" id="projectTech" name="technologies" class="form-control" value="{{ project.technologies or '' }}" placeholder="e.g. Python, React, Flask, FastAPI">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="courseContext">Course Context</label>
+        <input type="text" id="courseContext" name="course_context" class="form-control" value="{{ project.course_context or 'Innovation & Design Thinking (IDT)' }}">
+      </div>
+    </div>
+
+    <!-- Section B: Skills Required -->
+    <div class="card" style="padding: 2rem; margin-bottom: 1.5rem;">
+      <h2 style="font-size: 1.25rem; font-weight: 800; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem; margin-bottom: 1.25rem;">
+        2. Team Requirements and Skills
+      </h2>
+
+      <!-- Add Skill Input -->
+      <div class="card" style="background: var(--surface-alt); padding: 1.25rem; margin-bottom: 1.5rem; border: 1px solid var(--border);">
+        <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.75rem;">+ Add / Modify Skill</h3>
+        <div style="display: grid; grid-template-columns: 2fr 1.2fr 1.2fr auto; gap: 0.75rem; align-items: flex-end;">
+          <div>
+            <label class="form-label" style="font-size: 0.8rem;" for="skillNameInput">Skill Name</label>
+            <input type="text" id="skillNameInput" list="catalogSkillsList" class="form-control" placeholder="Skill name...">
+            <datalist id="catalogSkillsList">
+              {% for sk in all_skills %}
+                <option value="{{ sk.name }}">{{ sk.category }}</option>
+              {% endfor %}
+            </datalist>
+          </div>
+          <div>
+            <label class="form-label" style="font-size: 0.8rem;" for="skillPriorityInput">Requirement</label>
+            <select id="skillPriorityInput" class="form-control">
+              <option value="Must Have">Must Have</option>
+              <option value="Nice to Have">Nice to Have</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label" style="font-size: 0.8rem;" for="skillProficiencyInput">Proficiency</label>
+            <select id="skillProficiencyInput" class="form-control">
+              {% for prof in proficiencies %}
+                <option value="{{ prof }}">{{ prof }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <button type="button" class="btn btn-primary" onclick="handleAddSkill()">Add Skill</button>
+          </div>
+        </div>
+        <div id="skillErrorMsg" style="color: var(--danger); font-size: 0.8rem; margin-top: 0.4rem; display: none;"></div>
+      </div>
+
+      <!-- Skills List -->
+      <div id="selectedSkillsList" style="display: flex; flex-direction: column; gap: 0.6rem;">
+        <!-- Injected via JavaScript -->
+      </div>
+    </div>
+
+    <!-- Section C: Team Configuration -->
+    <div class="card" style="padding: 2rem; margin-bottom: 1.5rem;">
+      <h2 style="font-size: 1.25rem; font-weight: 800; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem; margin-bottom: 1.25rem;">
+        3. Team Configuration
+      </h2>
+
+      <div class="form-group">
+        <label class="form-label">Maximum Team Size</label>
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          {% for sz in [2, 3, 4, 5, 6] %}
+            <label class="size-radio-chip">
+              <input type="radio" name="team_size_max" value="{{ sz }}" {% if project.team_size_max == sz %}checked{% endif %} onchange="handleTeamSizeChange(this.value)">
+              <span>{{ sz }} Members</span>
+            </label>
+          {% endfor %}
+          <label class="size-radio-chip">
+            <input type="radio" name="team_size_max" value="custom" {% if project.team_size_max not in [2, 3, 4, 5, 6] %}checked{% endif %} onchange="handleTeamSizeChange(this.value)">
+            <span>Custom Size</span>
+          </label>
+        </div>
+
+        <div id="customSizeWrapper" style="{% if project.team_size_max in [2, 3, 4, 5, 6] %}display: none;{% endif %} max-width: 200px; margin-top: 0.5rem;">
+          <input type="number" id="customTeamSizeInput" name="custom_team_size" class="form-control" value="{{ project.team_size_max }}" min="2" max="20">
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label" for="collabMode">Collaboration Mode</label>
+          <select id="collabMode" name="collaboration_mode" class="form-control">
+            {% for mode in collaboration_modes %}
+              <option value="{{ mode }}" {% if project.collaboration_mode == mode %}selected{% endif %}>{{ mode }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="collabAvailability">Availability Expectations</label>
+          <select id="collabAvailability" name="availability" class="form-control">
+            {% for av in availabilities %}
+              <option value="{{ av }}" {% if project.availability == av %}selected{% endif %}>{{ av }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="additionalReqs">Additional Requirements</label>
+        <textarea id="additionalReqs" name="additional_requirements" class="form-control" rows="3">{{ project.additional_requirements or '' }}</textarea>
+      </div>
+    </div>
+
+    <!-- Actions Bar -->
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; border-top: 1px solid var(--border); padding-top: 1.5rem;">
+      <a href="{{ url_for('projects.project_detail', project_id=project.id) }}" class="btn btn-ghost">
+        Cancel Changes
+      </a>
+
+      <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+        <button type="submit" name="action" value="draft" class="btn btn-secondary">
+          Save as Draft
+        </button>
+        <button type="submit" name="action" value="publish" class="btn btn-primary">
+          {% if project.status == 'published' %}Save Updates{% else %}Publish Project{% endif %}
+        </button>
+      </div>
+    </div>
+  </form>
+
+  <!-- Danger Zone: Delete Project -->
+  <div class="card" style="margin-top: 3rem; border: 1px solid rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.02); padding: 1.5rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+      <div>
+        <h4 style="color: var(--danger); font-weight: 800; margin: 0 0 0.25rem;">Delete This Project</h4>
+        <p style="font-size: 0.88rem; color: var(--text-muted); margin: 0;">
+          Permanently remove this project, all required skill configurations, and student applications. This action cannot be undone.
+        </p>
+      </div>
+      <form method="POST" action="{{ url_for('projects.delete_project', project_id=project.id) }}" onsubmit="return confirm('Are you sure you want to permanently delete this project? All associated applications and skill requirements will be removed.');">
+        <button type="submit" class="btn btn-danger">
+          Delete Project
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<style>
+.size-radio-chip {
+  display: inline-flex;
+  cursor: pointer;
+}
+.size-radio-chip input {
+  display: none;
+}
+.size-radio-chip span {
+  display: inline-block;
+  padding: 0.5rem 0.9rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text);
+  transition: all 0.15s ease;
+}
+.size-radio-chip input:checked + span {
+  background: var(--primary-light);
+  border-color: var(--primary);
+  color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+}
+.skill-row-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+</style>
+
+<script>
+let projectSkills = [
+  {% for sk in current_skills %}
+    {
+      name: "{{ sk.skill_name|escape }}",
+      priority: "{% if sk.priority in ['must-have', 'Must Have'] %}Must Have{% else %}Nice to Have{% endif %}",
+      proficiency: "{{ sk.proficiency_level or 'Intermediate' }}"
+    }{% if not loop.last %},{% endif %}
+  {% endfor %}
+];
+
+function handleAddSkill() {
+  const nameInput = document.getElementById('skillNameInput');
+  const prioInput = document.getElementById('skillPriorityInput');
+  const profInput = document.getElementById('skillProficiencyInput');
+  const errorMsg = document.getElementById('skillErrorMsg');
+
+  const name = nameInput.value.trim();
+  const priority = prioInput.value;
+  const proficiency = profInput.value;
+
+  if (!name) {
+    errorMsg.textContent = 'Please enter or select a skill name.';
+    errorMsg.style.display = 'block';
+    return;
+  }
+
+  const isDuplicate = projectSkills.some(s => s.name.toLowerCase() === name.toLowerCase());
+  if (isDuplicate) {
+    errorMsg.textContent = `"${name}" is already in the list.`;
+    errorMsg.style.display = 'block';
+    return;
+  }
+
+  errorMsg.style.display = 'none';
+  projectSkills.push({ name, priority, proficiency });
+  nameInput.value = '';
+  renderSkillsList();
+}
+
+function removeSkill(index) {
+  projectSkills.splice(index, 1);
+  renderSkillsList();
+}
+
+function toggleSkillPriority(index) {
+  projectSkills[index].priority = (projectSkills[index].priority === 'Must Have') ? 'Nice to Have' : 'Must Have';
+  renderSkillsList();
+}
+
+function updateSkillProficiency(index, newProf) {
+  projectSkills[index].proficiency = newProf;
+  renderSkillsList();
+}
+
+function renderSkillsList() {
+  const listContainer = document.getElementById('selectedSkillsList');
+  const jsonInput = document.getElementById('skillsJsonInput');
+  jsonInput.value = JSON.stringify(projectSkills);
+
+  if (projectSkills.length === 0) {
+    listContainer.innerHTML = '<div style="color: var(--text-muted); font-size: 0.9rem; padding: 1rem; text-align: center; border: 1px dashed var(--border); border-radius: 8px;">No required skills declared yet.</div>';
+    return;
+  }
+
+  listContainer.innerHTML = '';
+  projectSkills.forEach((skill, index) => {
+    const card = document.createElement('div');
+    card.className = 'skill-row-card';
+    const isMust = (skill.priority === 'Must Have');
+
+    card.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+        <span style="font-weight: 700; font-size: 0.95rem; color: var(--text);">${skill.name}</span>
+        <button type="button" class="badge ${isMust ? 'badge-must-have' : 'badge-preferred'}" 
+                onclick="toggleSkillPriority(${index})" 
+                style="cursor: pointer; border: none; font-size: 0.75rem;">
+          ${skill.priority} &#8644;
+        </button>
+        <select onchange="updateSkillProficiency(${index}, this.value)" class="form-control" style="width: auto; padding: 0.2rem 0.5rem; font-size: 0.8rem; height: auto;">
+          <option value="Beginner" ${skill.proficiency === 'Beginner' ? 'selected' : ''}>Beginner</option>
+          <option value="Intermediate" ${skill.proficiency === 'Intermediate' ? 'selected' : ''}>Intermediate</option>
+          <option value="Advanced" ${skill.proficiency === 'Advanced' ? 'selected' : ''}>Advanced</option>
+          <option value="Expert" ${skill.proficiency === 'Expert' ? 'selected' : ''}>Expert</option>
+        </select>
+      </div>
+      <div>
+        <button type="button" onclick="removeSkill(${index})" style="background: none; border: none; color: var(--danger); font-size: 1.1rem; cursor: pointer; padding: 0.25rem 0.5rem;" title="Remove Skill">
+          &times;
+        </button>
+      </div>
+    `;
+    listContainer.appendChild(card);
+  });
+}
+
+function handleTeamSizeChange(val) {
+  const customWrapper = document.getElementById('customSizeWrapper');
+  if (val === 'custom') {
+    customWrapper.style.display = 'block';
+  } else {
+    customWrapper.style.display = 'none';
+  }
+}
+
+// Initial render
+renderSkillsList();
+</script>
+{% endblock %}

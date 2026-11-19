@@ -1,0 +1,286 @@
+{% extends "base.html" %}
+{% block title %}My Projects &amp; Applications - SkillSync{% endblock %}
+
+{% block content %}
+<div class="page-header" style="align-items: flex-start; gap: 1.5rem; flex-wrap: wrap;">
+  <div>
+    <div style="display: inline-flex; align-items: center; gap: 0.5rem; background: var(--primary-light); color: var(--primary); padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.8rem; font-weight: 600; margin-bottom: 0.5rem;">
+      <span>&#128100;</span> Student Workspace
+    </div>
+    <h1 class="page-title">My Projects &amp; Management Dashboard</h1>
+    <p class="page-subtitle">Manage your created projects, review applicant submissions, and track projects you have applied to join.</p>
+  </div>
+
+  <div style="display: flex; gap: 0.75rem;">
+    <a href="{{ url_for('projects.create_project') }}" class="btn btn-primary" style="box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+      <span>+ Create New Project</span>
+    </a>
+  </div>
+</div>
+
+<!-- Tabs Navigation for My Projects -->
+<div class="card" style="padding: 1.25rem; margin-bottom: 2rem;">
+  <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+    <button type="button" class="btn btn-sm btn-primary tab-trigger" onclick="switchDashboardTab('publishedTab', this)">
+      Published Projects ({{ published|length }})
+    </button>
+    <button type="button" class="btn btn-sm btn-ghost tab-trigger" onclick="switchDashboardTab('draftsTab', this)">
+      Drafts ({{ drafts|length }})
+    </button>
+    <button type="button" class="btn btn-sm btn-ghost tab-trigger" onclick="switchDashboardTab('closedTab', this)">
+      Closed Projects ({{ closed|length }})
+    </button>
+    <button type="button" class="btn btn-sm btn-ghost tab-trigger" onclick="switchDashboardTab('applicationsTab', this)">
+      My Sent Applications ({{ my_applications|length }})
+    </button>
+  </div>
+</div>
+
+<!-- TAB 1: Published Projects -->
+<div id="publishedTab" class="dashboard-tab-content">
+  {% if published %}
+    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+      {% for p in published %}
+        <div class="card" style="padding: 1.5rem; border: 1px solid var(--border);">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 0.75rem;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem;">
+                <span class="badge" style="background: rgba(99, 102, 241, 0.12); color: #4f46e5; font-weight: 700;">{{ p.category or 'General' }}</span>
+                <span class="badge badge-published">Published</span>
+                {% if p.pending_apps_count > 0 %}
+                  <span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #d97706; font-weight: 700;">
+                    {{ p.pending_apps_count }} Pending Applicant{{ 's' if p.pending_apps_count != 1 else '' }}
+                  </span>
+                {% endif %}
+              </div>
+              <h3 style="font-size: 1.3rem; font-weight: 800; margin: 0 0 0.25rem;">
+                <a href="{{ url_for('projects.project_detail', project_id=p.id) }}" style="color: var(--text); text-decoration: none;">
+                  {{ p.title }}
+                </a>
+              </h3>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">
+                Team Capacity: <strong>{{ p.current_team_count }} / {{ p.team_size_max }} Members</strong> &bull; 
+                <span style="color: var(--success); font-weight: 600;">{{ p.available_positions }} spots open</span> &bull; 
+                Duration: {{ p.duration }} &bull; Updated {{ p.updated_at[:10] }}
+              </div>
+            </div>
+
+            <!-- Action Controls -->
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+              <a href="{{ url_for('projects.project_detail', project_id=p.id) }}" class="btn btn-secondary btn-sm">
+                View &amp; Manage
+              </a>
+              <a href="{{ url_for('projects.edit_project', project_id=p.id) }}" class="btn btn-ghost btn-sm">
+                Edit Project
+              </a>
+              <a href="{{ url_for('projects.match_candidates', project_id=p.id) }}" class="btn btn-primary btn-sm">
+                Find Matches
+              </a>
+              <form method="POST" action="{{ url_for('projects.close_project', project_id=p.id) }}" style="display: inline;" onsubmit="return confirm('Close this project from accepting new applications?');">
+                <button type="submit" class="btn btn-secondary btn-sm">Close</button>
+              </form>
+              <form method="POST" action="{{ url_for('projects.delete_project', project_id=p.id) }}" style="display: inline;" onsubmit="return confirm('Are you sure you want to permanently delete this project?');">
+                <button type="submit" class="btn btn-ghost btn-sm" style="color: var(--danger);">Delete</button>
+              </form>
+            </div>
+          </div>
+
+          <!-- Description snippet -->
+          <p style="font-size: 0.9rem; color: var(--text-muted); margin: 0 0 0.75rem; line-height: 1.5;">
+            {{ p.description[:180] }}{% if p.description and p.description|length > 180 %}...{% endif %}
+          </p>
+
+          <!-- Skills tags -->
+          <div style="display: flex; flex-wrap: wrap; gap: 0.35rem;">
+            {% for req in p.requirements %}
+              <span class="badge {% if req.priority in ['must-have', 'Must Have'] %}badge-must-have{% else %}badge-preferred{% endif %}" style="font-size: 0.72rem;">
+                {{ req.skill_name }} ({{ req.priority }})
+              </span>
+            {% endfor %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="card" style="text-align: center; padding: 3rem 1.5rem; max-width: 600px; margin: 0 auto;">
+      <div style="font-size: 2rem; margin-bottom: 0.5rem; color: var(--text-muted);">&#128203;</div>
+      <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 0.35rem;">No Published Projects</h3>
+      <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1.5rem;">
+        You don't have any published projects yet. Create and publish a project to start receiving teammate applications.
+      </p>
+      <a href="{{ url_for('projects.create_project') }}" class="btn btn-primary">+ Create New Project</a>
+    </div>
+  {% endif %}
+</div>
+
+<!-- TAB 2: Drafts -->
+<div id="draftsTab" class="dashboard-tab-content" style="display: none;">
+  {% if drafts %}
+    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+      {% for p in drafts %}
+        <div class="card" style="padding: 1.5rem; border: 1px solid var(--border); background: var(--surface);">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 0.75rem;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem;">
+                <span class="badge badge-draft">Draft (Private)</span>
+                <span class="badge" style="background: var(--surface-alt); color: var(--text-muted);">{{ p.category or 'General' }}</span>
+              </div>
+              <h3 style="font-size: 1.3rem; font-weight: 800; margin: 0 0 0.25rem;">
+                <a href="{{ url_for('projects.project_detail', project_id=p.id) }}" style="color: var(--text); text-decoration: none;">
+                  {{ p.title }}
+                </a>
+              </h3>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">
+                Target Team: {{ p.team_size_max }} Members &bull; Last updated {{ p.updated_at[:10] }}
+              </div>
+            </div>
+
+            <!-- Draft Controls -->
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+              <a href="{{ url_for('projects.edit_project', project_id=p.id) }}" class="btn btn-primary btn-sm">
+                Continue Editing &amp; Publish
+              </a>
+              <a href="{{ url_for('projects.project_detail', project_id=p.id) }}" class="btn btn-secondary btn-sm">
+                Preview Draft
+              </a>
+              <form method="POST" action="{{ url_for('projects.delete_project', project_id=p.id) }}" style="display: inline;" onsubmit="return confirm('Permanently delete this draft?');">
+                <button type="submit" class="btn btn-ghost btn-sm" style="color: var(--danger);">Delete</button>
+              </form>
+            </div>
+          </div>
+
+          <p style="font-size: 0.9rem; color: var(--text-muted); margin: 0 0 0.75rem;">
+            {{ p.description or 'No description entered yet.' }}
+          </p>
+
+          <div style="display: flex; flex-wrap: wrap; gap: 0.35rem;">
+            {% for req in p.requirements %}
+              <span class="badge badge-draft" style="font-size: 0.72rem;">{{ req.skill_name }}</span>
+            {% endfor %}
+            {% if not p.requirements %}
+              <span style="font-size: 0.8rem; color: var(--warning);">⚠️ No skills declared yet (required before publishing).</span>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="card" style="text-align: center; padding: 3rem 1.5rem; max-width: 600px; margin: 0 auto;">
+      <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 0.35rem;">No Draft Projects</h3>
+      <p style="font-size: 0.9rem; color: var(--text-muted);">
+        All your projects are currently published or you haven't saved any drafts.
+      </p>
+    </div>
+  {% endif %}
+</div>
+
+<!-- TAB 3: Closed Projects -->
+<div id="closedTab" class="dashboard-tab-content" style="display: none;">
+  {% if closed %}
+    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+      {% for p in closed %}
+        <div class="card" style="padding: 1.5rem; border: 1px solid var(--border);">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.75rem;">
+            <div>
+              <span class="badge badge-closed">Closed (Team Finalized)</span>
+              <h3 style="font-size: 1.3rem; font-weight: 800; margin: 0.4rem 0 0.25rem;">{{ p.title }}</h3>
+              <p style="font-size: 0.88rem; color: var(--text-muted); margin: 0;">
+                Team formed: {{ p.current_team_count }} / {{ p.team_size_max }} members.
+              </p>
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+              <form method="POST" action="{{ url_for('projects.close_project', project_id=p.id) }}">
+                <button type="submit" class="btn btn-secondary btn-sm">Reopen Project</button>
+              </form>
+              <a href="{{ url_for('projects.project_detail', project_id=p.id) }}" class="btn btn-secondary btn-sm">View Details</a>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="card" style="text-align: center; padding: 3rem 1.5rem; max-width: 600px; margin: 0 auto;">
+      <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 0.35rem;">No Closed Projects</h3>
+      <p style="font-size: 0.9rem; color: var(--text-muted);">
+        You don't have any closed or completed projects at this time.
+      </p>
+    </div>
+  {% endif %}
+</div>
+
+<!-- TAB 4: Sent Applications -->
+<div id="applicationsTab" class="dashboard-tab-content" style="display: none;">
+  {% if my_applications %}
+    <div style="display: flex; flex-direction: column; gap: 1rem;">
+      {% for app in my_applications %}
+        <div class="card" style="padding: 1.25rem; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+              <span class="badge {% if app.application_status == 'pending' %}badge-draft{% elif app.application_status == 'accepted' %}badge-published{% else %}badge-closed{% endif %}">
+                {{ app.application_status|capitalize }}
+              </span>
+              <span style="font-size: 0.82rem; color: var(--text-muted);">Applied on {{ app.created_at[:10] }}</span>
+            </div>
+            <h4 style="font-size: 1.15rem; font-weight: 800; margin: 0 0 0.25rem;">
+              <a href="{{ url_for('projects.project_detail', project_id=app.project_id) }}" style="color: var(--text); text-decoration: none;">
+                {{ app.project_title }}
+              </a>
+            </h4>
+            <div style="font-size: 0.82rem; color: var(--text-muted);">
+              Project Creator: <strong>{{ app.owner_name }}</strong> ({{ app.owner_branch }})
+            </div>
+            {% if app.introduction %}
+              <div style="font-size: 0.85rem; color: var(--text); margin-top: 0.5rem; font-style: italic;">
+                "{{ app.introduction }}"
+              </div>
+            {% endif %}
+          </div>
+
+          <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <a href="{{ url_for('projects.project_detail', project_id=app.project_id) }}" class="btn btn-secondary btn-sm">
+              View Project
+            </a>
+            {% if app.application_status == 'pending' %}
+              <form method="POST" action="{{ url_for('projects.withdraw_application', app_id=app.id) }}" onsubmit="return confirm('Withdraw this application?');">
+                <button type="submit" class="btn btn-ghost btn-sm" style="color: var(--danger);">
+                  Withdraw
+                </button>
+              </form>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="card" style="text-align: center; padding: 3rem 1.5rem; max-width: 600px; margin: 0 auto;">
+      <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 0.35rem;">No Applications Submitted</h3>
+      <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1.5rem;">
+        You haven't submitted any applications to join other projects yet. Explore active projects seeking teammates.
+      </p>
+      <a href="{{ url_for('projects.list_projects') }}" class="btn btn-primary">Browse Projects</a>
+    </div>
+  {% endif %}
+</div>
+
+<script>
+function switchDashboardTab(tabId, triggerBtn) {
+  const contents = document.querySelectorAll('.dashboard-tab-content');
+  contents.forEach(c => c.style.display = 'none');
+
+  const triggers = document.querySelectorAll('.tab-trigger');
+  triggers.forEach(t => {
+    t.classList.remove('btn-primary');
+    t.classList.add('btn-ghost');
+  });
+
+  const activeTab = document.getElementById(tabId);
+  if (activeTab) activeTab.style.display = 'block';
+
+  if (triggerBtn) {
+    triggerBtn.classList.remove('btn-ghost');
+    triggerBtn.classList.add('btn-primary');
+  }
+}
+</script>
+{% endblock %}
