@@ -42,24 +42,4 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
-
-  // 3. Interactive Hero Mockup Micro-interaction
-  const inviteBtn = document.querySelector('.mockup-action-btn');
-  if (inviteBtn) {
-    inviteBtn.style.cursor = 'pointer';
-    inviteBtn.addEventListener('click', () => {
-      inviteBtn.innerHTML = `
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-        Invitation Dispatched!
-      `;
-      inviteBtn.style.background = '#10b981';
-      setTimeout(() => {
-        inviteBtn.innerHTML = `
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-          Invite to Team
-        `;
-        inviteBtn.style.background = '';
-      }, 3000);
-    });
-  }
 });

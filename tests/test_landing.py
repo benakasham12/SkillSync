@@ -64,6 +64,14 @@ def test_landing_page_renders_successfully(client):
     assert "Goral Chhabra" in html
     assert "Akansha" in html
 
+    # Verify complete removal of the hero preview mockup section
+    assert "AI Healthcare Diagnostic Assistant" not in html
+    assert "Priya Sharma" not in html
+    assert "94.5" not in html
+    assert "Zero Schedule Clashes" not in html
+    assert "hero-preview-wrapper" not in html
+    assert "mockup-candidate-card" not in html
+
 
 def test_projects_directory_route(client):
     """Verify '/projects' route continues to serve the projects directory."""
