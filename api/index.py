@@ -56,3 +56,9 @@ def ensure_db_exists():
     if os.environ.get('VERCEL'):
         if not os.path.exists(db_path) or os.path.getsize(db_path) == 0:
             initialize_environment()
+
+
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))
+    print(f"Starting SkillSync server on http://127.0.0.1:{port}")
+    app.run(host='0.0.0.0', port=port, debug=True)

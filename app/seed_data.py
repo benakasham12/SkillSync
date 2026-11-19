@@ -27,6 +27,11 @@ def seed_database(db_path=None):
     cur = conn.cursor()
 
     # Clear existing demo projects and relations to ensure clean idempotency
+    cur.execute("DELETE FROM message_attachments")
+    cur.execute("DELETE FROM message_read_status")
+    cur.execute("DELETE FROM messages")
+    cur.execute("DELETE FROM conversation_participants")
+    cur.execute("DELETE FROM conversations")
     cur.execute("DELETE FROM reports")
     cur.execute("DELETE FROM invitations")
     cur.execute("DELETE FROM team_members")
