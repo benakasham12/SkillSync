@@ -1108,13 +1108,57 @@ textarea.form-control {
 }
 
 /* ==========================================================================
+   Reference UI (Fiverr Style): Sub-Navbar & Hero Section
+   ========================================================================== */
+
+/* Sub-Navbar Category Strip */
+.category-subnav-strip {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0.65rem 0;
+  position: relative;
+  z-index: 30;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+.category-subnav-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  overflow-x: auto;
+  white-space: nowrap;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.category-subnav-container::-webkit-scrollbar {
+  display: none;
+}
+.subnav-item {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-decoration: none;
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+}
+.subnav-item:hover {
+  color: var(--text);
+  background: var(--surface-alt);
+}
+.subnav-item.active {
+  color: var(--primary);
+  font-weight: 600;
+  background: var(--primary-light);
+}
+
+/* ==========================================================================
    LANDING PAGE HERO SECTION
    ========================================================================== */
 .hero-section {
   position: relative;
   overflow: hidden;
-  padding: 6.5rem 0 6.5rem 0;
-  background: linear-gradient(180deg, rgba(239, 246, 255, 0.7) 0%, rgba(248, 250, 252, 1) 100%);
+  padding: 5.5rem 0 5.5rem 0;
+  background: #080c16;
 }
 
 /* Animated Beams Background (Opening Hero Section Only) */
@@ -1133,16 +1177,16 @@ textarea.form-control {
   inset: 0;
   width: 100%;
   height: 100%;
-  filter: blur(24px);
+  filter: blur(28px);
   pointer-events: none;
-  opacity: 0.85;
+  opacity: 0.9;
 }
 
 .beams-blur-overlay {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: radial-gradient(circle at 50% 30%, rgba(99, 102, 241, 0.05) 0%, transparent 70%);
+  background: radial-gradient(circle at 50% 30%, rgba(99, 102, 241, 0.06) 0%, rgba(8, 12, 22, 0.5) 85%);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   z-index: 2;
@@ -1165,17 +1209,17 @@ textarea.form-control {
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 1.75rem;
+  gap: 1.5rem;
 }
 
 /* Headline */
 .hero-headline {
-  font-size: clamp(2.6rem, 5vw, 4rem);
+  font-size: clamp(2.3rem, 4.6vw, 3.6rem);
   font-weight: 800;
   line-height: 1.15;
   letter-spacing: -0.03em;
-  color: #0f172a;
-  max-width: 840px;
+  color: #ffffff;
+  max-width: 860px;
 }
 .gradient-text {
   background: var(--primary-gradient);
@@ -1186,9 +1230,9 @@ textarea.form-control {
 
 /* Subtitle */
 .hero-subtitle {
-  font-size: 1.2rem;
-  color: #475569;
-  line-height: 1.7;
+  font-size: 1.12rem;
+  color: rgba(255, 255, 255, 0.75);
+  line-height: 1.65;
   max-width: 680px;
 }
 

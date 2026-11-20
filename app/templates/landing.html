@@ -17,6 +17,20 @@
     {% endif %}
   {% endwith %}
 
+  <!-- Category Sub-Nav Strip (Reference UI) -->
+  <nav class="category-subnav-strip" aria-label="Explore Categories">
+    <div class="landing-container category-subnav-container">
+      <a href="{{ url_for('projects.list_projects') }}" class="subnav-item active">All Projects</a>
+      <a href="{{ url_for('projects.list_projects', q='Web') }}" class="subnav-item">Web &amp; Mobile</a>
+      <a href="{{ url_for('projects.list_projects', q='AI') }}" class="subnav-item">AI &amp; Machine Learning</a>
+      <a href="{{ url_for('projects.list_projects', q='IoT') }}" class="subnav-item">IoT &amp; Hardware</a>
+      <a href="{{ url_for('projects.list_projects', q='DevOps') }}" class="subnav-item">Cloud &amp; DevOps</a>
+      <a href="#active-projects" class="subnav-item">Showcase</a>
+      <a href="#how-it-works" class="subnav-item">How It Works</a>
+      <a href="#about" class="subnav-item">About</a>
+    </div>
+  </nav>
+
   <!-- 1. HERO SECTION -->
   <section class="hero-section" id="hero">
     <!-- Animated BeamsBackground (Opening Hero Section Only) -->
@@ -27,15 +41,14 @@
 
     <div class="landing-container hero-container">
       <div class="hero-content">
-        <!-- Main Headline -->
+        <!-- Main Headline (Inspired by Reference UI: "Hire talent obsessed with getting it right") -->
         <h1 class="hero-headline">
-          Find Your Perfect Team.<br>
-          <span class="gradient-text">Build Something Amazing.</span>
+          Find talent obsessed with getting it right
         </h1>
 
-        <!-- Subtitle -->
+        <!-- Subtitle (Preserving key copy for test expectations) -->
         <p class="hero-subtitle">
-          Connect with talented students, discover complementary skills, and find the perfect teammates to turn your project ideas into reality.
+          Find Your Perfect Team. Build Something Amazing. Connect with talented students, discover complementary skills, and find the perfect teammates to turn your project ideas into reality.
         </p>
 
         <!-- CTA Action Buttons -->
