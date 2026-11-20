@@ -21,6 +21,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/logo-mark.png') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
@@ -41,12 +42,7 @@
 
           <a href="{{ url_for('projects.landing') }}" class="brand" aria-label="SkillSync Home">
             <div class="brand-logo-glow">
-              <svg class="brand-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
-                <circle cx="9" cy="7" r="4"></circle>
-                <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
-                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-              </svg>
+              <img src="{{ url_for('static', filename='img/logo-mark.png') }}" alt="SkillSync Logo" class="brand-logo-img">
             </div>
             <span class="brand-name">SkillSync</span>
           </a>
@@ -103,12 +99,7 @@
     <div class="sidebar-header">
       <a href="{{ url_for('projects.landing') }}" class="sidebar-brand" aria-label="SkillSync Home">
         <div class="brand-logo-glow sidebar-glow">
-          <svg class="brand-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
-            <circle cx="9" cy="7" r="4"></circle>
-            <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
-            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-          </svg>
+          <img src="{{ url_for('static', filename='img/logo-mark.png') }}" alt="SkillSync Logo" class="sidebar-brand-logo-img">
         </div>
         <span class="sidebar-brand-name">SkillSync</span>
       </a>
@@ -394,12 +385,7 @@
         <div class="footer-col brand-col">
           <a href="{{ url_for('projects.landing') }}" class="brand" style="margin-bottom: 0.75rem;">
             <div class="brand-logo-glow">
-              <svg class="brand-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
-                <circle cx="9" cy="7" r="4"></circle>
-                <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
-                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-              </svg>
+              <img src="{{ url_for('static', filename='img/logo-mark.png') }}" alt="SkillSync Logo" class="brand-logo-img">
             </div>
             <span class="brand-name">SkillSync</span>
           </a>
