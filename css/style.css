@@ -2043,8 +2043,6 @@ textarea.form-control {
   .brand-name {
     font-size: 1.15rem;
   }
-    border-top: 1px solid var(--border);
-  }
 
   .cta-banner-card {
     padding: 3rem 1.5rem;
