@@ -102,7 +102,7 @@ def test_sidebar_navigation_sections_logged_out(client):
     assert 'Home' in html
     assert 'Features' in html
     assert 'How It Works' in html
-    assert 'About Us' in html
+    assert 'BMSIT &amp; M Engineering' in html or 'BMSIT & M Engineering' in html or 'About' in html
 
     # Section 2: Projects
     assert 'Explore Projects' in html

@@ -201,7 +201,7 @@ def test_css_about_section_visibility_and_alignment():
 
 
 def test_dedicated_multi_page_routes_and_navigation(client):
-    """Verify all major sections have dedicated independent pages with direct header navigation."""
+    """Verify all major sections have dedicated independent pages with direct header/sidebar navigation."""
     pages = [
         ('/', 'Home'),
         ('/about-skillsync', 'Introduction'),
@@ -218,20 +218,26 @@ def test_dedicated_multi_page_routes_and_navigation(client):
         assert res.status_code == 200, f"Page {url} failed with {res.status_code}"
         html = res.data.decode('utf-8')
 
-        # Header contains all direct navigation links on desktop without More dropdown
-        assert 'href="/"' in html
+        # Header contains the 6 direct horizontal navigation links without overflow
         assert 'href="/about-skillsync"' in html
         assert 'href="/projects"' in html
-        assert 'href="/students"' in html
         assert 'href="/features"' in html
         assert 'href="/how-it-works"' in html
-        assert 'href="/bmsit-engineering"' in html
         assert 'href="/contact"' in html
         assert 'nav-menu-links' in html
         assert 'more-dropdown' not in html
 
+        # Top horizontal header must NOT contain Explore Students or BMSIT & M Engineering
+        top_nav = html.split('<div class="nav-menu-links">')[1].split('</div>')[0]
+        assert 'href="/students"' not in top_nav
+        assert 'href="/bmsit-engineering"' not in top_nav
+
+        # Side navigation panel MUST continue to contain all pages including Explore Students and BMSIT & M Engineering
+        assert 'class="sidebar-link' in html
+        assert 'href="/students"' in html
+        assert 'href="/bmsit-engineering"' in html
+
         # Active link highlight
-        assert 'nav-menu-link' in html
         assert 'active' in html
 
 
@@ -279,8 +285,9 @@ def test_bmsit_engineering_dedicated_page(client):
     assert "Akansha" in html
     assert "Section 13" in html
 
-    # Active navigation highlight
-    assert 'class="nav-menu-link active">BMSIT &amp; M Engineering</a>' in html
+    # Active navigation highlight in side navigation (and confirmed removed from top header)
+    assert 'class="sidebar-link active"' in html
+    assert 'class="nav-menu-link active">BMSIT &amp; M Engineering</a>' not in html
 
 
 def test_dedicated_pages_content(client):
