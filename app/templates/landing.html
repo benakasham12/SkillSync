@@ -19,7 +19,13 @@
 
   <!-- 1. HERO SECTION -->
   <section class="hero-section" id="hero">
-    <!-- Ambient glowing backdrop orbs -->
+    <!-- Animated BeamsBackground (Opening Hero Section Only) -->
+    <div class="beams-background-wrapper" aria-hidden="true">
+      <canvas id="beamsBackgroundCanvas" class="beams-canvas"></canvas>
+      <div class="beams-blur-overlay"></div>
+    </div>
+
+    <!-- Ambient glowing backdrop accents -->
     <div class="glow-orb orb-primary"></div>
     <div class="glow-orb orb-secondary"></div>
     <div class="glow-orb orb-accent"></div>

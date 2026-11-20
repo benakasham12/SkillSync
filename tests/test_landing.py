@@ -87,3 +87,36 @@ def test_projects_directory_route(client):
     assert response.status_code == 200
     html = response.data.decode('utf-8')
     assert "Projects" in html
+
+
+def test_beams_background_only_on_homepage(client):
+    """Verify that BeamsBackground canvas is strictly on the homepage hero and NOT on other pages."""
+    # 1. Homepage has the beams canvas
+    home_res = client.get('/')
+    assert home_res.status_code == 200
+    home_html = home_res.data.decode('utf-8')
+    assert 'id="beamsBackgroundCanvas"' in home_html
+    assert 'beams-background-wrapper' in home_html
+
+    # 2. Other pages MUST NOT have the beams canvas (Scope Restrictions)
+    for path in ['/login', '/register', '/projects']:
+        res = client.get(path)
+        assert res.status_code == 200
+        html = res.data.decode('utf-8')
+        assert 'id="beamsBackgroundCanvas"' not in html
+        assert 'beams-background-wrapper' not in html
+
+
+def test_beams_background_react_component_file():
+    """Verify the /components/ui/beams-background.tsx React component exists and is valid."""
+    from pathlib import Path
+    comp_path = Path("components/ui/beams-background.tsx")
+    assert comp_path.exists(), "components/ui/beams-background.tsx not found"
+    code = comp_path.read_text(encoding="utf-8")
+
+    assert "export function BeamsBackground" in code
+    assert "createBeam" in code
+    assert "children" in code
+    assert "cancelAnimationFrame" in code
+    assert "prefers-reduced-motion" in code
+
