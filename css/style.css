@@ -668,6 +668,33 @@ body.sidebar-lock-scroll {
 .btn-outline-primary:hover {
   background: var(--primary-light);
 }
+.btn-success {
+  background: var(--success);
+  color: #ffffff;
+  border-color: #059669;
+}
+.btn-success:hover {
+  background: #059669;
+  color: #ffffff;
+}
+.btn-danger {
+  background: var(--danger);
+  color: #ffffff;
+  border-color: #dc2626;
+}
+.btn-danger:hover {
+  background: #dc2626;
+  color: #ffffff;
+}
+.btn-outline-danger {
+  background: transparent;
+  color: var(--danger);
+  border-color: var(--danger);
+}
+.btn-outline-danger:hover {
+  background: var(--danger-light);
+  color: #dc2626;
+}
 .btn-sm {
   padding: 0.4rem 0.85rem;
   font-size: 0.825rem;
@@ -2890,12 +2917,139 @@ html:not([data-theme="dark"]) .sidebar-theme-toggle .theme-icon-moon {
   border-color: var(--surface);
 }
 
+/* ==========================================================================
+   Dark Mode Global Button System & Contrast Rules
+   ========================================================================== */
+
+/* 1. Homepage "Explore How It Works" Secondary Button */
+[data-theme="dark"] .btn-hero-secondary {
+  background: #1e293b;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+}
+[data-theme="dark"] .btn-hero-secondary span {
+  color: #ffffff !important;
+}
+[data-theme="dark"] .btn-hero-secondary svg {
+  stroke: #ffffff !important;
+  color: #ffffff !important;
+}
+[data-theme="dark"] .btn-hero-secondary:hover {
+  background: #334155;
+  border-color: rgba(255, 255, 255, 0.45);
+  color: #ffffff !important;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.55), 0 0 14px rgba(59, 130, 246, 0.25);
+}
+[data-theme="dark"] .btn-hero-secondary:hover span {
+  color: #ffffff !important;
+}
+[data-theme="dark"] .btn-hero-secondary:hover svg {
+  stroke: #ffffff !important;
+  color: #ffffff !important;
+}
+
+/* 2. Global Primary Buttons */
+[data-theme="dark"] .btn-primary,
+[data-theme="dark"] .btn-hero-primary {
+  background: var(--primary);
+  color: #ffffff !important;
+  border-color: transparent;
+}
+[data-theme="dark"] .btn-primary:hover,
+[data-theme="dark"] .btn-hero-primary:hover {
+  background: #2563eb;
+  color: #ffffff !important;
+  box-shadow: 0 8px 20px -2px rgba(59, 130, 246, 0.4);
+}
+
+/* 3. Global Secondary Buttons */
+[data-theme="dark"] .btn-secondary {
+  background: var(--surface-alt);
+  color: #f9fafb !important;
+  border: 1px solid var(--border);
+}
+[data-theme="dark"] .btn-secondary:hover {
+  background: #374151;
+  border-color: #4b5563;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+/* 4. Global Ghost Buttons */
 [data-theme="dark"] .btn-ghost {
-  color: var(--text);
+  background: transparent;
+  color: #cbd5e1 !important;
+  border-color: transparent;
 }
 [data-theme="dark"] .btn-ghost:hover {
   background: var(--surface-alt);
-  color: var(--primary);
+  color: #60a5fa !important;
+}
+
+/* 5. Outline Buttons */
+[data-theme="dark"] .btn-outline-primary {
+  background: transparent;
+  color: #60a5fa !important;
+  border: 1px solid #3b82f6;
+}
+[data-theme="dark"] .btn-outline-primary:hover {
+  background: rgba(59, 130, 246, 0.2);
+  color: #93c5fd !important;
+  border-color: #60a5fa;
+  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.25);
+}
+
+/* 6. Success & Danger Action Buttons */
+[data-theme="dark"] .btn-success {
+  background: #059669;
+  color: #ffffff !important;
+  border-color: #10b981;
+}
+[data-theme="dark"] .btn-success:hover {
+  background: #10b981;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+}
+
+[data-theme="dark"] .btn-danger {
+  background: #dc2626;
+  color: #ffffff !important;
+  border-color: #ef4444;
+}
+[data-theme="dark"] .btn-danger:hover {
+  background: #ef4444;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.35);
+}
+
+[data-theme="dark"] .btn-outline-danger {
+  background: transparent;
+  color: #f87171 !important;
+  border-color: #ef4444;
+}
+[data-theme="dark"] .btn-outline-danger:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5 !important;
+  border-color: #f87171;
+}
+
+/* 7. Homepage CTA Banner Secondary Button */
+[data-theme="dark"] .btn-cta-secondary {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+[data-theme="dark"] .btn-cta-secondary:hover {
+  background: rgba(255, 255, 255, 0.22);
+  color: #ffffff !important;
+}
+
+/* Button Icon Synchronization */
+.btn svg {
+  flex-shrink: 0;
+  stroke: currentColor;
 }
 
 /* Hero Section */

@@ -111,3 +111,37 @@ def test_js_theme_toggle_logic():
     assert "skillsync_theme" in js_content
     assert "skillsync:themechange" in js_content
     assert "data-theme" in js_content
+
+
+def test_landing_page_hero_buttons_and_icons(client):
+    """Verify that the hero section contains both primary and secondary CTA buttons with SVGs."""
+    response = client.get("/")
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+
+    assert "btn-hero-primary" in html
+    assert "btn-hero-secondary" in html
+    assert "Explore How It Works" in html
+    # Verify play icon is inside secondary button
+    assert "<polygon points=" in html or "<polyline points=" in html
+
+
+def test_dark_mode_button_contrast_css():
+    """Verify style.css contains proper Dark Mode contrast rules for all button classes."""
+    css_path = Path("app/static/css/style.css")
+    assert css_path.exists()
+    css = css_path.read_text(encoding="utf-8")
+
+    # 1. Secondary hero button dark mode rules
+    assert '[data-theme="dark"] .btn-hero-secondary' in css
+    assert "#ffffff" in css  # White text/icon
+    assert '[data-theme="dark"] .btn-hero-secondary svg' in css
+
+    # 2. Global buttons dark mode rules
+    assert '[data-theme="dark"] .btn-secondary' in css
+    assert '[data-theme="dark"] .btn-ghost' in css
+    assert '[data-theme="dark"] .btn-outline-primary' in css
+    assert '[data-theme="dark"] .btn-success' in css
+    assert '[data-theme="dark"] .btn-danger' in css
+    assert '[data-theme="dark"] .btn-outline-danger' in css
+
