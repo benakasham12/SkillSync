@@ -225,4 +225,82 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initial quick sync and periodic update every 10 seconds
     setInterval(updateUnreadBadges, 10000);
   }
+
+  // 8. Dark Mode / Light Mode Theme Toggle
+  const themeToggleBtn = document.getElementById('themeToggleBtn');
+  const sidebarThemeToggleBtn = document.getElementById('sidebarThemeToggleBtn');
+
+  const getCurrentTheme = () => {
+    return document.documentElement.getAttribute('data-theme') ||
+      localStorage.getItem('skillsync_theme') ||
+      (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  };
+
+  const updateThemeUI = (theme) => {
+    const isDark = theme === 'dark';
+    const label = isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode';
+
+    if (themeToggleBtn) {
+      themeToggleBtn.setAttribute('aria-label', label);
+      themeToggleBtn.setAttribute('title', label);
+    }
+
+    if (sidebarThemeToggleBtn) {
+      sidebarThemeToggleBtn.setAttribute('aria-label', label);
+      sidebarThemeToggleBtn.setAttribute('title', label);
+      const textSpan = sidebarThemeToggleBtn.querySelector('.sidebar-theme-text');
+      if (textSpan) {
+        textSpan.textContent = isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode';
+      }
+    }
+  };
+
+  const applyTheme = (theme, persist = true) => {
+    document.documentElement.setAttribute('data-theme', theme);
+    if (persist) {
+      try {
+        localStorage.setItem('skillsync_theme', theme);
+      } catch (e) {
+        // Safe fallback if local storage is restricted
+      }
+    }
+    updateThemeUI(theme);
+    window.dispatchEvent(new CustomEvent('skillsync:themechange', { detail: { theme } }));
+  };
+
+  const toggleTheme = () => {
+    const currentTheme = getCurrentTheme();
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    applyTheme(newTheme, true);
+  };
+
+  if (themeToggleBtn) {
+    themeToggleBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      toggleTheme();
+    });
+  }
+
+  if (sidebarThemeToggleBtn) {
+    sidebarThemeToggleBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      toggleTheme();
+    });
+  }
+
+  // Initialize UI state with current theme
+  updateThemeUI(getCurrentTheme());
+
+  // Listen to OS / System color scheme changes if user hasn't explicitly set a preference
+  if (window.matchMedia) {
+    try {
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+        if (!localStorage.getItem('skillsync_theme')) {
+          applyTheme(e.matches ? 'dark' : 'light', false);
+        }
+      });
+    } catch (e) {
+      // Support older browsers
+    }
+  }
 });
