@@ -17,20 +17,6 @@
     {% endif %}
   {% endwith %}
 
-  <!-- Category Sub-Nav Strip (Reference UI) -->
-  <nav class="category-subnav-strip" aria-label="Explore Categories">
-    <div class="landing-container category-subnav-container">
-      <a href="{{ url_for('projects.list_projects') }}" class="subnav-item active">All Projects</a>
-      <a href="{{ url_for('projects.list_projects', q='Web') }}" class="subnav-item">Web &amp; Mobile</a>
-      <a href="{{ url_for('projects.list_projects', q='AI') }}" class="subnav-item">AI &amp; Machine Learning</a>
-      <a href="{{ url_for('projects.list_projects', q='IoT') }}" class="subnav-item">IoT &amp; Hardware</a>
-      <a href="{{ url_for('projects.list_projects', q='DevOps') }}" class="subnav-item">Cloud &amp; DevOps</a>
-      <a href="#active-projects" class="subnav-item">Showcase</a>
-      <a href="#how-it-works" class="subnav-item">How It Works</a>
-      <a href="#about" class="subnav-item">About</a>
-    </div>
-  </nav>
-
   <!-- 1. HERO SECTION -->
   <section class="hero-section" id="hero">
     <!-- Animated BeamsBackground (Opening Hero Section Only) -->
@@ -41,101 +27,16 @@
 
     <div class="landing-container hero-container">
       <div class="hero-content">
-        <!-- Main Headline (Inspired by Reference UI: "Hire talent obsessed with getting it right") -->
+        <!-- Main Headline -->
         <h1 class="hero-headline">
-          Find talent obsessed with getting it right
+          Find Your Perfect Team.<br>
+          <span class="gradient-text">Build Something Amazing.</span>
         </h1>
 
-        <!-- Subtitle (Preserving key copy for test expectations) -->
+        <!-- Subtitle -->
         <p class="hero-subtitle">
-          Find Your Perfect Team. Build Something Amazing. Connect with talented students, discover complementary skills, and find the perfect teammates to turn your project ideas into reality.
+          Connect with talented students, discover complementary skills, and find the perfect teammates to turn your project ideas into reality.
         </p>
-
-        <!-- Fiverr-Style Frosted Glass Search & Discovery Card -->
-        <div class="hero-search-card">
-          <!-- Primary Search Bar -->
-          <form action="{{ url_for('projects.list_projects') }}" method="GET" class="hero-search-form" id="heroSearchForm">
-            <div class="hero-search-bar">
-              <input type="text" name="q" id="heroSearchInput" class="hero-search-input" 
-                     placeholder="Search projects, skills (e.g. React, Python, AI), or ideas..." 
-                     autocomplete="off" aria-label="Search projects or skills">
-              <button type="submit" class="hero-search-btn" aria-label="Submit Search">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="11" cy="11" r="8"></circle>
-                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                </svg>
-              </button>
-            </div>
-          </form>
-
-          <!-- Tab Selection: Quick Search & Trending Searches -->
-          <div class="hero-search-tabs">
-            <button type="button" class="hero-tab-btn active" id="tabQuickSearch">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="11" cy="11" r="8"></circle>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-              </svg>
-              <span>Quick search</span>
-            </button>
-            <button type="button" class="hero-tab-btn" id="tabTrendingSearch">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
-                <polyline points="17 6 23 6 23 12"></polyline>
-              </svg>
-              <span>Trending searches</span>
-            </button>
-          </div>
-
-          <!-- Quick Search Suggestions List -->
-          <div class="hero-suggestions-list" id="quickSuggestionsList">
-            <a href="{{ url_for('projects.list_projects', q='React Node.js') }}" class="hero-suggestion-item">
-              <span class="suggestion-title">Develop full-stack web application with React &amp; Node.js</span>
-              <svg class="suggestion-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="7" y1="17" x2="17" y2="7"></line>
-                <polyline points="7 7 17 7 17 17"></polyline>
-              </svg>
-            </a>
-            <a href="{{ url_for('projects.list_projects', q='AI Chatbot') }}" class="hero-suggestion-item">
-              <span class="suggestion-title">AI chatbot &amp; copilot using RAG, Llama &amp; Python</span>
-              <svg class="suggestion-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="7" y1="17" x2="17" y2="7"></line>
-                <polyline points="7 7 17 7 17 17"></polyline>
-              </svg>
-            </a>
-            <a href="{{ url_for('projects.list_projects', q='IoT') }}" class="hero-suggestion-item">
-              <span class="suggestion-title">IoT smart campus &amp; hardware monitoring system</span>
-              <svg class="suggestion-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="7" y1="17" x2="17" y2="7"></line>
-                <polyline points="7 7 17 7 17 17"></polyline>
-              </svg>
-            </a>
-          </div>
-
-          <!-- Trending Searches Suggestions List -->
-          <div class="hero-suggestions-list" id="trendingSuggestionsList" style="display: none;">
-            <a href="{{ url_for('projects.list_projects', q='Machine Learning') }}" class="hero-suggestion-item">
-              <span class="suggestion-title">Autonomous computer vision &amp; deep learning model</span>
-              <svg class="suggestion-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="7" y1="17" x2="17" y2="7"></line>
-                <polyline points="7 7 17 7 17 17"></polyline>
-              </svg>
-            </a>
-            <a href="{{ url_for('projects.list_projects', q='Flutter Mobile') }}" class="hero-suggestion-item">
-              <span class="suggestion-title">Cross-platform mobile application with Flutter &amp; Firebase</span>
-              <svg class="suggestion-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="7" y1="17" x2="17" y2="7"></line>
-                <polyline points="7 7 17 7 17 17"></polyline>
-              </svg>
-            </a>
-            <a href="{{ url_for('projects.list_projects', q='DevOps Docker') }}" class="hero-suggestion-item">
-              <span class="suggestion-title">Cloud infrastructure &amp; CI/CD pipeline with Docker</span>
-              <svg class="suggestion-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="7" y1="17" x2="17" y2="7"></line>
-                <polyline points="7 7 17 7 17 17"></polyline>
-              </svg>
-            </a>
-          </div>
-        </div>
 
         <!-- CTA Action Buttons -->
         <div class="hero-cta-group">

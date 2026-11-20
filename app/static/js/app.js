@@ -445,26 +445,4 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
   }
-
-  // 10. Hero Discovery Search Tabs (Quick Search vs Trending Searches)
-  const tabQuick = document.getElementById('tabQuickSearch');
-  const tabTrending = document.getElementById('tabTrendingSearch');
-  const quickList = document.getElementById('quickSuggestionsList');
-  const trendingList = document.getElementById('trendingSuggestionsList');
-
-  if (tabQuick && tabTrending && quickList && trendingList) {
-    tabQuick.addEventListener('click', () => {
-      tabQuick.classList.add('active');
-      tabTrending.classList.remove('active');
-      quickList.style.display = 'flex';
-      trendingList.style.display = 'none';
-    });
-
-    tabTrending.addEventListener('click', () => {
-      tabTrending.classList.add('active');
-      tabQuick.classList.remove('active');
-      trendingList.style.display = 'flex';
-      quickList.style.display = 'none';
-    });
-  }
 });
