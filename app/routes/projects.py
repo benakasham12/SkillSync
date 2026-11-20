@@ -178,6 +178,12 @@ def landing():
     return render_template('landing.html', featured_projects=featured_projects, stats=stats)
 
 
+@projects_bp.route('/about-skillsync')
+def about_skillsync():
+    """Renders the dedicated Introduction to SkillSync page presenting core pillars and capabilities."""
+    return render_template('about_skillsync.html')
+
+
 @projects_bp.route('/features')
 def features():
     """Renders the dedicated Features page."""

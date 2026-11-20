@@ -50,6 +50,7 @@
           <!-- Inline Navigation Links (Multi-Page Header - All Direct Links, No Dropdown) -->
           <div class="nav-menu-links">
             <a href="{{ url_for('projects.landing') }}" class="nav-menu-link {% if request.endpoint == 'projects.landing' %}active{% endif %}">Home</a>
+            <a href="{{ url_for('projects.about_skillsync') }}" class="nav-menu-link {% if request.endpoint == 'projects.about_skillsync' %}active{% endif %}">Introduction</a>
             <a href="{{ url_for('projects.list_projects') }}" class="nav-menu-link {% if request.endpoint and 'projects.list' in request.endpoint %}active{% endif %}">Find Projects</a>
             <a href="{{ url_for('projects.create_project') if current_user_id else url_for('auth.login', next=url_for('projects.create_project')) }}" class="nav-menu-link {% if request.endpoint == 'projects.create_project' %}active{% endif %}">Post Project</a>
             <a href="{{ url_for('profile.list_students') }}" class="nav-menu-link {% if request.endpoint == 'profile.list_students' %}active{% endif %}">Explore Students</a>
@@ -171,6 +172,16 @@
                 <polyline points="9 22 9 12 15 12 15 22"></polyline>
               </svg>
               <span>Home</span>
+            </a>
+          </li>
+          <li>
+            <a href="{{ url_for('projects.about_skillsync') }}" class="sidebar-link {% if request.endpoint == 'projects.about_skillsync' %}active{% endif %}">
+              <svg class="sidebar-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="16" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+              </svg>
+              <span>Introduction to SkillSync</span>
             </a>
           </li>
           <li>

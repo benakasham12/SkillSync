@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block title %}Introduction to SkillSync - Engineering Team Finding & Collaboration{% endblock %}
+
+{% block layout %}
+<div class="dedicated-page-wrapper">
+  <!-- Dedicated Page Header -->
+  <section class="page-hero-header">
+    <div class="landing-container">
+      <span class="section-eyebrow">A Better Way to Build</span>
+      <h1 class="page-hero-title">Introduction to SkillSync</h1>
+      <p class="page-hero-subtitle">
+        SkillSync is an engineering platform that replaces chaotic student group chats with mathematical compatibility, verified student skills, and transparent schedule alignment.
+      </p>
+    </div>
+  </section>
+
+  <!-- Core Introduction Pillars Section -->
+  <section class="section about-skillsync-section">
+    <div class="landing-container">
+      <div class="section-header-center">
+        <span class="section-eyebrow">Core Architecture</span>
+        <h2 class="section-title">Four Pillars of Deterministic Collaboration</h2>
+        <p class="section-subtitle">
+          Every component in SkillSync was engineered from the ground up to solve the real obstacles engineering students face during project formation.
+        </p>
+      </div>
+
+      <!-- Quick Platform Pillars (4 Cards) -->
+      <div class="home-pillars-grid">
+        <div class="pillar-card">
+          <div class="pillar-icon-box gradient-blue">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <circle cx="12" cy="6" r="2"></circle>
+              <circle cx="12" cy="18" r="2"></circle>
+              <line x1="12" y1="8" x2="12" y2="16"></line>
+            </svg>
+          </div>
+          <h3 class="pillar-name">Smart Team Matching</h3>
+          <p class="pillar-text">Deterministic 65/25/10 scoring balancing required skills, free hours, and shared engineering interests.</p>
+          <div class="pillar-features-list">
+            <span class="pillar-pill">65% Skill Match</span>
+            <span class="pillar-pill">25% Schedule Overlap</span>
+            <span class="pillar-pill">10% Domain Interest</span>
+          </div>
+          <a href="{{ url_for('projects.features') }}" class="pillar-link">Explore Features &rarr;</a>
+        </div>
+
+        <div class="pillar-card">
+          <div class="pillar-icon-box gradient-purple">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+          </div>
+          <h3 class="pillar-name">Skill-Based Profiles</h3>
+          <p class="pillar-text">Verified proficiencies, project experience links, and weekly schedule blocks across BMSIT&amp;M departments.</p>
+          <div class="pillar-features-list">
+            <span class="pillar-pill">Verified Proficiencies</span>
+            <span class="pillar-pill">Portfolio &amp; GitHub</span>
+            <span class="pillar-pill">Schedule Matrix</span>
+          </div>
+          <a href="{{ url_for('profile.list_students') }}" class="pillar-link">Explore Students &rarr;</a>
+        </div>
+
+        <div class="pillar-card">
+          <div class="pillar-icon-box gradient-indigo">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+          </div>
+          <h3 class="pillar-name">Project Collaboration</h3>
+          <p class="pillar-text">Track live skill coverage, manage invitation dispatches, and coordinate in real-time project workspaces.</p>
+          <div class="pillar-features-list">
+            <span class="pillar-pill">Live Skill Radar</span>
+            <span class="pillar-pill">Direct Dispatches</span>
+            <span class="pillar-pill">In-App Chat</span>
+          </div>
+          <a href="{{ url_for('projects.list_projects') }}" class="pillar-link">Find Projects &rarr;</a>
+        </div>
+
+        <div class="pillar-card">
+          <div class="pillar-icon-box gradient-cyan">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+            </svg>
+          </div>
+          <h3 class="pillar-name">Discover Opportunities</h3>
+          <p class="pillar-text">Explore capstones, IDT initiatives, and hackathon teams actively recruiting your exact technical stack.</p>
+          <div class="pillar-features-list">
+            <span class="pillar-pill">Capstone Projects</span>
+            <span class="pillar-pill">IDT Initiatives</span>
+            <span class="pillar-pill">Hackathons</span>
+          </div>
+          <a href="{{ url_for('projects.how_it_works') }}" class="pillar-link">How It Works &rarr;</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Deep Dive Narrative: Why SkillSync Matters -->
+  <section class="section about-skillsync-deepdive">
+    <div class="landing-container">
+      <div class="intro-deepdive-grid">
+        <div class="intro-card-highlight">
+          <div class="highlight-badge">The Background</div>
+          <h3 class="highlight-title">Why We Replaced Ad-Hoc Group Formation</h3>
+          <p class="highlight-desc">
+            In typical university settings, project teams form haphazardly within immediate social circles or ad-hoc messaging chats. 
+            This routinely produces imbalanced teams: multiple frontend developers with no backend engineer, or students with conflicting lab timetables that prevent meetings.
+          </p>
+          <p class="highlight-desc">
+            SkillSync solves this problem at the root. By parsing explicit skill requirements (must-have vs. nice-to-have), comparing weekly free slots, and evaluating shared domain interests, teams form around genuine technical and temporal synergy.
+          </p>
+        </div>
+
+        <div class="intro-card-highlight">
+          <div class="highlight-badge">The Philosophy</div>
+          <h3 class="highlight-title">Deterministic, Merit-Driven Alignment</h3>
+          <p class="highlight-desc">
+            SkillSync operates with zero algorithmic black boxes. Every match score is computed transparently: 65% based on skill overlap, 25% on weekly time slot alignment, and 10% on shared domain category interest.
+          </p>
+          <p class="highlight-desc">
+            Students see exactly why they matched, what skills they bring to the team, and where coverage gaps still exist, empowering informed team decisions.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Call to Action Banner -->
+  <section class="section cta-section">
+    <div class="landing-container">
+      <div class="cta-banner-card">
+        <div class="cta-content">
+          <div class="cta-badge">Ready to Experience SkillSync?</div>
+          <h2 class="cta-heading">Find Your Teammates or Post Your Project Today.</h2>
+          <p class="cta-subheading">
+            Join hundreds of BMSIT&amp;M engineering students already collaborating on innovative projects.
+          </p>
+          <div class="cta-actions-group">
+            <a href="{{ url_for('projects.list_projects') }}" class="btn btn-cta-primary">
+              <span>Explore Projects</span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+              </svg>
+            </a>
+            <a href="{{ url_for('profile.list_students') }}" class="btn btn-cta-secondary">
+              <span>Discover Students</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock layout %}

@@ -43,11 +43,11 @@ def test_landing_page_renders_successfully(client):
     assert "Find Your Team" in html
     assert "Explore How It Works" in html
 
-    # Features checks
-    assert "Smart Team Matching" in html
-    assert "Skill-Based Profiles" in html
-    assert "Project Collaboration" in html
-    assert "Discover Opportunities" in html
+    # Verify complete removal of the Introduction to SkillSync section from homepage per instructions
+    assert '<h2 class="section-title">Introduction to SkillSync</h2>' not in html
+    assert "A Better Way to Build" not in html
+    assert "home-intro-section" not in html
+    assert "hero-horizon-line" not in html
 
     # How it works checks
     assert "Create Your Profile" in html
@@ -186,6 +186,7 @@ def test_dedicated_multi_page_routes_and_navigation(client):
     """Verify all major sections have dedicated independent pages with direct header navigation."""
     pages = [
         ('/', 'Home'),
+        ('/about-skillsync', 'Introduction'),
         ('/projects', 'Find Projects'),
         ('/students', 'Explore Students'),
         ('/features', 'Features'),
@@ -199,8 +200,9 @@ def test_dedicated_multi_page_routes_and_navigation(client):
         assert res.status_code == 200, f"Page {url} failed with {res.status_code}"
         html = res.data.decode('utf-8')
 
-        # Header contains all 8 direct navigation links on desktop without More dropdown
+        # Header contains all direct navigation links on desktop without More dropdown
         assert 'href="/"' in html
+        assert 'href="/about-skillsync"' in html
         assert 'href="/projects"' in html
         assert 'href="/students"' in html
         assert 'href="/features"' in html
@@ -213,6 +215,28 @@ def test_dedicated_multi_page_routes_and_navigation(client):
         # Active link highlight
         assert 'nav-menu-link' in html
         assert 'active' in html
+
+
+def test_about_skillsync_dedicated_page(client):
+    """Verify the dedicated '/about-skillsync' page renders all Introduction section content."""
+    res = client.get('/about-skillsync')
+    assert res.status_code == 200
+    html = res.data.decode('utf-8')
+
+    # Core headers and description
+    assert "A Better Way to Build" in html
+    assert "Introduction to SkillSync" in html
+    assert "SkillSync is an engineering platform that replaces chaotic student group chats" in html
+
+    # All 4 core pillar cards
+    assert "Smart Team Matching" in html
+    assert "Skill-Based Profiles" in html
+    assert "Project Collaboration" in html
+    assert "Discover Opportunities" in html
+    assert "Deterministic 65/25/10 scoring" in html
+
+    # Check active state in navigation
+    assert 'class="nav-menu-link active">Introduction</a>' in html
 
 
 def test_dedicated_pages_content(client):

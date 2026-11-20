@@ -1252,7 +1252,7 @@ textarea.form-control {
 .hero-section {
   position: relative;
   overflow: hidden;
-  padding: 6.5rem 0 8.5rem 0;
+  padding: 5.5rem 0 5.5rem 0;
   background: #080c16;
 }
 
@@ -1265,8 +1265,8 @@ textarea.form-control {
   pointer-events: none;
   overflow: hidden;
   z-index: 1;
-  -webkit-mask-image: linear-gradient(180deg, black 0%, black 50%, rgba(0, 0, 0, 0.65) 75%, transparent 100%);
-  mask-image: linear-gradient(180deg, black 0%, black 50%, rgba(0, 0, 0, 0.65) 75%, transparent 100%);
+  -webkit-mask-image: linear-gradient(180deg, black 0%, black 50%, rgba(0, 0, 0, 0.5) 75%, transparent 100%);
+  mask-image: linear-gradient(180deg, black 0%, black 50%, rgba(0, 0, 0, 0.5) 75%, transparent 100%);
 }
 
 .beams-canvas {
@@ -1314,33 +1314,15 @@ textarea.form-control {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 280px;
+  height: 200px;
   background: linear-gradient(180deg, 
     transparent 0%, 
-    rgba(8, 12, 22, 0.15) 25%, 
-    rgba(8, 12, 22, 0.6) 55%, 
-    rgba(11, 15, 25, 0.92) 85%, 
+    rgba(8, 12, 22, 0.08) 25%, 
+    rgba(8, 12, 22, 0.4) 55%, 
+    rgba(11, 15, 25, 0.8) 80%, 
     var(--bg) 100%);
   pointer-events: none;
   z-index: 3;
-}
-
-/* Horizon Ambient Glow Line */
-.hero-horizon-line {
-  position: absolute;
-  bottom: 0;
-  left: 8%;
-  right: 8%;
-  height: 1px;
-  background: linear-gradient(90deg, 
-    transparent 0%, 
-    rgba(59, 130, 246, 0.15) 20%, 
-    rgba(99, 102, 241, 0.4) 50%, 
-    rgba(59, 130, 246, 0.15) 80%, 
-    transparent 100%);
-  box-shadow: 0 0 18px rgba(99, 102, 241, 0.4);
-  pointer-events: none;
-  z-index: 4;
 }
 
 /* Ambient Glowing Background Accents */
@@ -3392,7 +3374,7 @@ html:not([data-theme="dark"]) .sidebar-theme-toggle .theme-icon-moon {
 
 /* Hero Section */
 [data-theme="dark"] .hero-section {
-  background: linear-gradient(180deg, #080c16 0%, #0c1220 50%, #090e1a 100%);
+  background: linear-gradient(180deg, #080c16 0%, #0c1220 50%, var(--bg) 100%);
 }
 [data-theme="dark"] .beams-canvas {
   opacity: 0.95;
@@ -3411,9 +3393,9 @@ html:not([data-theme="dark"]) .sidebar-theme-toggle .theme-icon-moon {
 [data-theme="dark"] .beams-bottom-fade {
   background: linear-gradient(180deg, 
     transparent 0%, 
-    rgba(12, 18, 32, 0.1) 20%, 
-    rgba(11, 15, 25, 0.55) 50%, 
-    rgba(11, 15, 25, 0.92) 82%, 
+    rgba(12, 18, 32, 0.05) 20%, 
+    rgba(11, 15, 25, 0.45) 50%, 
+    rgba(11, 15, 25, 0.85) 80%, 
     var(--bg) 100%);
 }
 [data-theme="dark"] .hero-headline {
@@ -3942,10 +3924,75 @@ html:not([data-theme="dark"]) .sidebar-theme-toggle .theme-icon-moon {
   transform: translateX(3px);
 }
 
+/* Introduction / Pillar Feature Tags */
+.pillar-features-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 1rem 0 1.25rem 0;
+}
+.pillar-pill {
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.25rem 0.6rem;
+  border-radius: 9999px;
+  background: rgba(59, 130, 246, 0.08);
+  color: var(--primary);
+  border: 1px solid rgba(59, 130, 246, 0.16);
+}
+[data-theme="dark"] .pillar-pill {
+  background: rgba(59, 130, 246, 0.12);
+  color: #93c5fd;
+  border-color: rgba(59, 130, 246, 0.25);
+}
+.intro-deepdive-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 2rem;
+  margin-top: 1.5rem;
+}
+.intro-card-highlight {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: 2.25rem 2rem;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.intro-card-highlight:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+.highlight-badge {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--primary);
+  margin-bottom: 0.75rem;
+}
+.highlight-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 1rem;
+}
+.highlight-desc {
+  font-size: 0.95rem;
+  line-height: 1.65;
+  color: var(--text-muted);
+  margin-bottom: 0.85rem;
+}
+.highlight-desc:last-child {
+  margin-bottom: 0;
+}
+
 /* Home Steps Compact Row */
 .home-steps-summary {
-  padding: 3rem 0 4.5rem 0;
-  border-top: 1px solid var(--border);
+  padding: 4.5rem 0 4.5rem 0;
+  border-top: none;
+  background: var(--bg);
 }
 .steps-compact-row {
   display: grid;
