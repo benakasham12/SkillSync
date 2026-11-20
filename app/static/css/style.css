@@ -183,7 +183,7 @@ a:hover {
   padding: 0 4px;
   font-size: 0.7rem;
   font-weight: 700;
-  border-radius: 9999px;
+  border-radius: 6px;
   background: var(--danger);
   color: white;
   display: inline-flex;
@@ -201,7 +201,7 @@ a:hover {
   gap: 0.55rem;
   background: var(--surface-alt);
   padding: 0.25rem 0.75rem 0.25rem 0.25rem;
-  border-radius: 9999px;
+  border-radius: 6px;
   border: 1px solid var(--border);
   text-decoration: none;
   transition: all 0.2s ease;
@@ -375,7 +375,7 @@ a:hover {
 }
 .sidebar-scrollable::-webkit-scrollbar-thumb {
   background: #30363d;
-  border-radius: 9999px;
+  border-radius: 4px;
 }
 
 .sidebar-user-card {
@@ -492,7 +492,7 @@ a:hover {
   font-size: 0.72rem;
   font-weight: 700;
   padding: 0.12rem 0.5rem;
-  border-radius: 9999px;
+  border-radius: 6px;
   margin-left: auto;
   line-height: 1.2;
 }
@@ -568,7 +568,7 @@ body.sidebar-lock-scroll {
   gap: 0.6rem;
   background: var(--surface-alt);
   padding: 0.3rem 0.6rem 0.3rem 0.4rem;
-  border-radius: 9999px;
+  border-radius: 6px;
   border: 1px solid var(--border);
 }
 .user-name-text {
@@ -598,7 +598,7 @@ body.sidebar-lock-scroll {
   color: white;
   font-size: 0.75rem;
   padding: 0.15rem 0.45rem;
-  border-radius: 9999px;
+  border-radius: 6px;
   margin-left: 0.25rem;
 }
 
@@ -823,7 +823,7 @@ body.sidebar-lock-scroll {
   padding: 0.25rem 0.6rem;
   font-size: 0.75rem;
   font-weight: 600;
-  border-radius: 9999px;
+  border-radius: 6px;
   text-transform: uppercase;
   letter-spacing: 0.03em;
 }
@@ -922,14 +922,14 @@ textarea.form-control {
 .progress-bar-container {
   height: 12px;
   background: var(--surface-alt);
-  border-radius: 9999px;
+  border-radius: 6px;
   overflow: hidden;
   margin: 0.5rem 0 1rem 0;
   border: 1px solid var(--border);
 }
 .progress-bar-fill {
   height: 100%;
-  border-radius: 9999px;
+  border-radius: 6px;
   background: linear-gradient(90deg, #3b82f6, #10b981);
   transition: width 0.4s ease;
 }
@@ -1010,7 +1010,7 @@ textarea.form-control {
   padding: 0.25rem 0.6rem;
   background: var(--surface-alt);
   border: 1px solid var(--border);
-  border-radius: 9999px;
+  border-radius: 6px;
   font-size: 0.825rem;
 }
 .skill-pill.matched {
@@ -1121,33 +1121,7 @@ textarea.form-control {
 
 /* Ambient Glowing Background Accents */
 .glow-orb {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(80px);
-  pointer-events: none;
-  z-index: 0;
-  opacity: 0.45;
-}
-.orb-primary {
-  width: 500px;
-  height: 500px;
-  background: radial-gradient(circle, rgba(99, 102, 241, 0.35) 0%, rgba(37, 99, 235, 0.15) 70%, transparent 100%);
-  top: -150px;
-  left: 10%;
-}
-.orb-secondary {
-  width: 550px;
-  height: 550px;
-  background: radial-gradient(circle, rgba(139, 92, 246, 0.3) 0%, rgba(99, 102, 241, 0.1) 70%, transparent 100%);
-  top: 10%;
-  right: 10%;
-}
-.orb-accent {
-  width: 420px;
-  height: 420px;
-  background: radial-gradient(circle, rgba(56, 189, 248, 0.25) 0%, transparent 70%);
-  bottom: -60px;
-  left: 40%;
+  display: none !important;
 }
 
 .hero-container {
@@ -1854,15 +1828,7 @@ textarea.form-control {
 }
 
 .cta-glow-element {
-  position: absolute;
-  width: 450px;
-  height: 450px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(99, 102, 241, 0.4) 0%, transparent 70%);
-  top: -150px;
-  left: 50%;
-  transform: translateX(-50%);
-  pointer-events: none;
+  display: none !important;
 }
 
 .cta-content {
@@ -1882,7 +1848,7 @@ textarea.form-control {
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.15);
   padding: 0.25rem 0.85rem;
-  border-radius: 9999px;
+  border-radius: 6px;
   margin-bottom: 1.25rem;
 }
 
@@ -1992,7 +1958,7 @@ textarea.form-control {
   background: #1e293b;
   border: 1px solid #334155;
   padding: 0.35rem 0.75rem;
-  border-radius: 9999px;
+  border-radius: 6px;
   width: fit-content;
 }
 .pulse-dot {
@@ -2259,7 +2225,7 @@ textarea.form-control {
   background: rgba(255, 255, 255, 0.85);
   border: 1px solid rgba(59, 130, 246, 0.2);
   padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
+  border-radius: 6px;
   width: fit-content;
 }
 .auth-main-heading {
@@ -2601,7 +2567,7 @@ textarea.form-control {
   font-weight: 700;
   text-transform: uppercase;
   padding: 0.15rem 0.45rem;
-  border-radius: 9999px;
+  border-radius: 6px;
 }
 .demo-role-badge.admin {
   background: #fee2e2;

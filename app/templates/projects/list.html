@@ -5,10 +5,9 @@
 <!-- Header & Context Banner -->
 <div class="page-header" style="align-items: flex-start; gap: 1.5rem; flex-wrap: wrap;">
   <div>
-    <div style="display: inline-flex; align-items: center; gap: 0.5rem; background: var(--primary-light); color: var(--primary); padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.8rem; font-weight: 600; margin-bottom: 0.5rem; border: 1px solid rgba(59, 130, 246, 0.2);">
-      <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--primary); display: inline-block;"></span>
+    <span class="badge" style="background: var(--surface-alt); color: var(--primary); border: 1px solid var(--border); padding: 0.25rem 0.6rem; border-radius: 6px; font-size: 0.75rem; font-weight: 600; margin-bottom: 0.5rem; text-transform: none; letter-spacing: normal;">
       Team Discovery &amp; Match Roster
-    </div>
+    </span>
     <h1 class="page-title">Active Projects Seeking Teammates</h1>
     <p class="page-subtitle">Discover student-led project ideas, explore skill requirements, and connect with motivated teammates to build something amazing.</p>
   </div>
@@ -111,7 +110,7 @@
             </div>
 
             <!-- Team Capacity Indicator -->
-            <div style="display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.8rem; font-weight: 600; background: var(--surface-alt); padding: 0.2rem 0.6rem; border-radius: 9999px; border: 1px solid var(--border);">
+            <div style="display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.8rem; font-weight: 600; background: var(--surface-alt); padding: 0.2rem 0.6rem; border-radius: 6px; border: 1px solid var(--border);">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
               <span>{{ p.current_team_count }} / {{ p.team_size_max }} Members</span>
               {% if p.available_positions > 0 %}
