@@ -49,20 +49,27 @@ def test_landing_page_renders_successfully(client):
     assert "home-intro-section" not in html
     assert "hero-horizon-line" not in html
 
-    # How it works checks
-    assert "Create Your Profile" in html
-    assert "Discover Teammates" in html
-    assert "Build Your Team" in html
+    # Verify complete removal of How It Works in 3 Steps section from homepage per instructions
+    assert "home-steps-summary" not in html
+    assert '<h2 class="section-title">How It Works in 3 Steps</h2>' not in html
+    assert "SIMPLE & TRANSPARENT" not in html
+    assert "Simple &amp; Transparent" not in html
+
+    # Verify complete removal of Built for BMSIT & M Engineering section from homepage per instructions
+    assert "about-section" not in html
+    assert "Built for BMSIT&amp;M Engineering Students" not in html
+    assert "Built for BMSIT &amp; M Engineering" not in html
+    assert "institution-card" not in html
+    assert "team-cards-grid" not in html
+    assert "about-story-card" not in html
+    home_body = html.split('<footer')[0]
+    assert "Harsh Tiwari" not in home_body
+    assert "Benaka Sham" not in home_body
+    assert "Goral Chhabra" not in home_body
+    assert "Akansha" not in home_body
 
     # Final CTA check
     assert "Your Next Great Project Starts With the Right Team." in html
-
-    # Institutional & student attribution check
-    assert "BMSIT&amp;M" in html or "BMSIT&M" in html
-    assert "Harsh Tiwari" in html
-    assert "Benaka Sham" in html
-    assert "Goral Chhabra" in html
-    assert "Akansha" in html
 
     # Verify complete removal of the hero preview mockup section
     assert "AI Healthcare Diagnostic Assistant" not in html
@@ -124,8 +131,19 @@ def test_beams_background_react_component_file():
 
 
 def test_about_section_markup_and_cards(client):
-    """Verify the About section renders team member cards, institution card, and problem/solution story cards."""
-    res = client.get('/')
+    """Verify the Built for BMSIT & M Engineering section renders on /bmsit-engineering and NOT on '/'."""
+    # 1. Homepage '/' must NOT have about-section per removal instructions
+    home_res = client.get('/')
+    assert home_res.status_code == 200
+    home_html = home_res.data.decode('utf-8')
+    assert 'about-section' not in home_html
+    assert 'institution-card' not in home_html
+    assert 'team-cards-grid' not in home_html
+    home_body = home_html.split('<footer')[0]
+    assert 'Harsh Tiwari' not in home_body
+
+    # 2. Dedicated page '/bmsit-engineering' must render the full markup and cards
+    res = client.get('/bmsit-engineering')
     assert res.status_code == 200
     html = res.data.decode('utf-8')
 
@@ -191,7 +209,7 @@ def test_dedicated_multi_page_routes_and_navigation(client):
         ('/students', 'Explore Students'),
         ('/features', 'Features'),
         ('/how-it-works', 'How It Works'),
-        ('/about', 'About Us'),
+        ('/bmsit-engineering', 'BMSIT & M Engineering'),
         ('/contact', 'Contact')
     ]
 
@@ -207,7 +225,7 @@ def test_dedicated_multi_page_routes_and_navigation(client):
         assert 'href="/students"' in html
         assert 'href="/features"' in html
         assert 'href="/how-it-works"' in html
-        assert 'href="/about"' in html
+        assert 'href="/bmsit-engineering"' in html
         assert 'href="/contact"' in html
         assert 'nav-menu-links' in html
         assert 'more-dropdown' not in html
@@ -239,6 +257,32 @@ def test_about_skillsync_dedicated_page(client):
     assert 'class="nav-menu-link active">Introduction</a>' in html
 
 
+def test_bmsit_engineering_dedicated_page(client):
+    """Verify the dedicated '/bmsit-engineering' page renders all institute and team details."""
+    res = client.get('/bmsit-engineering')
+    assert res.status_code == 200
+    html = res.data.decode('utf-8')
+
+    # Core titles and IDT attribution
+    assert "Built for BMSIT &amp; M Engineering" in html
+    assert "Innovation &amp; Design Thinking" in html
+    assert "BMS Institute of Technology and Management" in html or "BMS Institute of Technology &amp; Management" in html
+
+    # Problem and Solution narratives
+    assert "The Problem We Are Solving" in html
+    assert "Our Engineering Solution" in html
+
+    # All 4 team members
+    assert "Harsh Tiwari" in html
+    assert "Benaka Sham" in html
+    assert "Goral Chhabra" in html
+    assert "Akansha" in html
+    assert "Section 13" in html
+
+    # Active navigation highlight
+    assert 'class="nav-menu-link active">BMSIT &amp; M Engineering</a>' in html
+
+
 def test_dedicated_pages_content(client):
     """Verify each dedicated page displays its specialized content."""
     # 1. Features
@@ -253,20 +297,25 @@ def test_dedicated_pages_content(client):
     # 2. How It Works
     res = client.get('/how-it-works')
     html = res.data.decode('utf-8')
-    assert "How SkillSync Works" in html
+    assert "How It Works in 3 Steps" in html or "How SkillSync Works" in html
     assert "Create Your Profile" in html
     assert "Discover Teammates" in html
     assert "Build Your Team" in html
     assert "Frequently Asked Questions" in html
 
-    # 3. About Us
-    res = client.get('/about')
-    html = res.data.decode('utf-8')
-    assert "The Problem We Are Solving" in html
-    assert "Our Engineering Solution" in html
-    assert "BMS Institute of Technology &amp; Management" in html or "BMSIT&amp;M" in html
-    assert "Harsh Tiwari" in html
-    assert "Benaka Sham" in html
+    # 3. Built for BMSIT & M Engineering (/bmsit-engineering and /about)
+    for endpoint in ['/bmsit-engineering', '/about']:
+        res = client.get(endpoint)
+        html = res.data.decode('utf-8')
+        assert "Built for BMSIT &amp; M Engineering" in html
+        assert "The Problem We Are Solving" in html
+        assert "Our Engineering Solution" in html
+        assert "BMS Institute of Technology &amp; Management" in html or "BMSIT&amp;M" in html
+        assert "Harsh Tiwari" in html
+        assert "Benaka Sham" in html
+        assert "Goral Chhabra" in html
+        assert "Akansha" in html
+        assert "Section 13" in html
 
     # 4. Contact
     res = client.get('/contact')

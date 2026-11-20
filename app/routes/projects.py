@@ -196,10 +196,16 @@ def how_it_works():
     return render_template('how_it_works.html')
 
 
+@projects_bp.route('/bmsit-engineering')
+def bmsit_engineering():
+    """Renders the dedicated Built for BMSIT & M Engineering page."""
+    return render_template('bmsit_engineering.html')
+
+
 @projects_bp.route('/about')
 def about():
-    """Renders the dedicated About Us page."""
-    return render_template('about.html')
+    """Renders the dedicated Built for BMSIT & M Engineering page (aliased for /about)."""
+    return render_template('bmsit_engineering.html')
 
 
 @projects_bp.route('/contact', methods=['GET', 'POST'])

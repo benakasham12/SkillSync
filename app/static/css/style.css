@@ -2013,8 +2013,37 @@ textarea.form-control {
    FINAL CALL-TO-ACTION SECTION
    ========================================================================== */
 .cta-section {
-  padding: 4rem 0 6rem 0;
-  background: #ffffff;
+  padding: 4.5rem 0 6rem 0;
+  background: var(--bg);
+}
+
+/* BMSIT Engineering Statistics Strip */
+.bmsit-stats-bar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 2.25rem 0;
+}
+.bmsit-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  text-align: center;
+}
+.bmsit-stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.bmsit-stat-number {
+  font-size: 1.85rem;
+  font-weight: 800;
+  color: var(--primary);
+  letter-spacing: -0.02em;
+}
+.bmsit-stat-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-muted);
 }
 
 .cta-banner-card {
