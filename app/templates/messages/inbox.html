@@ -2,7 +2,9 @@
 {% block title %}Messages &amp; Team Chat - SkillSync{% endblock %}
 
 {% block content %}
-<div class="chat-app-container">
+<div class="chat-app-container" id="chatAppContainer"
+     data-active-conv-id="{{ active_conversation.id if active_conversation else '' }}"
+     data-last-message-id="{{ messages[-1].id if messages else 0 }}">
   <!-- 1. LEFT SIDEBAR: Conversations List -->
   <aside class="chat-sidebar-left" id="chatSidebarLeft">
     <!-- Header -->
@@ -958,8 +960,13 @@
 </style>
 
 <script>
-const activeConvId = {{ active_conversation.id if active_conversation else 'null' }};
-let lastMessageId = {{ messages[-1].id if messages else 0 }};
+const chatContainer = document.querySelector('.chat-app-container');
+const activeConvId = (chatContainer && chatContainer.getAttribute('data-active-conv-id'))
+  ? parseInt(chatContainer.getAttribute('data-active-conv-id'), 10)
+  : null;
+let lastMessageId = (chatContainer && chatContainer.getAttribute('data-last-message-id'))
+  ? parseInt(chatContainer.getAttribute('data-last-message-id'), 10)
+  : 0;
 let pollingTimer = null;
 let unreadPollingTimer = null;
 let selectedFile = null;
@@ -1044,29 +1051,48 @@ function handleTextareaKeydown(e) {
 // Emoji Picker
 function toggleEmojiPopover() {
   const pop = document.getElementById('emojiPopover');
-  pop.style.display = (pop.style.display === 'none') ? 'flex' : 'none';
+  if (pop) {
+    pop.style.display = (pop.style.display === 'none') ? 'flex' : 'none';
+  }
 }
 
 function insertEmoji(emoji) {
   const textarea = document.getElementById('messageTextInput');
-  textarea.value += emoji;
-  textarea.focus();
-  document.getElementById('emojiPopover').style.display = 'none';
+  if (textarea) {
+    textarea.value += emoji;
+    textarea.focus();
+  }
+  const pop = document.getElementById('emojiPopover');
+  if (pop) {
+    pop.style.display = 'none';
+  }
 }
 
 // File Attachment handling
 function handleFileSelected(input) {
   if (input.files && input.files[0]) {
     selectedFile = input.files[0];
-    document.getElementById('previewFileName').textContent = selectedFile.name + ` (${(selectedFile.size / 1024).toFixed(1)} KB)`;
-    document.getElementById('filePreviewBar').style.display = 'flex';
+    const previewName = document.getElementById('previewFileName');
+    const previewBar = document.getElementById('filePreviewBar');
+    if (previewName) {
+      previewName.textContent = selectedFile.name + ` (${(selectedFile.size / 1024).toFixed(1)} KB)`;
+    }
+    if (previewBar) {
+      previewBar.style.display = 'flex';
+    }
   }
 }
 
 function clearSelectedAttachment() {
   selectedFile = null;
-  document.getElementById('fileAttachmentInput').value = '';
-  document.getElementById('filePreviewBar').style.display = 'none';
+  const fileInput = document.getElementById('fileAttachmentInput');
+  const previewBar = document.getElementById('filePreviewBar');
+  if (fileInput) {
+    fileInput.value = '';
+  }
+  if (previewBar) {
+    previewBar.style.display = 'none';
+  }
 }
 
 // Send Message API Call
@@ -1100,7 +1126,8 @@ async function handleSendMessage(e) {
     if (data.success && data.message) {
       textInput.value = '';
       clearSelectedAttachment();
-      document.getElementById('emojiPopover').style.display = 'none';
+      const pop = document.getElementById('emojiPopover');
+      if (pop) pop.style.display = 'none';
       appendMessageToFeed(data.message);
       lastMessageId = Math.max(lastMessageId, data.message.id);
 
@@ -1228,12 +1255,15 @@ async function pollUnreadCounts() {
 
 // Modal: New Chat
 function openNewChatModal() {
-  document.getElementById('newChatModal').style.display = 'flex';
-  document.getElementById('studentSearchFilter').focus();
+  const modal = document.getElementById('newChatModal');
+  const searchInput = document.getElementById('studentSearchFilter');
+  if (modal) modal.style.display = 'flex';
+  if (searchInput) searchInput.focus();
 }
 
 function closeNewChatModal() {
-  document.getElementById('newChatModal').style.display = 'none';
+  const modal = document.getElementById('newChatModal');
+  if (modal) modal.style.display = 'none';
 }
 
 function filterStudentDirectory() {

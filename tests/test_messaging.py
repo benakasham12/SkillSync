@@ -320,3 +320,46 @@ def test_search_and_filters_inbox(app, client):
     resp_search = client.get('/messages?search=Bob')
     assert resp_search.status_code == 200
     assert 'Bob' in resp_search.data.decode('utf-8')
+
+
+def test_inbox_script_syntax_and_data_attributes(app, client):
+    """Verify inbox.html contains valid script without template syntax in <script> and valid data attributes."""
+    import re
+    from pathlib import Path
+
+    # 1. Inspect raw template
+    tmpl_path = Path("app/templates/messages/inbox.html")
+    assert tmpl_path.exists()
+    content = tmpl_path.read_text(encoding="utf-8")
+
+    # Data attributes present on container
+    assert 'data-active-conv-id=' in content
+    assert 'data-last-message-id=' in content
+
+    # Script tag contains zero Jinja template interpolation
+    script_match = re.search(r'<script>(.*?)</script>', content, re.DOTALL)
+    assert script_match is not None
+    js = script_match.group(1)
+    assert '{{' not in js, "Jinja variable interpolation {{ }} found in <script> block"
+    assert '}}' not in js, "Jinja variable interpolation {{ }} found in <script> block"
+    assert '{%' not in js, "Jinja control tag {% %} found in <script> block"
+    assert '%}' not in js, "Jinja control tag {% %} found in <script> block"
+
+    # Verify key variables and functions exist in JS
+    assert 'const activeConvId' in js
+    assert 'let lastMessageId' in js
+    assert 'function handleSendMessage' in js
+    assert 'function pollNewMessages' in js
+    assert 'function appendMessageToFeed' in js
+    assert 'function pollUnreadCounts' in js
+
+    # 2. Rendered inbox page check
+    s1 = create_student(app, 'testuser@example.com', 'Test User')
+    login_student(client, s1, 'testuser@example.com', 'Test User')
+
+    resp = client.get('/messages')
+    assert resp.status_code == 200
+    html = resp.data.decode('utf-8')
+    assert 'data-active-conv-id=""' in html
+    assert 'data-last-message-id="0"' in html
+
