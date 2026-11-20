@@ -30,7 +30,7 @@
   <header class="site-header">
     <nav class="navbar" id="navbar">
       <div class="nav-container">
-        <!-- Left: Hamburger button + Logo & Brand -->
+        <!-- Left: Hamburger button + Logo & Brand + Inline Navigation Links -->
         <div class="nav-left">
           <button class="btn-hamburger" id="sidebarToggleBtn" aria-label="Open navigation menu" aria-controls="githubSidebar" aria-expanded="false" title="Open Navigation Menu">
             <svg class="hamburger-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -46,10 +46,37 @@
             </div>
             <span class="brand-name">SkillSync</span>
           </a>
+
+          <!-- Inline Navigation Links (Single-Row Unified Modern UI) -->
+          <div class="nav-menu-links">
+            <a href="{{ url_for('projects.list_projects') }}" class="nav-pill-btn {% if request.endpoint and 'projects.list' in request.endpoint %}active{% endif %}">Find Projects</a>
+            <a href="{{ url_for('projects.create_project') if current_user_id else url_for('auth.login', next=url_for('projects.create_project')) }}" class="nav-menu-link">Post Project</a>
+            <a href="{{ url_for('projects.landing') }}#features" class="nav-menu-link">Features</a>
+            <a href="{{ url_for('projects.landing') }}#how-it-works" class="nav-menu-link">How It Works</a>
+          </div>
         </div>
 
-        <!-- Right: Messages shortcut + Theme Toggle + User Actions -->
+        <!-- Right: Location, Language, Theme Toggle, Notifications, User Profile Pill -->
         <div class="nav-right">
+          <!-- Location Pill Badge -->
+          <div class="nav-meta-badge" title="Campus &amp; Location: Bengaluru">
+            <svg class="meta-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+              <circle cx="12" cy="10" r="3"></circle>
+            </svg>
+            <span>Bengaluru</span>
+          </div>
+
+          <!-- Language Pill Badge -->
+          <div class="nav-meta-badge" title="Language: English">
+            <svg class="meta-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="2" y1="12" x2="22" y2="12"></line>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+            </svg>
+            <span>EN</span>
+          </div>
+
           <!-- Theme Toggle Button (Light / Dark Mode) -->
           <button class="theme-toggle-btn" id="themeToggleBtn" type="button" aria-label="Switch to Dark Mode" title="Switch to Dark Mode">
             <svg class="theme-icon theme-icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -69,18 +96,23 @@
           </button>
 
           {% if current_user_id %}
-            <!-- Messages direct shortcut with unread badge -->
+            <!-- Messages shortcut with bell notification style and dynamic badge -->
             <a href="{{ url_for('messages.inbox') }}" class="nav-icon-link {% if 'messages' in request.endpoint %}active{% endif %}" id="navMessagesLink" aria-label="Messages" title="Messages">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
               </svg>
+              <span class="sr-only" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0;">Messages</span>
               <span class="badge-count nav-unread-badge" id="navUnreadMessagesBadge" {% if unread_messages_count == 0 %}style="display: none;"{% endif %}>{{ unread_messages_count if unread_messages_count > 0 else '' }}</span>
             </a>
 
-            <!-- Student Profile Avatar Pill -->
+            <!-- Student Profile Avatar Pill with initial, name, and chevron dropdown icon -->
             <a href="{{ url_for('profile.edit_profile') }}" class="nav-user-pill" title="{{ current_user_name }} ({{ current_user_email }})">
-              <div class="user-avatar">{{ (current_user_name or 'U')[:1] }}</div>
+              <div class="user-avatar">{{ (current_user_name or 'B')[:1] }}</div>
               <span class="user-name-text">{{ current_user_name or 'Student' }}</span>
+              <svg class="user-chevron" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
             </a>
           {% else %}
             <a href="{{ url_for('auth.login') }}" class="btn btn-ghost btn-sm">Login</a>

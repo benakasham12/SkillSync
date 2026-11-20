@@ -100,7 +100,7 @@ a:hover {
 }
 
 .nav-container {
-  max-width: 1240px;
+  max-width: 1320px;
   margin: 0 auto;
   padding: 0.75rem 1.5rem;
   display: flex;
@@ -111,13 +111,93 @@ a:hover {
 .nav-left {
   display: flex;
   align-items: center;
-  gap: 0.65rem;
+  gap: 0.85rem;
 }
 
 .nav-right {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.65rem;
+}
+
+/* Inline Navigation Links (Single-Row Modern SaaS Navbar) */
+.nav-menu-links {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-left: 0.75rem;
+}
+
+.nav-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.42rem 1.1rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  background: #1e293b;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+.nav-pill-btn:hover {
+  background: #2563eb;
+  color: #ffffff;
+  border-color: #3b82f6;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+.nav-pill-btn.active {
+  background: #142343;
+  color: #60a5fa;
+  border-color: rgba(59, 130, 246, 0.4);
+  box-shadow: 0 0 14px rgba(59, 130, 246, 0.25);
+}
+
+.nav-menu-link {
+  color: var(--secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+  padding: 0.42rem 0.8rem;
+  border-radius: 8px;
+  transition: color 0.18s ease, background-color 0.18s ease;
+  white-space: nowrap;
+}
+.nav-menu-link:hover {
+  color: var(--text);
+  background: var(--surface-alt);
+}
+
+/* Nav Meta Badges (Location & Language) */
+.nav-meta-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: 9999px;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.825rem;
+  font-weight: 500;
+  user-select: none;
+  cursor: default;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+.nav-meta-badge .meta-icon {
+  color: var(--primary);
+  flex-shrink: 0;
+}
+.nav-meta-badge:hover {
+  border-color: var(--border-focus);
+  color: var(--text);
 }
 
 /* Hamburger toggle button */
@@ -154,7 +234,7 @@ a:hover {
   position: relative;
   width: 38px;
   height: 38px;
-  border-radius: 8px;
+  border-radius: 9999px;
   border: 1px solid var(--border);
   background: var(--surface-alt);
   display: inline-flex;
@@ -200,16 +280,47 @@ a:hover {
   align-items: center;
   gap: 0.55rem;
   background: var(--surface-alt);
-  padding: 0.25rem 0.75rem 0.25rem 0.25rem;
-  border-radius: 6px;
+  padding: 0.28rem 0.85rem 0.28rem 0.32rem;
+  border-radius: 9999px;
   border: 1px solid var(--border);
   text-decoration: none;
-  transition: all 0.2s ease;
+  color: var(--text);
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
 }
 .nav-user-pill:hover {
   border-color: var(--primary);
   background: white;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+.nav-user-pill .user-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.825rem;
+  flex-shrink: 0;
+}
+.nav-user-pill .user-name-text {
+  font-weight: 600;
+  color: inherit;
+  letter-spacing: -0.01em;
+}
+.nav-user-pill .user-chevron {
+  color: var(--text-muted);
+  flex-shrink: 0;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+.nav-user-pill:hover .user-chevron {
+  color: var(--text);
+  transform: translateY(1px);
 }
 
 /* Brand */
@@ -1110,46 +1221,6 @@ textarea.form-control {
 /* ==========================================================================
    Reference UI (Fiverr Style): Sub-Navbar & Hero Section
    ========================================================================== */
-
-/* Sub-Navbar Category Strip */
-.category-subnav-strip {
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  padding: 0.65rem 0;
-  position: relative;
-  z-index: 30;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-}
-.category-subnav-container {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  overflow-x: auto;
-  white-space: nowrap;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-.category-subnav-container::-webkit-scrollbar {
-  display: none;
-}
-.subnav-item {
-  color: var(--text-muted);
-  font-size: 0.85rem;
-  font-weight: 500;
-  text-decoration: none;
-  padding: 0.35rem 0.75rem;
-  border-radius: 6px;
-  transition: all 0.15s ease;
-}
-.subnav-item:hover {
-  color: var(--text);
-  background: var(--surface-alt);
-}
-.subnav-item.active {
-  color: var(--primary);
-  font-weight: 600;
-  background: var(--primary-light);
-}
 
 /* ==========================================================================
    LANDING PAGE HERO SECTION
@@ -2131,6 +2202,9 @@ textarea.form-control {
    RESPONSIVE MEDIA QUERIES
    ========================================================================== */
 @media (max-width: 1024px) {
+  .nav-meta-badge {
+    display: none;
+  }
   .hero-container {
     padding: 0 1rem;
   }
@@ -2148,6 +2222,12 @@ textarea.form-control {
   .footer-top-grid {
     grid-template-columns: 1fr 1fr;
     gap: 2.5rem;
+  }
+}
+
+@media (max-width: 860px) {
+  .nav-menu-links {
+    display: none;
   }
 }
 
@@ -2178,7 +2258,8 @@ textarea.form-control {
   .nav-container {
     padding: 0.65rem 1rem;
   }
-  .user-name-text {
+  .user-name-text,
+  .user-chevron {
     display: none;
   }
   .brand-name {
@@ -3030,14 +3111,61 @@ html:not([data-theme="dark"]) .sidebar-theme-toggle .theme-icon-moon {
   color: #93c5fd;
 }
 
+[data-theme="dark"] .nav-pill-btn {
+  background: #142343;
+  color: #ffffff;
+  border: 1px solid rgba(59, 130, 246, 0.35);
+}
+[data-theme="dark"] .nav-pill-btn:hover {
+  background: #1d4ed8;
+  color: #ffffff;
+  border-color: #60a5fa;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
+}
+[data-theme="dark"] .nav-pill-btn.active {
+  background: #1e3a8a;
+  color: #93c5fd;
+  border-color: #3b82f6;
+  box-shadow: 0 0 16px rgba(59, 130, 246, 0.45);
+}
+
+[data-theme="dark"] .nav-menu-link {
+  color: #94a3b8;
+}
+[data-theme="dark"] .nav-menu-link:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="dark"] .nav-meta-badge {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+}
+[data-theme="dark"] .nav-meta-badge .meta-icon {
+  color: #60a5fa;
+}
+[data-theme="dark"] .nav-meta-badge:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+}
+
 [data-theme="dark"] .nav-user-pill {
-  background: var(--surface-alt);
-  border-color: var(--border);
-  color: var(--text);
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.14);
+  color: #f8fafc;
 }
 [data-theme="dark"] .nav-user-pill:hover {
-  background: var(--surface);
-  border-color: var(--primary);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(59, 130, 246, 0.5);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+[data-theme="dark"] .nav-user-pill .user-chevron {
+  color: #94a3b8;
+}
+[data-theme="dark"] .nav-user-pill:hover .user-chevron {
+  color: #ffffff;
 }
 [data-theme="dark"] .nav-unread-badge {
   border-color: var(--surface);
