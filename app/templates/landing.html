@@ -313,7 +313,7 @@
                 Led by <strong>{{ proj.owner_name }}</strong> &bull; {{ proj.owner_branch or 'CSE' }} {{ proj.owner_year or '' }}
               </p>
 
-              <p class="showcase-desc">
+              <p class="showcase-desc showcase-description">
                 {{ proj.description[:130] }}{% if proj.description|length > 130 %}...{% endif %}
               </p>
 
@@ -368,14 +368,14 @@
             SkillSync was designed and built as an <strong>Innovation &amp; Design Thinking (IDT)</strong> project by Computer Science and Engineering students at <strong>BMS Institute of Technology and Management (BMSIT&amp;M)</strong>.
           </p>
 
-          <div class="about-story-card">
+          <div class="about-story-card story-card">
             <h4 class="story-heading">The Problem We Are Solving</h4>
             <p class="story-text">
               Every semester, thousands of engineering students struggle with project group formation. Grouping exclusively by friendship circles or through ad-hoc WhatsApp messages routinely causes severe skill imbalances: teams end up with four frontend developers and no backend lead, or conflicting class schedules that stall development.
             </p>
           </div>
 
-          <div class="about-story-card">
+          <div class="about-story-card story-card">
             <h4 class="story-heading">Our Engineering Solution</h4>
             <p class="story-text">
               SkillSync eliminates the guesswork. Using deterministic candidate ranking, explicit skill requirement tagging (must-have vs. nice-to-have), availability matrix comparison, and live skill coverage analysis, students assemble well-rounded, capable teams equipped to deliver top-tier engineering coursework.
@@ -401,7 +401,7 @@
 
           <h4 class="roster-heading">Project Development Team</h4>
           <div class="team-cards-grid">
-            <div class="member-card">
+            <div class="member-card team-member-card">
               <div class="member-avatar">HT</div>
               <div class="member-details">
                 <span class="member-name">Harsh Tiwari</span>
@@ -409,7 +409,7 @@
               </div>
             </div>
 
-            <div class="member-card">
+            <div class="member-card team-member-card">
               <div class="member-avatar">BS</div>
               <div class="member-details">
                 <span class="member-name">Benaka Sham</span>
@@ -417,7 +417,7 @@
               </div>
             </div>
 
-            <div class="member-card">
+            <div class="member-card team-member-card">
               <div class="member-avatar">GC</div>
               <div class="member-details">
                 <span class="member-name">Goral Chhabra</span>
@@ -425,7 +425,7 @@
               </div>
             </div>
 
-            <div class="member-card">
+            <div class="member-card team-member-card">
               <div class="member-avatar">AK</div>
               <div class="member-details">
                 <span class="member-name">Akansha</span>

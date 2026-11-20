@@ -120,3 +120,63 @@ def test_beams_background_react_component_file():
     assert "cancelAnimationFrame" in code
     assert "prefers-reduced-motion" in code
 
+
+def test_about_section_markup_and_cards(client):
+    """Verify the About section renders team member cards, institution card, and problem/solution story cards."""
+    res = client.get('/')
+    assert res.status_code == 200
+    html = res.data.decode('utf-8')
+
+    # Card containers
+    assert 'about-section' in html
+    assert 'about-grid' in html
+    assert 'about-story-card' in html
+    assert 'The Problem We Are Solving' in html
+    assert 'Our Engineering Solution' in html
+    assert 'institution-card' in html
+    assert 'BMS Institute of Technology &amp; Management' in html
+    assert 'team-cards-grid' in html
+
+    # All 4 team members
+    assert 'Harsh Tiwari' in html
+    assert 'Benaka Sham' in html
+    assert 'Goral Chhabra' in html
+    assert 'Akansha' in html
+    assert 'member-card' in html
+    assert 'member-name' in html
+    assert 'member-role' in html
+    assert 'CSE &bull; Section 13' in html
+    assert 'academic-note' in html
+
+
+def test_css_about_section_visibility_and_alignment():
+    """Verify CSS has readable dark navy (#111827) names, slate grey roles (#64748B), white card backgrounds, and responsive container padding."""
+    from pathlib import Path
+    css_path = Path("app/static/css/style.css")
+    assert css_path.exists()
+    css = css_path.read_text(encoding="utf-8")
+
+    # Team member names dark navy (#111827)
+    assert "#111827" in css
+
+    # Department and section details slate grey (#64748B)
+    assert "#64748B" in css
+
+    # Team member cards have white background and proper borders
+    assert ".member-card" in css
+    assert ".member-avatar" in css
+
+    # Story cards have dark heading and readable text
+    assert ".story-heading" in css
+    assert ".story-text" in css
+
+    # Landing container responsive padding (px-4, px-6, lg:px-8 equivalents: 1rem, 1.5rem, 2rem)
+    assert ".landing-container" in css
+    assert "padding-left: 2rem" in css or "padding: 0 2rem" in css or "padding: 0 1.5rem" in css
+
+    # Dark mode overrides ensure proper contrast and no white-on-white text
+    assert '[data-theme="dark"] .member-card' in css
+    assert '[data-theme="dark"] .about-story-card' in css
+    assert '[data-theme="dark"] .institution-card' in css
+
+

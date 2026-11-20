@@ -726,9 +726,26 @@ body.sidebar-lock-scroll {
 
 .landing-container {
   max-width: 1240px;
-  margin: 0 auto;
-  padding: 0 1.5rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
   width: 100%;
+  box-sizing: border-box;
+}
+
+@media (min-width: 1024px) {
+  .landing-container {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .landing-container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
 }
 
 .landing-alerts-container {
@@ -1643,6 +1660,10 @@ textarea.form-control {
    ========================================================================== */
 .about-section {
   background: #f8fafc;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: visible;
+  position: relative;
 }
 
 .about-grid {
@@ -1650,45 +1671,67 @@ textarea.form-control {
   grid-template-columns: 1.15fr 0.95fr;
   gap: 3.5rem;
   align-items: flex-start;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .about-narrative {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 .about-lead {
   font-size: 1.1rem;
   color: #334155;
   line-height: 1.65;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
 }
-.about-story-card {
-  background: white;
+.about-story-card,
+.story-card {
+  background: #ffffff;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 1.5rem;
   box-shadow: var(--shadow-sm);
+  box-sizing: border-box;
+  width: 100%;
 }
-.story-heading {
+.story-heading,
+.about-story-card h4,
+.story-card h4 {
   font-size: 1.05rem;
   font-weight: 700;
-  color: #0f172a;
+  color: #111827;
   margin-bottom: 0.5rem;
+  line-height: 1.4;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
 }
-.story-text {
+.story-text,
+.about-story-card p,
+.story-card p {
   font-size: 0.92rem;
   color: #475569;
   line-height: 1.6;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
 }
 
 .about-team-panel {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .institution-card {
-  background: white;
+  background: #ffffff;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 1.5rem;
@@ -1696,6 +1739,8 @@ textarea.form-control {
   gap: 1.25rem;
   align-items: center;
   box-shadow: var(--shadow-sm);
+  box-sizing: border-box;
+  width: 100%;
 }
 .inst-icon-wrap {
   width: 52px;
@@ -1708,37 +1753,49 @@ textarea.form-control {
   justify-content: center;
   flex-shrink: 0;
 }
-.inst-name {
+.inst-name,
+.institution-card h3 {
   font-size: 1.1rem;
   font-weight: 800;
-  color: #0f172a;
+  color: #111827;
   line-height: 1.3;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
 }
 .inst-dept {
   font-size: 0.85rem;
-  color: var(--secondary);
+  color: #64748B;
   font-weight: 600;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
 }
 .inst-course {
   font-size: 0.8rem;
-  color: var(--text-muted);
+  color: #64748B;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
 }
 
 .roster-heading {
   font-size: 0.9rem;
   font-weight: 700;
   text-transform: uppercase;
-  color: #64748b;
+  color: #475569;
   letter-spacing: 0.05em;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
 }
 
 .team-cards-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 1rem;
+  width: 100%;
+  box-sizing: border-box;
 }
-.member-card {
-  background: white;
+.member-card,
+.team-member-card {
+  background: #ffffff;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 1rem;
@@ -1746,9 +1803,12 @@ textarea.form-control {
   align-items: center;
   gap: 0.75rem;
   box-shadow: var(--shadow-sm);
-  transition: transform 0.2s ease;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+  box-sizing: border-box;
+  min-width: 0;
 }
-.member-card:hover {
+.member-card:hover,
+.team-member-card:hover {
   transform: translateY(-2px);
   border-color: #cbd5e1;
 }
@@ -1757,7 +1817,7 @@ textarea.form-control {
   height: 38px;
   border-radius: 50%;
   background: var(--primary-gradient);
-  color: white;
+  color: #ffffff;
   font-weight: 700;
   font-size: 0.85rem;
   display: flex;
@@ -1765,26 +1825,44 @@ textarea.form-control {
   justify-content: center;
   flex-shrink: 0;
 }
-.member-name {
+.member-details {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.member-name,
+.member-card .member-name,
+.team-member-card .member-name {
   display: block;
   font-size: 0.9rem;
   font-weight: 700;
-  color: #0f172a;
+  color: #111827;
+  line-height: 1.3;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
 }
-.member-role {
+.member-role,
+.member-card .member-role,
+.team-member-card .member-role {
   font-size: 0.75rem;
-  color: #64748b;
+  color: #64748B;
+  line-height: 1.4;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
 }
 
 .academic-note {
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  font-size: 0.8rem;
-  color: #64748b;
+  font-size: 0.82rem;
+  color: #475569;
   background: #f1f5f9;
+  border: 1px solid #e2e8f0;
   padding: 0.75rem 1rem;
   border-radius: 8px;
+  box-sizing: border-box;
+  width: 100%;
 }
 .academic-note svg {
   color: var(--primary);
@@ -2736,8 +2814,11 @@ body,
 .feature-card,
 .showcase-card,
 .story-card,
+.about-story-card,
 .institution-card,
+.member-card,
 .team-member-card,
+.academic-note,
 .table {
   transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
@@ -3157,6 +3238,10 @@ html:not([data-theme="dark"]) .sidebar-theme-toggle .theme-icon-moon {
 [data-theme="dark"] .showcase-title a:hover {
   color: var(--primary);
 }
+[data-theme="dark"] .showcase-lead {
+  color: var(--text-muted);
+}
+[data-theme="dark"] .showcase-desc,
 [data-theme="dark"] .showcase-description {
   color: var(--text-muted);
 }
@@ -3170,14 +3255,19 @@ html:not([data-theme="dark"]) .sidebar-theme-toggle .theme-icon-moon {
 [data-theme="dark"] .about-paragraph {
   color: var(--text-muted);
 }
+[data-theme="dark"] .about-story-card,
 [data-theme="dark"] .story-card {
   background: var(--surface);
   border-color: var(--border);
 }
+[data-theme="dark"] .story-heading,
+[data-theme="dark"] .about-story-card h4,
 [data-theme="dark"] .story-card h4 {
   color: var(--text);
 }
-[data-theme="dark"] .story-text {
+[data-theme="dark"] .story-text,
+[data-theme="dark"] .about-story-card p,
+[data-theme="dark"] .story-card p {
   color: var(--text-muted);
 }
 [data-theme="dark"] .institution-card {
@@ -3185,15 +3275,42 @@ html:not([data-theme="dark"]) .sidebar-theme-toggle .theme-icon-moon {
   border-color: var(--border);
 }
 [data-theme="dark"] .inst-name,
-[data-theme="dark"] .inst-dept {
+[data-theme="dark"] .institution-card h3 {
   color: var(--text);
 }
+[data-theme="dark"] .inst-dept,
+[data-theme="dark"] .inst-course {
+  color: var(--text-muted);
+}
+[data-theme="dark"] .inst-icon-wrap {
+  background: rgba(99, 102, 241, 0.2);
+  color: #a5b4fc;
+}
+[data-theme="dark"] .roster-heading {
+  color: var(--text-muted);
+}
+[data-theme="dark"] .member-card,
 [data-theme="dark"] .team-member-card {
   background: var(--surface);
   border-color: var(--border);
 }
-[data-theme="dark"] .member-name {
+[data-theme="dark"] .member-name,
+[data-theme="dark"] .member-card .member-name,
+[data-theme="dark"] .team-member-card .member-name {
   color: var(--text);
+}
+[data-theme="dark"] .member-role,
+[data-theme="dark"] .member-card .member-role,
+[data-theme="dark"] .team-member-card .member-role {
+  color: var(--text-muted);
+}
+[data-theme="dark"] .academic-note {
+  background: var(--surface-alt);
+  border-color: var(--border);
+  color: var(--text-muted);
+}
+[data-theme="dark"] .academic-note svg {
+  color: #818cf8;
 }
 [data-theme="dark"] .cta-section {
   background: var(--bg);
