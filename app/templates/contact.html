@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block title %}Contact Us - SkillSync Support & Campus Outreach{% endblock %}
+
+{% block layout %}
+<div class="dedicated-page-wrapper">
+  <!-- Page Header -->
+  <section class="page-hero-header">
+    <div class="landing-container">
+      <span class="section-eyebrow">Support &amp; Campus Outreach</span>
+      <h1 class="page-hero-title">Get in Touch with SkillSync</h1>
+      <p class="page-hero-subtitle">
+        Have questions, ideas for collaboration, or need help with team formation? Reach out directly to the BMSIT&amp;M engineering team.
+      </p>
+    </div>
+  </section>
+
+  <!-- Contact Grid Section -->
+  <section class="section contact-section">
+    <div class="landing-container">
+      <!-- Flash Messages for Contact -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="landing-alerts-container" style="margin-bottom: 2rem;">
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }}">
+                <span>{{ message }}</span>
+                <button onclick="this.parentElement.style.display='none'" style="background:none; border:none; cursor:pointer; font-size:1.1rem; line-height:1;">&times;</button>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <div class="contact-grid">
+        <!-- Contact Form -->
+        <div class="contact-form-card">
+          <h2 class="contact-card-title">Send Us a Message</h2>
+          <p class="contact-card-subtitle">Fill out the form below and an IDT project team representative will respond promptly.</p>
+
+          <form action="{{ url_for('projects.contact') }}" method="POST" class="contact-form">
+            <div class="form-group-row">
+              <div class="form-group">
+                <label for="contactName" class="form-label">Full Name <span class="required">*</span></label>
+                <input type="text" id="contactName" name="name" class="form-control" placeholder="e.g. Benaka Sham" required value="{{ current_user_name if current_user_name else '' }}">
+              </div>
+              <div class="form-group">
+                <label for="contactEmail" class="form-label">Student / Email Address <span class="required">*</span></label>
+                <input type="email" id="contactEmail" name="email" class="form-control" placeholder="e.g. student@bmsit.in" required value="{{ current_user_email if current_user_email else '' }}">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="contactSubject" class="form-label">Inquiry Topic</label>
+              <select id="contactSubject" name="subject" class="form-control">
+                <option value="General Question">General Platform Question</option>
+                <option value="Team Matching Support">Team Matching &amp; Algorithm Support</option>
+                <option value="Bug Report">Report a Platform Issue</option>
+                <option value="Coursework Integration">Coursework / Faculty Integration</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="contactMessage" class="form-label">Message Details <span class="required">*</span></label>
+              <textarea id="contactMessage" name="message" rows="5" class="form-control" placeholder="Describe your question, project inquiry, or feedback..." required></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-submit-contact">
+              <span>Send Message</span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+            </button>
+          </form>
+        </div>
+
+        <!-- Campus & Department Information Card -->
+        <div class="contact-info-panel">
+          <div class="contact-info-card">
+            <div class="info-header-row">
+              <div class="info-icon-box gradient-blue">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+              </div>
+              <div>
+                <h3 class="info-card-title">Campus Location</h3>
+                <p class="info-card-text">BMS Institute of Technology &amp; Management</p>
+              </div>
+            </div>
+            <p class="info-detail-body">
+              Doddaballapur Main Road, Avalahalli, Yelahanka,<br>
+              Bengaluru, Karnataka 560064, India
+            </p>
+          </div>
+
+          <div class="contact-info-card">
+            <div class="info-header-row">
+              <div class="info-icon-box gradient-purple">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+              </div>
+              <div>
+                <h3 class="info-card-title">Academic Department</h3>
+                <p class="info-card-text">Dept of Computer Science &amp; Engineering</p>
+              </div>
+            </div>
+            <p class="info-detail-body">
+              Section 13 &bull; Innovation &amp; Design Thinking Laboratory<br>
+              Email: <code>skillsync.bmsit@gmail.com</code>
+            </p>
+          </div>
+
+          <div class="contact-info-card">
+            <div class="info-header-row">
+              <div class="info-icon-box gradient-indigo">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+              </div>
+              <div>
+                <h3 class="info-card-title">Student Hours</h3>
+                <p class="info-card-text">Monday &ndash; Friday: 9:00 AM &ndash; 5:00 PM IST</p>
+              </div>
+            </div>
+            <p class="info-detail-body">
+              For security or community moderation inquiries, you can also submit a report directly via the <a href="{{ url_for('admin.submit_report') }}" style="color:var(--primary); font-weight:600;">Reports System</a>.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock layout %}

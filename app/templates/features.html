@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block title %}Features - SkillSync Engineering Collaboration{% endblock %}
+
+{% block layout %}
+<div class="dedicated-page-wrapper">
+  <!-- Page Header -->
+  <section class="page-hero-header">
+    <div class="landing-container">
+      <span class="section-eyebrow">Engineered For Student Success</span>
+      <h1 class="page-hero-title">Designed for Modern Engineering Projects</h1>
+      <p class="page-hero-subtitle">
+        SkillSync replaces chaotic group formation with structured, data-driven collaboration tools tailored specifically for engineering students.
+      </p>
+    </div>
+  </section>
+
+  <!-- Main Features Section -->
+  <section class="section features-dedicated-section">
+    <div class="landing-container">
+      <div class="features-grid">
+        <!-- Feature 1: Smart Team Matching -->
+        <div class="feature-card">
+          <div class="feature-icon-wrapper gradient-blue">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <circle cx="12" cy="6" r="2"></circle>
+              <circle cx="12" cy="18" r="2"></circle>
+              <line x1="12" y1="8" x2="12" y2="16"></line>
+            </svg>
+          </div>
+          <div class="feature-tag">Deterministic Engine</div>
+          <h3 class="feature-title">Smart Team Matching</h3>
+          <p class="feature-description">
+            Find teammates based on skills and interests. Our deterministic algorithm computes multi-attribute scores balancing must-have technical proficiencies (65%), overlapping free study hours (25%), and shared project domains (10%).
+          </p>
+          <ul class="feature-bullets">
+            <li>No random groupings or biased selections</li>
+            <li>Prioritizes critical must-have skill requirements</li>
+            <li>Instant compatibility percentage ranking</li>
+          </ul>
+        </div>
+
+        <!-- Feature 2: Skill-Based Profiles -->
+        <div class="feature-card">
+          <div class="feature-icon-wrapper gradient-purple">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+          </div>
+          <div class="feature-tag">Verified Profiles</div>
+          <h3 class="feature-title">Skill-Based Profiles</h3>
+          <p class="feature-description">
+            Showcase your technical and creative abilities. Add languages, frameworks, cloud tools, or UI/UX proficiencies with verified experience levels, project links, and your weekly available time slots.
+          </p>
+          <ul class="feature-bullets">
+            <li>Beginner, Intermediate, and Expert competency tiers</li>
+            <li>Weekly availability grid (Morning, Afternoon, Evening, Night)</li>
+            <li>Profile readiness checks guarantee active discovery quality</li>
+          </ul>
+        </div>
+
+        <!-- Feature 3: Project Collaboration -->
+        <div class="feature-card">
+          <div class="feature-icon-wrapper gradient-indigo">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+          </div>
+          <div class="feature-tag">Team Assembly</div>
+          <h3 class="feature-title">Project Collaboration</h3>
+          <p class="feature-description">
+            Connect with students who share your goals. Create detailed project proposals with declared team caps, track live team skill coverage, and send formal project invitations that respect student privacy.
+          </p>
+          <ul class="feature-bullets">
+            <li>Dynamic skill coverage gap analysis</li>
+            <li>Structured invitation dispatch &amp; acceptance flow</li>
+            <li>Automatic privacy protection for contact details</li>
+          </ul>
+        </div>
+
+        <!-- Feature 4: Discover Opportunities -->
+        <div class="feature-card">
+          <div class="feature-icon-wrapper gradient-cyan">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+            </svg>
+          </div>
+          <div class="feature-tag">Campus Exploration</div>
+          <h3 class="feature-title">Discover Opportunities</h3>
+          <p class="feature-description">
+            Find interesting projects and potential teammates across BMSIT&amp;M departments. Search and filter by course code, technical requirements, or branch to discover projects matching your exact skill set.
+          </p>
+          <ul class="feature-bullets">
+            <li>Filter by IDT, Capstone, Hackathons, or Coursework</li>
+            <li>Real-time capacity tracking (e.g. 2 of 4 members joined)</li>
+            <li>Direct visibility into team tech stacks</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Deep Dive: The Matching Formula -->
+      <div class="deep-dive-card">
+        <div class="deep-dive-content">
+          <span class="section-eyebrow">Algorithm Breakdown</span>
+          <h3 class="deep-dive-title">The Deterministic Matching Engine</h3>
+          <p class="deep-dive-lead">
+            Unlike superficial social matchers, SkillSync computes compatibility mathematically using student-verified profiles and declared requirements.
+          </p>
+          
+          <div class="formula-breakdown-grid">
+            <div class="formula-pillar">
+              <div class="pillar-weight">65%</div>
+              <h4 class="pillar-title">Technical Skill Coverage</h4>
+              <p class="pillar-desc">Must-have requirements weighted against self-reported competencies with proficiency multipliers.</p>
+            </div>
+            <div class="formula-pillar">
+              <div class="pillar-weight">25%</div>
+              <h4 class="pillar-title">Schedule Availability</h4>
+              <p class="pillar-desc">Direct overlap across weekly morning, afternoon, evening, and night study time blocks.</p>
+            </div>
+            <div class="formula-pillar">
+              <div class="pillar-weight">10%</div>
+              <h4 class="pillar-title">Domain Interests</h4>
+              <p class="pillar-desc">Aligned engineering focus areas such as AI, Web Systems, Cloud DevOps, and IoT hardware.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Banner -->
+  <section class="section cta-section">
+    <div class="landing-container">
+      <div class="cta-banner-card">
+        <div class="cta-content">
+          <div class="cta-badge">Ready to Assemble Your Team?</div>
+          <h2 class="cta-heading">Your Next Great Project Starts With the Right Team.</h2>
+          <p class="cta-subheading">
+            Explore active engineering projects or post your proposal today.
+          </p>
+          <div class="cta-actions-group">
+            <a href="{{ url_for('projects.list_projects') }}" class="btn btn-cta-primary">
+              <span>Find Projects</span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+            </a>
+            <a href="{{ url_for('profile.list_students') }}" class="btn btn-cta-secondary">
+              <span>Explore Students</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock layout %}

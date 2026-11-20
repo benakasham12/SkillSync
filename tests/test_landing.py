@@ -182,3 +182,90 @@ def test_css_about_section_visibility_and_alignment():
     assert '[data-theme="dark"] .institution-card' in css
 
 
+def test_dedicated_multi_page_routes_and_navigation(client):
+    """Verify all major sections have dedicated independent pages with direct header navigation."""
+    pages = [
+        ('/', 'Home'),
+        ('/projects', 'Find Projects'),
+        ('/students', 'Explore Students'),
+        ('/features', 'Features'),
+        ('/how-it-works', 'How It Works'),
+        ('/about', 'About Us'),
+        ('/contact', 'Contact')
+    ]
+
+    for url, label in pages:
+        res = client.get(url)
+        assert res.status_code == 200, f"Page {url} failed with {res.status_code}"
+        html = res.data.decode('utf-8')
+
+        # Header contains all 8 direct navigation links on desktop without More dropdown
+        assert 'href="/"' in html
+        assert 'href="/projects"' in html
+        assert 'href="/students"' in html
+        assert 'href="/features"' in html
+        assert 'href="/how-it-works"' in html
+        assert 'href="/about"' in html
+        assert 'href="/contact"' in html
+        assert 'nav-menu-links' in html
+        assert 'more-dropdown' not in html
+
+        # Active link highlight
+        assert 'nav-menu-link' in html
+        assert 'active' in html
+
+
+def test_dedicated_pages_content(client):
+    """Verify each dedicated page displays its specialized content."""
+    # 1. Features
+    res = client.get('/features')
+    html = res.data.decode('utf-8')
+    assert "Designed for Modern Engineering Projects" in html
+    assert "Deterministic Matching Engine" in html
+    assert "65%" in html
+    assert "25%" in html
+    assert "10%" in html
+
+    # 2. How It Works
+    res = client.get('/how-it-works')
+    html = res.data.decode('utf-8')
+    assert "How SkillSync Works" in html
+    assert "Create Your Profile" in html
+    assert "Discover Teammates" in html
+    assert "Build Your Team" in html
+    assert "Frequently Asked Questions" in html
+
+    # 3. About Us
+    res = client.get('/about')
+    html = res.data.decode('utf-8')
+    assert "The Problem We Are Solving" in html
+    assert "Our Engineering Solution" in html
+    assert "BMS Institute of Technology &amp; Management" in html or "BMSIT&amp;M" in html
+    assert "Harsh Tiwari" in html
+    assert "Benaka Sham" in html
+
+    # 4. Contact
+    res = client.get('/contact')
+    html = res.data.decode('utf-8')
+    assert "Get in Touch with SkillSync" in html
+    assert "Send Us a Message" in html
+    assert "Campus Location" in html
+
+    # 5. Contact Form Submission
+    post_res = client.post('/contact', data={
+        'name': 'Test Student',
+        'email': 'student@bmsit.in',
+        'subject': 'General Question',
+        'message': 'Testing multi-page contact form dispatch.'
+    }, follow_redirects=True)
+    assert post_res.status_code == 200
+    assert "Thank you for reaching out" in post_res.data.decode('utf-8')
+
+    # 6. Students Directory
+    res = client.get('/students')
+    html = res.data.decode('utf-8')
+    assert "Explore Talented Engineering Students" in html
+    assert "directory-search-input" in html
+
+
+

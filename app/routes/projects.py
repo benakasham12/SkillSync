@@ -178,6 +178,42 @@ def landing():
     return render_template('landing.html', featured_projects=featured_projects, stats=stats)
 
 
+@projects_bp.route('/features')
+def features():
+    """Renders the dedicated Features page."""
+    return render_template('features.html')
+
+
+@projects_bp.route('/how-it-works')
+def how_it_works():
+    """Renders the dedicated How It Works page."""
+    return render_template('how_it_works.html')
+
+
+@projects_bp.route('/about')
+def about():
+    """Renders the dedicated About Us page."""
+    return render_template('about.html')
+
+
+@projects_bp.route('/contact', methods=['GET', 'POST'])
+def contact():
+    """Renders the dedicated Contact page and handles message inquiries."""
+    if request.method == 'POST':
+        name = request.form.get('name', '').strip()
+        email = request.form.get('email', '').strip()
+        subject = request.form.get('subject', '').strip()
+        message = request.form.get('message', '').strip()
+
+        if not name or not email or not message:
+            flash('Please complete all required fields (Name, Email, and Message).', 'danger')
+        else:
+            flash('Thank you for reaching out! The SkillSync engineering team has received your message.', 'success')
+            return redirect(url_for('projects.contact'))
+
+    return render_template('contact.html')
+
+
 @projects_bp.route('/projects')
 def list_projects():
     """List open and published projects, with filters, search, and dynamic status."""

@@ -30,12 +30,12 @@
 
     <div class="landing-container hero-container">
       <div class="hero-content">
-        <!-- Main Headline (Inspired by Reference UI: "Hire talent obsessed with getting it right") -->
+        <!-- Main Headline -->
         <h1 class="hero-headline">
           Find talent obsessed with getting it right
         </h1>
 
-        <!-- Subtitle (Preserving key copy for test expectations) -->
+        <!-- Subtitle -->
         <p class="hero-subtitle">
           Find Your Perfect Team. Build Something Amazing. Connect with talented students, discover complementary skills, and find the perfect teammates to turn your project ideas into reality.
         </p>
@@ -49,7 +49,7 @@
               <polyline points="12 5 19 12 12 19"></polyline>
             </svg>
           </a>
-          <a href="#how-it-works" class="btn btn-hero-secondary">
+          <a href="{{ url_for('projects.how_it_works') }}" class="btn btn-hero-secondary">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="10"></circle>
               <polygon points="10 8 16 12 10 16 10 8"></polygon>
@@ -57,281 +57,96 @@
             <span>Explore How It Works</span>
           </a>
         </div>
-
       </div>
     </div>
   </section>
 
-  <!-- 2. FEATURES SECTION -->
-  <section class="section features-section" id="features">
+  <!-- 2. SHORT INTRODUCTION TO SKILLSYNC -->
+  <section class="section home-intro-section" id="introduction">
     <div class="landing-container">
       <div class="section-header-center">
-        <span class="section-eyebrow">Engineered For Student Success</span>
-        <h2 class="section-title">Designed for Modern Engineering Projects</h2>
+        <span class="section-eyebrow">A Better Way to Build</span>
+        <h2 class="section-title">Introduction to SkillSync</h2>
         <p class="section-subtitle">
-          SkillSync replaces chaotic group formation with structured, data-driven collaboration tools tailored for engineering students.
+          SkillSync is an engineering platform that replaces chaotic student group chats with mathematical compatibility, verified student skills, and transparent schedule alignment.
         </p>
       </div>
 
-      <div class="features-grid">
-        <!-- Feature 1: Smart Team Matching -->
-        <div class="feature-card">
-          <div class="feature-icon-wrapper gradient-blue">
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"></circle>
-              <circle cx="12" cy="12" r="6"></circle>
-              <circle cx="12" cy="12" r="2"></circle>
-            </svg>
+      <!-- Quick Platform Pillars -->
+      <div class="home-pillars-grid">
+        <div class="pillar-card">
+          <div class="pillar-icon-box gradient-blue">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="6" r="2"></circle><circle cx="12" cy="18" r="2"></circle><line x1="12" y1="8" x2="12" y2="16"></line></svg>
           </div>
-          <div class="feature-tag">Deterministic Engine</div>
-          <h3 class="feature-title">Smart Team Matching</h3>
-          <p class="feature-description">
-            Find teammates based on skills and interests. Our deterministic algorithm computes multi-attribute scores balancing must-have technical proficiencies (65%), overlapping free study hours (25%), and shared project domains (10%).
-          </p>
-          <ul class="feature-bullets">
-            <li>No random groupings or biased selections</li>
-            <li>Prioritizes critical must-have skill requirements</li>
-            <li>Instant compatibility percentage ranking</li>
-          </ul>
+          <h3 class="pillar-name">Smart Team Matching</h3>
+          <p class="pillar-text">Deterministic 65/25/10 scoring balancing required skills, free hours, and shared engineering interests.</p>
+          <a href="{{ url_for('projects.features') }}" class="pillar-link">Explore Features &rarr;</a>
         </div>
 
-        <!-- Feature 2: Skill-Based Profiles -->
-        <div class="feature-card">
-          <div class="feature-icon-wrapper gradient-purple">
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-              <circle cx="12" cy="7" r="4"></circle>
-            </svg>
+        <div class="pillar-card">
+          <div class="pillar-icon-box gradient-purple">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
           </div>
-          <div class="feature-tag">Verified Profiles</div>
-          <h3 class="feature-title">Skill-Based Profiles</h3>
-          <p class="feature-description">
-            Showcase your technical and creative abilities. Add languages, frameworks, cloud tools, or UI/UX proficiencies with verified experience levels, project links, and your weekly available time slots.
-          </p>
-          <ul class="feature-bullets">
-            <li>Beginner, Intermediate, and Expert competency tiers</li>
-            <li>Weekly availability grid (Morning, Afternoon, Evening, Night)</li>
-            <li>Profile readiness checks guarantee active discovery quality</li>
-          </ul>
+          <h3 class="pillar-name">Skill-Based Profiles</h3>
+          <p class="pillar-text">Verified proficiencies, project experience links, and weekly schedule blocks across BMSIT&amp;M departments.</p>
+          <a href="{{ url_for('profile.list_students') }}" class="pillar-link">Explore Students &rarr;</a>
         </div>
 
-        <!-- Feature 3: Project Collaboration -->
-        <div class="feature-card">
-          <div class="feature-icon-wrapper gradient-indigo">
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-              <circle cx="9" cy="7" r="4"></circle>
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-            </svg>
+        <div class="pillar-card">
+          <div class="pillar-icon-box gradient-indigo">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
           </div>
-          <div class="feature-tag">Team Assembly</div>
-          <h3 class="feature-title">Project Collaboration</h3>
-          <p class="feature-description">
-            Connect with students who share your goals. Create detailed project proposals with declared team caps, track live team skill coverage, and send formal project invitations that respect student privacy.
-          </p>
-          <ul class="feature-bullets">
-            <li>Dynamic skill coverage gap analysis</li>
-            <li>Structured invitation dispatch &amp; acceptance flow</li>
-            <li>Automatic privacy protection for contact details</li>
-          </ul>
+          <h3 class="pillar-name">Project Collaboration</h3>
+          <p class="pillar-text">Track live skill coverage, manage invitation dispatches, and coordinate in real-time project workspaces.</p>
+          <a href="{{ url_for('projects.list_projects') }}" class="pillar-link">Find Projects &rarr;</a>
         </div>
 
-        <!-- Feature 4: Discover Opportunities -->
-        <div class="feature-card">
-          <div class="feature-icon-wrapper gradient-cyan">
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-            </svg>
+        <div class="pillar-card">
+          <div class="pillar-icon-box gradient-cyan">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
           </div>
-          <div class="feature-tag">Campus Exploration</div>
-          <h3 class="feature-title">Discover Opportunities</h3>
-          <p class="feature-description">
-            Find interesting projects and potential teammates across BMSIT&amp;M departments. Search and filter by course code, technical requirements, or branch to discover projects matching your exact skill set.
-          </p>
-          <ul class="feature-bullets">
-            <li>Filter by IDT, Capstone, Hackathons, or Coursework</li>
-            <li>Real-time capacity tracking (e.g. 2 of 4 members joined)</li>
-            <li>Direct visibility into team tech stacks</li>
-          </ul>
+          <h3 class="pillar-name">Discover Opportunities</h3>
+          <p class="pillar-text">Explore capstones, IDT initiatives, and hackathon teams actively recruiting your exact technical stack.</p>
+          <a href="{{ url_for('projects.how_it_works') }}" class="pillar-link">How It Works &rarr;</a>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- 3. HOW IT WORKS SECTION -->
-  <section class="section how-it-works-section" id="how-it-works">
-    <div class="landing-container">
-      <div class="section-header-center">
-        <span class="section-eyebrow">Seamless 3-Step Journey</span>
-        <h2 class="section-title">How SkillSync Works</h2>
-        <p class="section-subtitle">
-          From creating your engineering profile to kicking off your first sprint in three simple, transparent steps.
-        </p>
-      </div>
-
-      <div class="steps-flow-container">
-        <!-- Step 1 -->
-        <div class="step-card">
-          <div class="step-header">
-            <div class="step-number-pill">01</div>
-            <div class="step-line-connector"></div>
-          </div>
-          <div class="step-content">
-            <div class="step-icon-box">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
-                <circle cx="9" cy="7" r="4"></circle>
-                <line x1="19" y1="8" x2="19" y2="14"></line>
-                <line x1="22" y1="11" x2="16" y2="11"></line>
-              </svg>
-            </div>
-            <h3 class="step-title">Create Your Profile</h3>
-            <p class="step-description">
-              Sign up with your BMSIT&amp;M student credentials. Add your technical skills, branch, semester, and select your weekly availability slots.
-            </p>
-            <div class="step-tag-row">
-              <span class="step-mini-tag">&check; Skill Assessment</span>
-              <span class="step-mini-tag">&check; Availability Grid</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Step 2 -->
-        <div class="step-card">
-          <div class="step-header">
-            <div class="step-number-pill">02</div>
-            <div class="step-line-connector"></div>
-          </div>
-          <div class="step-content">
-            <div class="step-icon-box">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="11" cy="11" r="8"></circle>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                <line x1="11" y1="8" x2="11" y2="14"></line>
-                <line x1="8" y1="11" x2="14" y2="11"></line>
-              </svg>
-            </div>
-            <h3 class="step-title">Discover Teammates</h3>
-            <p class="step-description">
-              Browse open projects or publish your own project idea. SkillSync's matching algorithm immediately recommends peers with complementary skill sets and aligned schedules.
-            </p>
-            <div class="step-tag-row">
-              <span class="step-mini-tag">&check; 65/25/10 Formula</span>
-              <span class="step-mini-tag">&check; Gap Analysis</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Step 3 -->
-        <div class="step-card">
-          <div class="step-header">
-            <div class="step-number-pill">03</div>
-          </div>
-          <div class="step-content">
-            <div class="step-icon-box">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                <polyline points="22 4 12 14.01 9 11.01"></polyline>
-              </svg>
-            </div>
-            <h3 class="step-title">Build Your Team</h3>
-            <p class="step-description">
-              Send project invitations, confirm team roles, and lock in your roster. Once joined, securely access shared contacts and collaborate towards project completion.
-            </p>
-            <div class="step-tag-row">
-              <span class="step-mini-tag">&check; 1-Click Invites</span>
-              <span class="step-mini-tag">&check; Roster Finalization</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- 4. ACTIVE PROJECTS SHOWCASE (Live dynamic data) -->
-  <section class="section showcase-section" id="active-projects">
+  <!-- 3. HOW IT WORKS PREVIEW SUMMARY -->
+  <section class="section home-steps-summary">
     <div class="landing-container">
       <div class="section-header-split">
         <div>
-          <span class="section-eyebrow">Real Cohort Activity</span>
-          <h2 class="section-title">Active Projects Seeking Teammates</h2>
-          <p class="section-subtitle">
-            Explore active proposals posted by BMSIT&amp;M students and find where your skills make the biggest impact.
-          </p>
+          <span class="section-eyebrow">Simple &amp; Transparent</span>
+          <h2 class="section-title">How It Works in 3 Steps</h2>
         </div>
-        <div>
-          <a href="{{ url_for('projects.list_projects') }}" class="btn btn-outline-primary">
-            <span>View All Projects</span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-          </a>
-        </div>
+        <a href="{{ url_for('projects.how_it_works') }}" class="btn btn-outline-primary btn-sm">
+          <span>View Full Workflow &rarr;</span>
+        </a>
       </div>
 
-      {% if featured_projects %}
-        <div class="showcase-grid">
-          {% for proj in featured_projects %}
-            <div class="showcase-card">
-              <div class="showcase-card-header">
-                <span class="badge badge-published">Published</span>
-                <span class="showcase-capacity">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>
-                  {{ proj.current_team_count }} / {{ proj.target_team_size }} Members
-                </span>
-              </div>
-
-              <h3 class="showcase-title">
-                <a href="{{ url_for('projects.project_detail', project_id=proj.id) }}">{{ proj.title }}</a>
-              </h3>
-
-              <p class="showcase-lead">
-                Led by <strong>{{ proj.owner_name }}</strong> &bull; {{ proj.owner_branch or 'CSE' }} {{ proj.owner_year or '' }}
-              </p>
-
-              <p class="showcase-desc showcase-description">
-                {{ proj.description[:130] }}{% if proj.description|length > 130 %}...{% endif %}
-              </p>
-
-              {% if proj.requirements %}
-                <div class="showcase-skills">
-                  <div class="showcase-skills-label">Required Skills:</div>
-                  <div class="showcase-skill-pills">
-                    {% for req in proj.requirements[:4] %}
-                      <span class="skill-tag {% if req.priority == 'must-have' %}skill-must-have{% else %}skill-nice-to-have{% endif %}">
-                        {{ req.skill_name }}
-                        {% if req.priority == 'must-have' %}&bull; Must{% endif %}
-                      </span>
-                    {% endfor %}
-                    {% if proj.requirements|length > 4 %}
-                      <span class="skill-tag">+{{ proj.requirements|length - 4 }} more</span>
-                    {% endif %}
-                  </div>
-                </div>
-              {% endif %}
-
-              <div class="showcase-footer">
-                <span class="showcase-course">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path></svg>
-                  {{ proj.course_context or 'IDT / Capstone 2026' }}
-                </span>
-                <a href="{{ url_for('projects.project_detail', project_id=proj.id) }}" class="showcase-view-link">
-                  View Project &rarr;
-                </a>
-              </div>
-            </div>
-          {% endfor %}
+      <div class="steps-compact-row">
+        <div class="step-compact-item">
+          <span class="step-compact-num">01</span>
+          <h4 class="step-compact-title">Create Your Profile</h4>
+          <p class="step-compact-desc">Highlight verified skills and weekly time availability blocks.</p>
         </div>
-      {% else %}
-        <!-- Fallback if no projects exist yet -->
-        <div class="empty-showcase-box">
-          <p>Projects are being published by BMSIT&amp;M cohorts. Be the first to launch your team!</p>
-          <a href="{{ url_for('projects.create_project') }}" class="btn btn-primary" style="margin-top: 1rem;">+ Post a Project</a>
+        <div class="step-compact-item">
+          <span class="step-compact-num">02</span>
+          <h4 class="step-compact-title">Discover Teammates</h4>
+          <p class="step-compact-desc">Match with peers having complementary skills and zero clashes.</p>
         </div>
-      {% endif %}
+        <div class="step-compact-item">
+          <span class="step-compact-num">03</span>
+          <h4 class="step-compact-title">Build Your Team</h4>
+          <p class="step-compact-desc">Finalize rosters, access secure contacts, and collaborate.</p>
+        </div>
+      </div>
     </div>
   </section>
 
-  <!-- 5. ABOUT US SECTION (Authentic BMSIT&M IDT Context) -->
+  <!-- 4. ACADEMIC ATTRIBUTION & CONTEXT (About Section summary) -->
   <section class="section about-section" id="about">
     <div class="landing-container">
       <div class="about-grid">
@@ -355,6 +170,12 @@
             <p class="story-text">
               SkillSync eliminates the guesswork. Using deterministic candidate ranking, explicit skill requirement tagging (must-have vs. nice-to-have), availability matrix comparison, and live skill coverage analysis, students assemble well-rounded, capable teams equipped to deliver top-tier engineering coursework.
             </p>
+          </div>
+
+          <div style="margin-top: 1.5rem;">
+            <a href="{{ url_for('projects.about') }}" class="btn btn-outline-primary btn-sm">
+              <span>Read Our Full Story &amp; Team Details &rarr;</span>
+            </a>
           </div>
         </div>
 
@@ -419,7 +240,7 @@
     </div>
   </section>
 
-  <!-- 6. FINAL CALL-TO-ACTION (High Impact SaaS Banner) -->
+  <!-- 5. FINAL CALL-TO-ACTION -->
   <section class="section cta-section">
     <div class="landing-container">
       <div class="cta-banner-card">

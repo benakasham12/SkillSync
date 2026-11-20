@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block title %}Explore Students - SkillSync Student Discovery{% endblock %}
+
+{% block layout %}
+<div class="dedicated-page-wrapper">
+  <!-- Page Header -->
+  <section class="page-hero-header">
+    <div class="landing-container">
+      <span class="section-eyebrow">Student Discovery Directory</span>
+      <h1 class="page-hero-title">Explore Talented Engineering Students</h1>
+      <p class="page-hero-subtitle">
+        Find complementary skills, discover motivated teammates, and view verified academic profiles across BMSIT&amp;M departments.
+      </p>
+    </div>
+  </section>
+
+  <!-- Filter & Search Controls -->
+  <section class="section students-directory-section">
+    <div class="landing-container">
+      <div class="directory-controls-bar">
+        <form method="GET" action="{{ url_for('profile.list_students') }}" class="directory-search-form">
+          <div class="directory-input-wrap">
+            <svg class="search-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" name="q" value="{{ search_q }}" placeholder="Search by student name or skills (e.g. Python, React, AI)..." class="directory-search-input">
+          </div>
+
+          <div class="directory-select-wrap">
+            <select name="branch" class="directory-select" onchange="this.form.submit()">
+              <option value="">All Branches</option>
+              {% for b in branches %}
+                <option value="{{ b.branch }}" {% if selected_branch == b.branch %}selected{% endif %}>{{ b.branch }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="directory-select-wrap">
+            <select name="skill" class="directory-select" onchange="this.form.submit()">
+              <option value="">All Skills</option>
+              {% for sk in all_skills %}
+                <option value="{{ sk.name }}" {% if selected_skill == sk.name %}selected{% endif %}>{{ sk.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-search-submit">
+            <span>Filter</span>
+          </button>
+
+          {% if search_q or selected_branch or selected_skill %}
+            <a href="{{ url_for('profile.list_students') }}" class="btn btn-ghost btn-reset-filters" title="Reset all filters">Clear</a>
+          {% endif %}
+        </form>
+      </div>
+
+      <!-- Students Grid -->
+      {% if students %}
+        <div class="students-grid">
+          {% for s in students %}
+            <div class="student-profile-card">
+              <div class="student-card-top">
+                <div class="student-avatar-wrap">
+                  <div class="student-initials-badge">
+                    {{ (s.display_name or 'S')[:2].upper() }}
+                  </div>
+                </div>
+
+                <div class="student-meta-info">
+                  <h3 class="student-name">
+                    <a href="{{ url_for('profile.view_student_profile', target_user_id=s.user_id) }}">
+                      {{ s.display_name or 'Engineering Student' }}
+                    </a>
+                  </h3>
+                  <div class="student-academic-badge">
+                    <span>{{ s.branch or 'Engineering' }}</span>
+                    {% if s.year %}&bull; <span>Year {{ s.year }}</span>{% endif %}
+                  </div>
+                </div>
+
+                {% if s.is_match_ready %}
+                  <span class="match-ready-indicator" title="Profile meets matching criteria">
+                    <span class="match-pulse-dot"></span> Match Ready
+                  </span>
+                {% endif %}
+              </div>
+
+              {% if s.bio %}
+                <p class="student-bio-text">{{ s.bio[:120] }}{% if s.bio|length > 120 %}...{% endif %}</p>
+              {% else %}
+                <p class="student-bio-text placeholder">Student has not added a bio yet.</p>
+              {% endif %}
+
+              <!-- Top Skills -->
+              <div class="student-skills-tray">
+                <span class="skills-tray-label">Top Skills:</span>
+                {% if s.skills %}
+                  <div class="student-skill-pills">
+                    {% for sk in s.skills %}
+                      <span class="student-skill-tag" title="Proficiency: {{ sk.proficiency }}">
+                        {{ sk.name }}
+                        {% if sk.proficiency == 'expert' %}
+                          <span class="prof-star">&starf;</span>
+                        {% endif %}
+                      </span>
+                    {% endfor %}
+                  </div>
+                {% else %}
+                  <span class="no-skills-declared">Skills pending profile update</span>
+                {% endif %}
+              </div>
+
+              <div class="student-card-footer">
+                <a href="{{ url_for('profile.view_student_profile', target_user_id=s.user_id) }}" class="btn btn-outline-primary btn-sm btn-view-profile">
+                  <span>View Profile</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </a>
+                
+                {% if current_user_id and current_user_id != s.user_id %}
+                  <a href="{{ url_for('messages.open_direct_message', target_id=s.user_id) }}" class="btn btn-ghost btn-sm btn-direct-chat" title="Message {{ s.display_name }}">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                  </a>
+                {% endif %}
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-state-box">
+          <div class="empty-state-icon">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+          </div>
+          <h3 class="empty-state-title">No Students Found</h3>
+          <p class="empty-state-desc">Try clearing your search terms or selecting a different engineering branch.</p>
+          <a href="{{ url_for('profile.list_students') }}" class="btn btn-secondary btn-sm" style="margin-top: 1rem;">Clear Search Filters</a>
+        </div>
+      {% endif %}
+    </div>
+  </section>
+
+  <!-- CTA Banner -->
+  <section class="section cta-section">
+    <div class="landing-container">
+      <div class="cta-banner-card">
+        <div class="cta-content">
+          <div class="cta-badge">Join the Network</div>
+          <h2 class="cta-heading">Ready to Connect With Teammates?</h2>
+          <p class="cta-subheading">Set up your profile, list your skills and free hours, and become match-ready for project invitations.</p>
+          <div class="cta-actions-group">
+            <a href="{{ url_for('profile.edit_profile') if current_user_id else url_for('auth.login') }}" class="btn btn-cta-primary">
+              <span>Update Profile</span>
+            </a>
+            <a href="{{ url_for('projects.list_projects') }}" class="btn btn-cta-secondary">
+              <span>Explore Projects</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock layout %}

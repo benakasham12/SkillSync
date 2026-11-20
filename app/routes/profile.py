@@ -230,3 +230,65 @@ def view_student_profile(target_user_id):
         slots=slots,
         can_view_contact=can_view_contact
     )
+
+
+@profile_bp.route('/students')
+def list_students():
+    """Renders the dedicated Explore Students directory with search and filter capabilities."""
+    search_q = request.args.get('q', '').strip()
+    branch_filter = request.args.get('branch', '').strip()
+    skill_filter = request.args.get('skill', '').strip()
+
+    sql = """
+        SELECT sp.*, u.email
+        FROM student_profiles sp
+        JOIN users u ON sp.user_id = u.id
+        WHERE 1=1
+    """
+    params = []
+
+    if search_q:
+        sql += " AND (sp.display_name LIKE ? OR sp.bio LIKE ?)"
+        params.extend([f"%{search_q}%", f"%{search_q}%"])
+
+    if branch_filter:
+        sql += " AND sp.branch = ?"
+        params.append(branch_filter)
+
+    if skill_filter:
+        sql += """ AND sp.user_id IN (
+            SELECT ss2.user_id FROM student_skills ss2
+            JOIN skills s2 ON ss2.skill_id = s2.id
+            WHERE s2.name LIKE ?
+        )"""
+        params.append(f"%{skill_filter}%")
+
+    sql += " ORDER BY sp.is_match_ready DESC, sp.display_name ASC"
+
+    students = query_db(sql, tuple(params))
+
+    # Fetch top skills for each student
+    for s in students:
+        s_skills = query_db("""
+            SELECT ss.proficiency, s.name, s.category
+            FROM student_skills ss
+            JOIN skills s ON ss.skill_id = s.id
+            WHERE ss.user_id = ?
+            ORDER BY ss.proficiency DESC
+            LIMIT 5
+        """, (s['user_id'],))
+        s['skills'] = s_skills
+
+    branches = query_db("SELECT DISTINCT branch FROM student_profiles WHERE branch IS NOT NULL AND branch != '' ORDER BY branch ASC")
+    all_skills = query_db("SELECT id, name FROM skills ORDER BY name ASC")
+
+    return render_template(
+        'students.html',
+        students=students,
+        branches=branches,
+        all_skills=all_skills,
+        search_q=search_q,
+        selected_branch=branch_filter,
+        selected_skill=skill_filter
+    )
+
