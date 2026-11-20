@@ -3,8 +3,8 @@
 
 {% block content %}
 <div class="chat-app-container" id="chatAppContainer"
-     data-active-conv-id="{{ active_conversation.id if active_conversation else '' }}"
-     data-last-message-id="{{ messages[-1].id if messages else 0 }}">
+  data-active-conv-id="{{ active_conversation.id if active_conversation else '' }}"
+  data-last-message-id="{{ messages[-1].id if messages else 0 }}">
   <!-- 1. LEFT SIDEBAR: Conversations List -->
   <aside class="chat-sidebar-left" id="chatSidebarLeft">
     <!-- Header -->
@@ -13,16 +13,26 @@
         <h2 style="font-size: 1.35rem; font-weight: 800; margin: 0; color: var(--text);">
           Messages
         </h2>
-        <button type="button" class="btn btn-primary btn-sm" onclick="openNewChatModal()" title="Start New Direct Conversation" style="padding: 0.35rem 0.75rem; border-radius: 9999px;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align: -1px; margin-right: 2px;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        <button type="button" class="btn btn-primary btn-sm" onclick="openNewChatModal()"
+          title="Start New Direct Conversation" style="padding: 0.35rem 0.75rem; border-radius: 9999px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            style="vertical-align: -1px; margin-right: 2px;">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
           <span>New Chat</span>
         </button>
       </div>
 
       <!-- Search Box -->
       <div class="chat-search-wrap" style="margin-top: 0.85rem;">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="search-icon"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-        <input type="text" id="conversationSearchInput" class="form-control chat-search-input" placeholder="Search conversations or groups..." oninput="filterConversations()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          class="search-icon">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" id="conversationSearchInput" class="form-control chat-search-input"
+          placeholder="Search conversations or groups..." oninput="filterConversations()">
       </div>
 
       <!-- Filter Tabs -->
@@ -37,56 +47,55 @@
     <!-- Conversations List -->
     <div class="conversations-scrollable" id="conversationsListContainer">
       {% if conversations %}
-        {% for conv in conversations %}
-          <a href="{{ url_for('messages.inbox', conversation_id=conv.id) }}" 
-             class="conversation-card {% if active_conversation and active_conversation.id == conv.id %}active{% endif %}"
-             data-conv-id="{{ conv.id }}"
-             data-conv-type="{{ conv.type }}"
-             data-conv-name="{{ conv.name|lower }}"
-             data-unread="{{ conv.unread_count }}">
-            
-            <!-- Avatar -->
-            <div class="conv-avatar-wrap">
-              {% if conv.type == 'project_group' %}
-                <div class="conv-avatar group-avatar">&#128101;</div>
-              {% else %}
-                <div class="conv-avatar direct-avatar">{{ conv.avatar_char }}</div>
-              {% endif %}
-            </div>
+      {% for conv in conversations %}
+      <a href="{{ url_for('messages.inbox', conversation_id=conv.id) }}"
+        class="conversation-card {% if active_conversation and active_conversation.id == conv.id %}active{% endif %}"
+        data-conv-id="{{ conv.id }}" data-conv-type="{{ conv.type }}" data-conv-name="{{ conv.name|lower }}"
+        data-unread="{{ conv.unread_count }}">
 
-            <!-- Content preview -->
-            <div class="conv-info">
-              <div class="conv-title-row">
-                <span class="conv-name">{{ conv.name }}</span>
-                <span class="conv-time">
-                  {% if conv.last_message_time %}
-                    {{ conv.last_message_time[11:16] }}
-                  {% endif %}
-                </span>
-              </div>
-              <div class="conv-preview-row">
-                <span class="conv-last-msg" id="lastMsgPreview-{{ conv.id }}">{{ conv.last_message }}</span>
-                {% if conv.unread_count > 0 %}
-                  <span class="conv-unread-pill" id="unreadBadge-{{ conv.id }}">{{ conv.unread_count }}</span>
-                {% else %}
-                  <span class="conv-unread-pill" id="unreadBadge-{{ conv.id }}" style="display: none;">0</span>
-                {% endif %}
-              </div>
-            </div>
-          </a>
-        {% endfor %}
-      {% else %}
-        <!-- Empty State: No conversations -->
-        <div class="empty-conversations-box">
-          <div style="font-size: 2.2rem; margin-bottom: 0.5rem; color: var(--text-muted);">&#128172;</div>
-          <h4 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 0.35rem; color: var(--text);">Your conversations will appear here.</h4>
-          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">
-            Connect with students and start collaborating on exciting projects.
-          </p>
-          <button type="button" class="btn btn-primary btn-sm" onclick="openNewChatModal()">
-            Find Students
-          </button>
+        <!-- Avatar -->
+        <div class="conv-avatar-wrap">
+          {% if conv.type == 'project_group' %}
+          <div class="conv-avatar group-avatar">&#128101;</div>
+          {% else %}
+          <div class="conv-avatar direct-avatar">{{ conv.avatar_char }}</div>
+          {% endif %}
         </div>
+
+        <!-- Content preview -->
+        <div class="conv-info">
+          <div class="conv-title-row">
+            <span class="conv-name">{{ conv.name }}</span>
+            <span class="conv-time">
+              {% if conv.last_message_time %}
+              {{ conv.last_message_time[11:16] }}
+              {% endif %}
+            </span>
+          </div>
+          <div class="conv-preview-row">
+            <span class="conv-last-msg" id="lastMsgPreview-{{ conv.id }}">{{ conv.last_message }}</span>
+            {% if conv.unread_count > 0 %}
+            <span class="conv-unread-pill" id="unreadBadge-{{ conv.id }}">{{ conv.unread_count }}</span>
+            {% else %}
+            <span class="conv-unread-pill" id="unreadBadge-{{ conv.id }}" style="display: none;">0</span>
+            {% endif %}
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+      {% else %}
+      <!-- Empty State: No conversations -->
+      <div class="empty-conversations-box">
+        <div style="font-size: 2.2rem; margin-bottom: 0.5rem; color: var(--text-muted);">&#128172;</div>
+        <h4 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 0.35rem; color: var(--text);">Your conversations
+          will appear here.</h4>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+          Connect with students and start collaborating on exciting projects.
+        </p>
+        <button type="button" class="btn btn-primary btn-sm" onclick="openNewChatModal()">
+          Find Students
+        </button>
+      </div>
       {% endif %}
     </div>
   </aside>
@@ -94,321 +103,376 @@
   <!-- 2. MIDDLE SECTION: Active Chat Window -->
   <main class="chat-main-window" id="chatMainWindow">
     {% if active_conversation %}
-      <!-- Chat Header -->
-      <header class="chat-header">
-        <div style="display: flex; align-items: center; gap: 0.75rem;">
-          <!-- Mobile Back Button -->
-          <button type="button" class="btn-mobile-back" onclick="showMobileSidebar()" title="Back to conversations">
-            &larr;
-          </button>
+    <!-- Chat Header -->
+    <header class="chat-header">
+      <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <!-- Mobile Back Button -->
+        <button type="button" class="btn-mobile-back" onclick="showMobileSidebar()" title="Back to conversations">
+          &larr;
+        </button>
 
-          <div class="chat-header-avatar">
+        <div class="chat-header-avatar">
+          {% if active_conversation.type == 'project_group' %}
+          <div class="conv-avatar group-avatar" style="width: 40px; height: 40px; font-size: 1.1rem;">&#128101;</div>
+          {% else %}
+          <div class="conv-avatar direct-avatar" style="width: 40px; height: 40px; font-size: 1.1rem;">{{
+            active_conversation.avatar_char or (active_conversation.name)[:1] }}</div>
+          {% endif %}
+        </div>
+
+        <div>
+          <h3 class="chat-header-title">{{ active_conversation.name }}</h3>
+          <div class="chat-header-status">
             {% if active_conversation.type == 'project_group' %}
-              <div class="conv-avatar group-avatar" style="width: 40px; height: 40px; font-size: 1.1rem;">&#128101;</div>
+            <span>Project Group Chat</span>
+            {% if active_conversation.project_id %}
+            &bull; <a href="{{ url_for('projects.project_detail', project_id=active_conversation.project_id) }}"
+              style="color: var(--primary); text-decoration: underline;">View Project</a>
+            {% endif %}
             {% else %}
-              <div class="conv-avatar direct-avatar" style="width: 40px; height: 40px; font-size: 1.1rem;">{{ active_conversation.avatar_char or (active_conversation.name)[:1] }}</div>
+            <span class="status-dot-online"></span>
+            <span>Active Direct Chat</span>
             {% endif %}
           </div>
-
-          <div>
-            <h3 class="chat-header-title">{{ active_conversation.name }}</h3>
-            <div class="chat-header-status">
-              {% if active_conversation.type == 'project_group' %}
-                <span>Project Group Chat</span>
-                {% if active_conversation.project_id %}
-                  &bull; <a href="{{ url_for('projects.project_detail', project_id=active_conversation.project_id) }}" style="color: var(--primary); text-decoration: underline;">View Project</a>
-                {% endif %}
-              {% else %}
-                <span class="status-dot-online"></span>
-                <span>Active Direct Chat</span>
-              {% endif %}
-            </div>
-          </div>
         </div>
-
-        <!-- Header Actions: Info Drawer Toggle -->
-        <div style="display: flex; align-items: center; gap: 0.5rem;">
-          <button type="button" class="btn btn-ghost btn-sm" onclick="toggleInfoSidebar()" title="Toggle Conversation Information">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-          </button>
-        </div>
-      </header>
-
-      <!-- Messages Feed -->
-      <div class="chat-messages-feed" id="messagesFeed">
-        {% if messages %}
-          {% set ns = namespace(last_date='') %}
-          {% for msg in messages %}
-            <!-- Date Separator -->
-            {% if msg.date_display != ns.last_date %}
-              <div class="date-separator">
-                <span>{{ msg.date_display }}</span>
-              </div>
-              {% set ns.last_date = msg.date_display %}
-            {% endif %}
-
-            <!-- System Message -->
-            {% if msg.message_type == 'system' %}
-              <div class="message-system-row">
-                <span class="system-pill">{{ msg.content }}</span>
-              </div>
-            {% else %}
-              <!-- Sent vs Received Message Bubble -->
-              <div class="message-row {% if msg.is_me %}message-sent{% else %}message-received{% endif %}" id="msg-{{ msg.id }}">
-                <div class="message-bubble">
-                  <!-- Sender name in group chats -->
-                  {% if not msg.is_me and active_conversation.type == 'project_group' %}
-                    <div class="message-sender-name">{{ msg.sender_name }}</div>
-                  {% endif %}
-
-                  <!-- Message Text Content -->
-                  {% if msg.content %}
-                    <div class="message-text">{{ msg.content }}</div>
-                  {% endif %}
-
-                  <!-- Attachments -->
-                  {% if msg.attachments %}
-                    <div class="message-attachments-list">
-                      {% for att in msg.attachments %}
-                        <a href="{{ url_for('messages.download_attachment', attachment_id=att.id) }}" class="attachment-chip" target="_blank">
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                          <span class="attachment-name">{{ att.file_name }}</span>
-                          <span class="attachment-size">({{ (att.file_size / 1024)|round(1) }} KB)</span>
-                        </a>
-                      {% endfor %}
-                    </div>
-                  {% endif %}
-
-                  <!-- Metadata: Time and Delivery Status -->
-                  <div class="message-meta">
-                    <span class="message-time">{{ msg.time_display }}</span>
-                    {% if msg.is_me %}
-                      <span class="message-checkmarks">&#10003;&#10003;</span>
-                    {% endif %}
-                  </div>
-                </div>
-              </div>
-            {% endif %}
-          {% endfor %}
-        {% else %}
-          <!-- Empty State: No messages in active chat -->
-          <div class="empty-chat-box">
-            <div style="font-size: 2rem; margin-bottom: 0.5rem; color: var(--text-muted);">&#128075;</div>
-            <h4 style="font-size: 1.1rem; font-weight: 700; color: var(--text); margin-bottom: 0.35rem;">Start the conversation!</h4>
-            <p style="font-size: 0.88rem; color: var(--text-muted); max-width: 380px; margin: 0 auto;">
-              Send a friendly greeting, discuss project goals, or share technical ideas with your teammates.
-            </p>
-          </div>
-        {% endif %}
       </div>
 
-      <!-- Selected File Preview Bar (hidden until file attached) -->
-      <div id="filePreviewBar" class="file-preview-bar" style="display: none;">
-        <div style="display: flex; align-items: center; gap: 0.5rem;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
-          <span id="previewFileName" style="font-weight: 600; font-size: 0.85rem; color: var(--text);"></span>
-        </div>
-        <button type="button" onclick="clearSelectedAttachment()" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--danger); line-height: 1;">&times;</button>
-      </div>
-
-      <!-- Emoji Popover -->
-      <div id="emojiPopover" class="emoji-popover" style="display: none;">
-        <span onclick="insertEmoji('👍')">👍</span>
-        <span onclick="insertEmoji('🚀')">🚀</span>
-        <span onclick="insertEmoji('💡')">💡</span>
-        <span onclick="insertEmoji('🎉')">🎉</span>
-        <span onclick="insertEmoji('👏')">👏</span>
-        <span onclick="insertEmoji('❤️')">❤️</span>
-        <span onclick="insertEmoji('🔥')">🔥</span>
-        <span onclick="insertEmoji('✨')">✨</span>
-        <span onclick="insertEmoji('🤝')">🤝</span>
-        <span onclick="insertEmoji('💻')">💻</span>
-      </div>
-
-      <!-- Message Input Form -->
-      <form id="chatInputForm" class="chat-input-form" onsubmit="handleSendMessage(event)">
-        <!-- Hidden file input -->
-        <input type="file" id="fileAttachmentInput" name="attachment" style="display: none;" onchange="handleFileSelected(this)">
-
-        <div class="chat-input-row">
-          <!-- Attachment Button -->
-          <button type="button" class="btn-input-tool" onclick="document.getElementById('fileAttachmentInput').click()" title="Attach file or document">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
-          </button>
-
-          <!-- Emoji Button -->
-          <button type="button" class="btn-input-tool" onclick="toggleEmojiPopover()" title="Insert emoji">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M8 14s1.5 2 4 2 4-2 4-2"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line></svg>
-          </button>
-
-          <!-- Textarea -->
-          <textarea id="messageTextInput" name="content" class="chat-textarea" rows="1" placeholder="Type a message... (Shift + Enter for new line)" onkeydown="handleTextareaKeydown(event)"></textarea>
-
-          <!-- Send Button -->
-          <button type="submit" id="btnSend" class="btn btn-primary btn-send">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-          </button>
-        </div>
-      </form>
-    {% else %}
-      <!-- Empty State: No active conversation selected -->
-      <div class="empty-chat-welcome">
-        <div style="font-size: 3rem; margin-bottom: 0.75rem; color: var(--primary);">&#128172;</div>
-        <h3 style="font-size: 1.4rem; font-weight: 800; color: var(--text); margin-bottom: 0.5rem;">SkillSync Messaging</h3>
-        <p style="font-size: 0.95rem; color: var(--text-muted); max-width: 440px; margin: 0 auto 1.5rem; line-height: 1.5;">
-          Select a direct conversation or project group from the left sidebar, or start a new chat with any classmate.
-        </p>
-        <button type="button" class="btn btn-primary" onclick="openNewChatModal()">
-          + Start a New Chat
+      <!-- Header Actions: Info Drawer Toggle -->
+      <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <button type="button" class="btn btn-ghost btn-sm" onclick="toggleInfoSidebar()"
+          title="Toggle Conversation Information">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="16" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+          </svg>
         </button>
       </div>
+    </header>
+
+    <!-- Messages Feed -->
+    <div class="chat-messages-feed" id="messagesFeed">
+      {% if messages %}
+      {% set ns = namespace(last_date='') %}
+      {% for msg in messages %}
+      <!-- Date Separator -->
+      {% if msg.date_display != ns.last_date %}
+      <div class="date-separator">
+        <span>{{ msg.date_display }}</span>
+      </div>
+      {% set ns.last_date = msg.date_display %}
+      {% endif %}
+
+      <!-- System Message -->
+      {% if msg.message_type == 'system' %}
+      <div class="message-system-row">
+        <span class="system-pill">{{ msg.content }}</span>
+      </div>
+      {% else %}
+      <!-- Sent vs Received Message Bubble -->
+      <div class="message-row {% if msg.is_me %}message-sent{% else %}message-received{% endif %}"
+        id="msg-{{ msg.id }}">
+        <div class="message-bubble">
+          <!-- Sender name in group chats -->
+          {% if not msg.is_me and active_conversation.type == 'project_group' %}
+          <div class="message-sender-name">{{ msg.sender_name }}</div>
+          {% endif %}
+
+          <!-- Message Text Content -->
+          {% if msg.content %}
+          <div class="message-text">{{ msg.content }}</div>
+          {% endif %}
+
+          <!-- Attachments -->
+          {% if msg.attachments %}
+          <div class="message-attachments-list">
+            {% for att in msg.attachments %}
+            <a href="{{ url_for('messages.download_attachment', attachment_id=att.id) }}" class="attachment-chip"
+              target="_blank">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+              </svg>
+              <span class="attachment-name">{{ att.file_name }}</span>
+              <span class="attachment-size">({{ (att.file_size / 1024)|round(1) }} KB)</span>
+            </a>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          <!-- Metadata: Time and Delivery Status -->
+          <div class="message-meta">
+            <span class="message-time">{{ msg.time_display }}</span>
+            {% if msg.is_me %}
+            <span class="message-checkmarks">&#10003;&#10003;</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% endif %}
+      {% endfor %}
+      {% else %}
+      <!-- Empty State: No messages in active chat -->
+      <div class="empty-chat-box">
+        <div style="font-size: 2rem; margin-bottom: 0.5rem; color: var(--text-muted);">&#128075;</div>
+        <h4 style="font-size: 1.1rem; font-weight: 700; color: var(--text); margin-bottom: 0.35rem;">Start the
+          conversation!</h4>
+        <p style="font-size: 0.88rem; color: var(--text-muted); max-width: 380px; margin: 0 auto;">
+          Send a friendly greeting, discuss project goals, or share technical ideas with your teammates.
+        </p>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Selected File Preview Bar (hidden until file attached) -->
+    <div id="filePreviewBar" class="file-preview-bar" style="display: none;">
+      <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path
+            d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48">
+          </path>
+        </svg>
+        <span id="previewFileName" style="font-weight: 600; font-size: 0.85rem; color: var(--text);"></span>
+      </div>
+      <button type="button" onclick="clearSelectedAttachment()"
+        style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--danger); line-height: 1;">&times;</button>
+    </div>
+
+    <!-- Emoji Popover -->
+    <div id="emojiPopover" class="emoji-popover" style="display: none;">
+      <span onclick="insertEmoji('👍')">👍</span>
+      <span onclick="insertEmoji('🚀')">🚀</span>
+      <span onclick="insertEmoji('💡')">💡</span>
+      <span onclick="insertEmoji('🎉')">🎉</span>
+      <span onclick="insertEmoji('👏')">👏</span>
+      <span onclick="insertEmoji('❤️')">❤️</span>
+      <span onclick="insertEmoji('🔥')">🔥</span>
+      <span onclick="insertEmoji('✨')">✨</span>
+      <span onclick="insertEmoji('🤝')">🤝</span>
+      <span onclick="insertEmoji('💻')">💻</span>
+    </div>
+
+    <!-- Message Input Form -->
+    <form id="chatInputForm" class="chat-input-form" onsubmit="handleSendMessage(event)">
+      <!-- Hidden file input -->
+      <input type="file" id="fileAttachmentInput" name="attachment" style="display: none;"
+        onchange="handleFileSelected(this)">
+
+      <div class="chat-input-row">
+        <!-- Attachment Button -->
+        <button type="button" class="btn-input-tool" onclick="document.getElementById('fileAttachmentInput').click()"
+          title="Attach file or document">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path
+              d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48">
+            </path>
+          </svg>
+        </button>
+
+        <!-- Emoji Button -->
+        <button type="button" class="btn-input-tool" onclick="toggleEmojiPopover()" title="Insert emoji">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+            <line x1="9" y1="9" x2="9.01" y2="9"></line>
+            <line x1="15" y1="9" x2="15.01" y2="9"></line>
+          </svg>
+        </button>
+
+        <!-- Textarea -->
+        <textarea id="messageTextInput" name="content" class="chat-textarea" rows="1"
+          placeholder="Type a message... (Shift + Enter for new line)"
+          onkeydown="handleTextareaKeydown(event)"></textarea>
+
+        <!-- Send Button -->
+        <button type="submit" id="btnSend" class="btn btn-primary btn-send">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+        </button>
+      </div>
+    </form>
+    {% else %}
+    <!-- Empty State: No active conversation selected -->
+    <div class="empty-chat-welcome">
+      <div style="font-size: 3rem; margin-bottom: 0.75rem; color: var(--primary);">&#128172;</div>
+      <h3 style="font-size: 1.4rem; font-weight: 800; color: var(--text); margin-bottom: 0.5rem;">SkillSync Messaging
+      </h3>
+      <p
+        style="font-size: 0.95rem; color: var(--text-muted); max-width: 440px; margin: 0 auto 1.5rem; line-height: 1.5;">
+        Select a direct conversation or project group from the left sidebar, or start a new chat with any classmate.
+      </p>
+      <button type="button" class="btn btn-primary" onclick="openNewChatModal()">
+        + Start a New Chat
+      </button>
+    </div>
     {% endif %}
   </main>
 
   <!-- 3. RIGHT SIDEBAR: Chat Information Drawer -->
   <aside class="chat-sidebar-right" id="chatSidebarRight">
     {% if info_panel %}
-      <!-- Close drawer button -->
-      <div class="info-sidebar-header">
-        <h4 style="font-size: 1rem; font-weight: 800; margin: 0; color: var(--text);">Conversation Info</h4>
-        <button type="button" onclick="toggleInfoSidebar()" class="btn-close-info">&times;</button>
+    <!-- Close drawer button -->
+    <div class="info-sidebar-header">
+      <h4 style="font-size: 1rem; font-weight: 800; margin: 0; color: var(--text);">Conversation Info</h4>
+      <button type="button" onclick="toggleInfoSidebar()" class="btn-close-info">&times;</button>
+    </div>
+
+    <div class="info-sidebar-content">
+      {% if info_panel.type == 'direct' and info_panel.user %}
+      <!-- Direct Student Profile Card -->
+      <div style="text-align: center; padding-bottom: 1.25rem; border-bottom: 1px solid var(--border);">
+        <div class="info-large-avatar">{{ (info_panel.user.display_name or 'U')[:1] }}</div>
+        <h3 style="font-size: 1.2rem; font-weight: 800; margin: 0.5rem 0 0.2rem; color: var(--text);">
+          {{ info_panel.user.display_name }}
+        </h3>
+        <div style="font-size: 0.85rem; color: var(--text-muted);">
+          {{ info_panel.user.branch }} &bull; {{ info_panel.user.year }}
+        </div>
+        {% if info_panel.user.bio %}
+        <p
+          style="font-size: 0.85rem; color: var(--text-muted); margin: 0.75rem 0 0; line-height: 1.4; font-style: italic;">
+          "{{ info_panel.user.bio }}"
+        </p>
+        {% endif %}
+        <div style="margin-top: 1rem;">
+          <a href="{{ url_for('profile.view_student_profile', target_user_id=info_panel.user.id) }}"
+            class="btn btn-secondary btn-sm" style="width: 100%;">
+            View Full Profile
+          </a>
+        </div>
       </div>
 
-      <div class="info-sidebar-content">
-        {% if info_panel.type == 'direct' and info_panel.user %}
-          <!-- Direct Student Profile Card -->
-          <div style="text-align: center; padding-bottom: 1.25rem; border-bottom: 1px solid var(--border);">
-            <div class="info-large-avatar">{{ (info_panel.user.display_name or 'U')[:1] }}</div>
-            <h3 style="font-size: 1.2rem; font-weight: 800; margin: 0.5rem 0 0.2rem; color: var(--text);">
-              {{ info_panel.user.display_name }}
-            </h3>
-            <div style="font-size: 0.85rem; color: var(--text-muted);">
-              {{ info_panel.user.branch }} &bull; {{ info_panel.user.year }}
-            </div>
-            {% if info_panel.user.bio %}
-              <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0.75rem 0 0; line-height: 1.4; font-style: italic;">
-                "{{ info_panel.user.bio }}"
-              </p>
-            {% endif %}
-            <div style="margin-top: 1rem;">
-              <a href="{{ url_for('profile.view_student_profile', target_user_id=info_panel.user.id) }}" class="btn btn-secondary btn-sm" style="width: 100%;">
-                View Full Profile
-              </a>
-            </div>
-          </div>
+      <!-- Student Skills -->
+      <div style="padding-top: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem;">
+        <h5
+          style="font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem;">
+          Technical Skills
+        </h5>
+        <div style="display: flex; flex-wrap: wrap; gap: 0.35rem;">
+          {% for sk in info_panel.skills %}
+          <span class="badge"
+            style="background: var(--surface-alt); color: var(--text); font-size: 0.75rem; border: 1px solid var(--border);">
+            {{ sk.skill_name }} ({{ sk.proficiency }})
+          </span>
+          {% endfor %}
+          {% if not info_panel.skills %}
+          <span style="font-size: 0.8rem; color: var(--text-muted);">No skills listed.</span>
+          {% endif %}
+        </div>
+      </div>
 
-          <!-- Student Skills -->
-          <div style="padding-top: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem;">
-            <h5 style="font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem;">
-              Technical Skills
-            </h5>
-            <div style="display: flex; flex-wrap: wrap; gap: 0.35rem;">
-              {% for sk in info_panel.skills %}
-                <span class="badge" style="background: var(--surface-alt); color: var(--text); font-size: 0.75rem; border: 1px solid var(--border);">
-                  {{ sk.skill_name }} ({{ sk.proficiency }})
-                </span>
-              {% endfor %}
-              {% if not info_panel.skills %}
-                <span style="font-size: 0.8rem; color: var(--text-muted);">No skills listed.</span>
-              {% endif %}
-            </div>
-          </div>
-
-          <!-- Shared Projects -->
-          <div style="padding-top: 1rem;">
-            <h5 style="font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem;">
-              Shared Projects ({{ info_panel.shared_projects|length }})
-            </h5>
-            {% for sp in info_panel.shared_projects %}
-              <a href="{{ url_for('projects.project_detail', project_id=sp.id) }}" style="display: block; padding: 0.5rem; background: var(--surface-alt); border-radius: 6px; text-decoration: none; color: var(--text); font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem; border: 1px solid var(--border);">
-                {{ sp.title }}
-              </a>
-            {% endfor %}
-            {% if not info_panel.shared_projects %}
-              <div style="font-size: 0.8rem; color: var(--text-muted);">No shared projects yet.</div>
-            {% endif %}
-          </div>
-
-        {% elif info_panel.type == 'project_group' and info_panel.project %}
-          <!-- Project Group Details -->
-          <div style="padding-bottom: 1.25rem; border-bottom: 1px solid var(--border);">
-            <span class="badge" style="background: rgba(99, 102, 241, 0.12); color: #4f46e5; font-weight: 700;">{{ info_panel.project.category }}</span>
-            <h3 style="font-size: 1.25rem; font-weight: 800; margin: 0.5rem 0 0.35rem; color: var(--text);">
-              {{ info_panel.project.title }}
-            </h3>
-            <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.5; margin: 0 0 1rem;">
-              {{ info_panel.project.description }}
-            </p>
-            <a href="{{ url_for('projects.project_detail', project_id=info_panel.project.id) }}" class="btn btn-primary btn-sm" style="width: 100%;">
-              View Project Details
-            </a>
-          </div>
-
-          <!-- Team Roster -->
-          <div style="padding-top: 1rem;">
-            <h5 style="font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem;">
-              Team Roster ({{ info_panel.members|length }} Members)
-            </h5>
-            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-              {% for mem in info_panel.members %}
-                <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.45rem 0.6rem; background: var(--surface-alt); border-radius: 6px; border: 1px solid var(--border);">
-                  <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    <div class="user-avatar" style="width: 28px; height: 28px; font-size: 0.75rem;">
-                      {{ (mem.display_name or 'U')[:1] }}
-                    </div>
-                    <div>
-                      <a href="{{ url_for('profile.view_student_profile', target_user_id=mem.id) }}" style="font-size: 0.85rem; font-weight: 700; color: var(--text); text-decoration: none;">
-                        {{ mem.display_name }}
-                      </a>
-                      <div style="font-size: 0.72rem; color: var(--text-muted);">{{ mem.branch }}</div>
-                    </div>
-                  </div>
-                  <span class="badge {% if mem.role == 'owner' %}badge-must-have{% else %}badge-preferred{% endif %}" style="font-size: 0.68rem;">
-                    {{ mem.role|capitalize }}
-                  </span>
-                </div>
-              {% endfor %}
-            </div>
-          </div>
+      <!-- Shared Projects -->
+      <div style="padding-top: 1rem;">
+        <h5
+          style="font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem;">
+          Shared Projects ({{ info_panel.shared_projects|length }})
+        </h5>
+        {% for sp in info_panel.shared_projects %}
+        <a href="{{ url_for('projects.project_detail', project_id=sp.id) }}"
+          style="display: block; padding: 0.5rem; background: var(--surface-alt); border-radius: 6px; text-decoration: none; color: var(--text); font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem; border: 1px solid var(--border);">
+          {{ sp.title }}
+        </a>
+        {% endfor %}
+        {% if not info_panel.shared_projects %}
+        <div style="font-size: 0.8rem; color: var(--text-muted);">No shared projects yet.</div>
         {% endif %}
       </div>
+
+      {% elif info_panel.type == 'project_group' and info_panel.project %}
+      <!-- Project Group Details -->
+      <div style="padding-bottom: 1.25rem; border-bottom: 1px solid var(--border);">
+        <span class="badge" style="background: rgba(99, 102, 241, 0.12); color: #4f46e5; font-weight: 700;">{{
+          info_panel.project.category }}</span>
+        <h3 style="font-size: 1.25rem; font-weight: 800; margin: 0.5rem 0 0.35rem; color: var(--text);">
+          {{ info_panel.project.title }}
+        </h3>
+        <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.5; margin: 0 0 1rem;">
+          {{ info_panel.project.description }}
+        </p>
+        <a href="{{ url_for('projects.project_detail', project_id=info_panel.project.id) }}"
+          class="btn btn-primary btn-sm" style="width: 100%;">
+          View Project Details
+        </a>
+      </div>
+
+      <!-- Team Roster -->
+      <div style="padding-top: 1rem;">
+        <h5
+          style="font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem;">
+          Team Roster ({{ info_panel.members|length }} Members)
+        </h5>
+        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+          {% for mem in info_panel.members %}
+          <div
+            style="display: flex; align-items: center; justify-content: space-between; padding: 0.45rem 0.6rem; background: var(--surface-alt); border-radius: 6px; border: 1px solid var(--border);">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <div class="user-avatar" style="width: 28px; height: 28px; font-size: 0.75rem;">
+                {{ (mem.display_name or 'U')[:1] }}
+              </div>
+              <div>
+                <a href="{{ url_for('profile.view_student_profile', target_user_id=mem.id) }}"
+                  style="font-size: 0.85rem; font-weight: 700; color: var(--text); text-decoration: none;">
+                  {{ mem.display_name }}
+                </a>
+                <div style="font-size: 0.72rem; color: var(--text-muted);">{{ mem.branch }}</div>
+              </div>
+            </div>
+            <span class="badge {% if mem.role == 'owner' %}badge-must-have{% else %}badge-preferred{% endif %}"
+              style="font-size: 0.68rem;">
+              {{ mem.role|capitalize }}
+            </span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
     {% endif %}
   </aside>
 </div>
 
 <!-- Modal: Start New Direct Conversation -->
-<div id="newChatModal" class="modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
-  <div class="card" style="max-width: 480px; width: 90%; max-height: 80vh; display: flex; flex-direction: column; padding: 1.5rem; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.25);">
+<div id="newChatModal" class="modal-overlay"
+  style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+  <div class="card"
+    style="max-width: 480px; width: 90%; max-height: 80vh; display: flex; flex-direction: column; padding: 1.5rem; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.25);">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
       <h3 style="font-size: 1.25rem; font-weight: 800; margin: 0; color: var(--text);">Start a New Conversation</h3>
-      <button type="button" onclick="closeNewChatModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted); line-height: 1;">&times;</button>
+      <button type="button" onclick="closeNewChatModal()"
+        style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted); line-height: 1;">&times;</button>
     </div>
 
     <!-- Filter input -->
     <div style="margin-bottom: 1rem;">
-      <input type="text" id="studentSearchFilter" class="form-control" placeholder="Search classmates by name or department..." oninput="filterStudentDirectory()">
+      <input type="text" id="studentSearchFilter" class="form-control"
+        placeholder="Search classmates by name or department..." oninput="filterStudentDirectory()">
     </div>
 
     <!-- Scrollable student directory -->
-    <div style="overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 0.5rem;" id="studentDirectoryList">
+    <div style="overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 0.5rem;"
+      id="studentDirectoryList">
       {% for student in all_students %}
-        <a href="{{ url_for('messages.open_direct_message', target_id=student.id) }}" 
-           class="student-pick-item" 
-           data-student-name="{{ student.display_name|lower }}"
-           data-student-branch="{{ student.branch|lower }}">
-          <div class="user-avatar" style="width: 36px; height: 36px; font-size: 0.9rem;">
-            {{ (student.display_name or 'U')[:1] }}
+      <a href="{{ url_for('messages.open_direct_message', target_id=student.id) }}" class="student-pick-item"
+        data-student-name="{{ student.display_name|lower }}" data-student-branch="{{ student.branch|lower }}">
+        <div class="user-avatar" style="width: 36px; height: 36px; font-size: 0.9rem;">
+          {{ (student.display_name or 'U')[:1] }}
+        </div>
+        <div>
+          <div style="font-weight: 700; font-size: 0.92rem; color: var(--text);">{{ student.display_name }}</div>
+          <div style="font-size: 0.78rem; color: var(--text-muted);">{{ student.branch }} &bull; {{ student.year }}
           </div>
-          <div>
-            <div style="font-weight: 700; font-size: 0.92rem; color: var(--text);">{{ student.display_name }}</div>
-            <div style="font-size: 0.78rem; color: var(--text-muted);">{{ student.branch }} &bull; {{ student.year }}</div>
-          </div>
-        </a>
+        </div>
+      </a>
       {% endfor %}
       {% if not all_students %}
-        <div style="text-align: center; padding: 2rem; color: var(--text-muted); font-size: 0.9rem;">
-          No other students available yet.
-        </div>
+      <div style="text-align: center; padding: 2rem; color: var(--text-muted); font-size: 0.9rem;">
+        No other students available yet.
+      </div>
       {% endif %}
     </div>
   </div>
@@ -416,787 +480,850 @@
 
 <!-- Styles for Chat Interface -->
 <style>
-.chat-app-container {
-  display: flex;
-  height: calc(100vh - 120px);
-  min-height: 580px;
-  max-width: 1300px;
-  margin: 0 auto;
-  background: var(--surface);
-  border-radius: 14px;
-  border: 1px solid var(--border);
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.06);
-  overflow: hidden;
-  position: relative;
-}
-
-/* 1. Left Sidebar */
-.chat-sidebar-left {
-  width: 340px;
-  border-right: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  background: var(--surface);
-  flex-shrink: 0;
-  transition: transform 0.25s ease;
-}
-.sidebar-header {
-  padding: 1.15rem 1rem 0.75rem 1rem;
-  border-bottom: 1px solid var(--border);
-  background: var(--surface);
-}
-.chat-search-wrap {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-.chat-search-wrap .search-icon {
-  position: absolute;
-  left: 10px;
-  color: var(--text-muted);
-  pointer-events: none;
-}
-.chat-search-input {
-  padding-left: 2rem !important;
-  font-size: 0.85rem !important;
-  border-radius: 9999px !important;
-  background: var(--surface-alt) !important;
-}
-.chat-filter-tabs {
-  display: flex;
-  gap: 0.35rem;
-  overflow-x: auto;
-  padding-bottom: 0.25rem;
-}
-.tab-chip {
-  background: var(--surface-alt);
-  border: 1px solid var(--border);
-  border-radius: 9999px;
-  padding: 0.25rem 0.65rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.15s ease;
-}
-.tab-chip:hover {
-  color: var(--text);
-  border-color: var(--primary);
-}
-.tab-chip.active {
-  background: var(--primary-light);
-  color: var(--primary);
-  border-color: var(--primary);
-}
-
-.conversations-scrollable {
-  flex: 1;
-  overflow-y: auto;
-  padding: 0.5rem;
-}
-.conversation-card {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem;
-  border-radius: 10px;
-  text-decoration: none;
-  color: var(--text);
-  margin-bottom: 0.25rem;
-  transition: background 0.15s ease;
-}
-.conversation-card:hover {
-  background: var(--surface-alt);
-}
-.conversation-card.active {
-  background: rgba(37, 99, 235, 0.08);
-  border-left: 3px solid var(--primary);
-}
-
-.conv-avatar-wrap {
-  position: relative;
-  flex-shrink: 0;
-}
-.conv-avatar {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 1rem;
-}
-.direct-avatar {
-  background: var(--primary-gradient);
-  color: #ffffff;
-}
-.group-avatar {
-  background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
-  color: #ffffff;
-}
-
-.conv-info {
-  flex: 1;
-  min-width: 0;
-}
-.conv-title-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  margin-bottom: 0.2rem;
-}
-.conv-name {
-  font-weight: 700;
-  font-size: 0.92rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.conv-time {
-  font-size: 0.72rem;
-  color: var(--text-muted);
-  flex-shrink: 0;
-  margin-left: 0.4rem;
-}
-.conv-preview-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.conv-last-msg {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 190px;
-}
-.conv-unread-pill {
-  background: var(--primary);
-  color: #ffffff;
-  font-size: 0.7rem;
-  font-weight: 700;
-  padding: 0.1rem 0.45rem;
-  border-radius: 9999px;
-  flex-shrink: 0;
-}
-
-/* 2. Middle Main Chat Window */
-.chat-main-window {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  background: var(--bg);
-  min-width: 0;
-  position: relative;
-}
-.chat-header {
-  padding: 0.75rem 1.25rem;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  z-index: 10;
-}
-.chat-header-title {
-  font-size: 1.05rem;
-  font-weight: 800;
-  margin: 0;
-  color: var(--text);
-  line-height: 1.2;
-}
-.chat-header-status {
-  font-size: 0.78rem;
-  color: var(--text-muted);
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-}
-.status-dot-online {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--success);
-  display: inline-block;
-}
-.btn-mobile-back {
-  display: none;
-  background: none;
-  border: none;
-  font-size: 1.25rem;
-  cursor: pointer;
-  color: var(--text);
-  padding: 0.25rem 0.5rem;
-}
-
-.chat-messages-feed {
-  flex: 1;
-  overflow-y: auto;
-  padding: 1.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-/* Message Rows & Bubbles */
-.date-separator {
-  text-align: center;
-  margin: 0.75rem 0;
-}
-.date-separator span {
-  background: var(--surface-alt);
-  color: var(--text-muted);
-  font-size: 0.72rem;
-  font-weight: 700;
-  padding: 0.2rem 0.65rem;
-  border-radius: 9999px;
-  border: 1px solid var(--border);
-}
-.message-system-row {
-  text-align: center;
-  margin: 0.4rem 0;
-}
-.system-pill {
-  background: rgba(99, 102, 241, 0.08);
-  color: var(--primary);
-  font-size: 0.78rem;
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
-  display: inline-block;
-}
-
-.message-row {
-  display: flex;
-  width: 100%;
-}
-.message-sent {
-  justify-content: flex-end;
-}
-.message-received {
-  justify-content: flex-start;
-}
-
-.message-bubble {
-  max-width: 68%;
-  padding: 0.65rem 0.95rem;
-  border-radius: 14px;
-  font-size: 0.92rem;
-  line-height: 1.45;
-  position: relative;
-  word-break: break-word;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-}
-.message-sent .message-bubble {
-  background: var(--primary-gradient);
-  color: #ffffff;
-  border-bottom-right-radius: 3px;
-}
-.message-received .message-bubble {
-  background: var(--surface);
-  color: var(--text);
-  border: 1px solid var(--border);
-  border-bottom-left-radius: 3px;
-}
-
-.message-sender-name {
-  font-size: 0.75rem;
-  font-weight: 800;
-  color: var(--primary);
-  margin-bottom: 0.2rem;
-}
-.message-text {
-  white-space: pre-wrap;
-}
-.message-meta {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.25rem;
-  margin-top: 0.3rem;
-  font-size: 0.68rem;
-  opacity: 0.8;
-}
-.message-sent .message-meta {
-  color: rgba(255, 255, 255, 0.85);
-}
-.message-received .message-meta {
-  color: var(--text-muted);
-}
-.message-checkmarks {
-  font-size: 0.75rem;
-}
-
-.message-attachments-list {
-  margin-top: 0.5rem;
-}
-.attachment-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.35rem 0.65rem;
-  border-radius: 8px;
-  font-size: 0.82rem;
-  font-weight: 600;
-  text-decoration: none;
-  background: rgba(255, 255, 255, 0.2);
-  color: inherit;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-}
-.message-received .attachment-chip {
-  background: var(--surface-alt);
-  color: var(--text);
-  border-color: var(--border);
-}
-
-/* Chat Input Bar */
-.chat-input-form {
-  padding: 0.75rem 1rem;
-  background: var(--surface);
-  border-top: 1px solid var(--border);
-  position: relative;
-}
-.chat-input-row {
-  display: flex;
-  align-items: flex-end;
-  gap: 0.5rem;
-  background: var(--surface-alt);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 0.4rem 0.6rem;
-  transition: border-color 0.15s ease;
-}
-.chat-input-row:focus-within {
-  border-color: var(--primary);
-  background: var(--surface);
-}
-.chat-textarea {
-  flex: 1;
-  background: none;
-  border: none;
-  resize: none;
-  padding: 0.35rem 0.5rem;
-  font-size: 0.92rem;
-  font-family: inherit;
-  line-height: 1.4;
-  outline: none;
-  max-height: 120px;
-}
-.btn-input-tool {
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  padding: 0.4rem;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: color 0.15s ease, background 0.15s ease;
-}
-.btn-input-tool:hover {
-  color: var(--primary);
-  background: rgba(37, 99, 235, 0.1);
-}
-.btn-send {
-  border-radius: 8px;
-  padding: 0.45rem 0.75rem;
-  height: 38px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.file-preview-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.4rem 1rem;
-  background: var(--surface-alt);
-  border-top: 1px solid var(--border);
-}
-.emoji-popover {
-  position: absolute;
-  bottom: 68px;
-  left: 20px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 0.5rem;
-  display: flex;
-  gap: 0.5rem;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-  z-index: 20;
-}
-.emoji-popover span {
-  font-size: 1.3rem;
-  cursor: pointer;
-  transition: transform 0.1s ease;
-}
-.emoji-popover span:hover {
-  transform: scale(1.25);
-}
-
-/* 3. Right Sidebar */
-.chat-sidebar-right {
-  width: 300px;
-  border-left: 1px solid var(--border);
-  background: var(--surface);
-  display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
-  transition: transform 0.25s ease;
-}
-.chat-sidebar-right.collapsed {
-  display: none;
-}
-.info-sidebar-header {
-  padding: 1.15rem 1rem;
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.btn-close-info {
-  background: none;
-  border: none;
-  font-size: 1.3rem;
-  cursor: pointer;
-  color: var(--text-muted);
-}
-.info-sidebar-content {
-  flex: 1;
-  overflow-y: auto;
-  padding: 1.25rem 1rem;
-}
-.info-large-avatar {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  background: var(--primary-gradient);
-  color: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.6rem;
-  font-weight: 800;
-  margin: 0 auto;
-}
-
-/* Empty states */
-.empty-chat-welcome {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem;
-  text-align: center;
-}
-.empty-chat-box {
-  margin: auto;
-  text-align: center;
-  padding: 2rem 1rem;
-}
-.empty-conversations-box {
-  text-align: center;
-  padding: 2.5rem 1rem;
-}
-
-.student-pick-item {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.65rem 0.85rem;
-  border-radius: 8px;
-  text-decoration: none;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  transition: all 0.15s ease;
-}
-.student-pick-item:hover {
-  border-color: var(--primary);
-  background: var(--surface-alt);
-}
-
-/* Mobile Responsiveness */
-@media (max-width: 900px) {
-  .chat-sidebar-right {
-    position: absolute;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    z-index: 50;
-    box-shadow: -5px 0 20px rgba(0, 0, 0, 0.15);
-  }
-}
-@media (max-width: 768px) {
   .chat-app-container {
-    height: calc(100vh - 100px);
-    border-radius: 0;
-    border: none;
-  }
-  .chat-sidebar-left {
-    width: 100%;
-  }
-  .chat-main-window {
-    display: none;
-  }
-  .chat-app-container.mobile-chat-active .chat-sidebar-left {
-    display: none;
-  }
-  .chat-app-container.mobile-chat-active .chat-main-window {
     display: flex;
+    height: calc(100vh - 120px);
+    min-height: 580px;
+    max-width: 1300px;
+    margin: 0 auto;
+    background: var(--surface);
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.06);
+    overflow: hidden;
+    position: relative;
   }
-  .btn-mobile-back {
+
+  /* 1. Left Sidebar */
+  .chat-sidebar-left {
+    width: 340px;
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+    flex-shrink: 0;
+    transition: transform 0.25s ease;
+  }
+
+  .sidebar-header {
+    padding: 1.15rem 1rem 0.75rem 1rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  .chat-search-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .chat-search-wrap .search-icon {
+    position: absolute;
+    left: 10px;
+    color: var(--text-muted);
+    pointer-events: none;
+  }
+
+  .chat-search-input {
+    padding-left: 2rem !important;
+    font-size: 0.85rem !important;
+    border-radius: 9999px !important;
+    background: var(--surface-alt) !important;
+  }
+
+  .chat-filter-tabs {
+    display: flex;
+    gap: 0.35rem;
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+  }
+
+  .tab-chip {
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    border-radius: 9999px;
+    padding: 0.25rem 0.65rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+  }
+
+  .tab-chip:hover {
+    color: var(--text);
+    border-color: var(--primary);
+  }
+
+  .tab-chip.active {
+    background: var(--primary-light);
+    color: var(--primary);
+    border-color: var(--primary);
+  }
+
+  .conversations-scrollable {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.5rem;
+  }
+
+  .conversation-card {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    border-radius: 10px;
+    text-decoration: none;
+    color: var(--text);
+    margin-bottom: 0.25rem;
+    transition: background 0.15s ease;
+  }
+
+  .conversation-card:hover {
+    background: var(--surface-alt);
+  }
+
+  .conversation-card.active {
+    background: rgba(37, 99, 235, 0.08);
+    border-left: 3px solid var(--primary);
+  }
+
+  .conv-avatar-wrap {
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .conv-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1rem;
+  }
+
+  .direct-avatar {
+    background: var(--primary-gradient);
+    color: #ffffff;
+  }
+
+  .group-avatar {
+    background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+    color: #ffffff;
+  }
+
+  .conv-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .conv-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 0.2rem;
+  }
+
+  .conv-name {
+    font-weight: 700;
+    font-size: 0.92rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .conv-time {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    flex-shrink: 0;
+    margin-left: 0.4rem;
+  }
+
+  .conv-preview-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .conv-last-msg {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 190px;
+  }
+
+  .conv-unread-pill {
+    background: var(--primary);
+    color: #ffffff;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0.1rem 0.45rem;
+    border-radius: 9999px;
+    flex-shrink: 0;
+  }
+
+  /* 2. Middle Main Chat Window */
+  .chat-main-window {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+    min-width: 0;
+    position: relative;
+  }
+
+  .chat-header {
+    padding: 0.75rem 1.25rem;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 10;
+  }
+
+  .chat-header-title {
+    font-size: 1.05rem;
+    font-weight: 800;
+    margin: 0;
+    color: var(--text);
+    line-height: 1.2;
+  }
+
+  .chat-header-status {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  .status-dot-online {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--success);
     display: inline-block;
   }
-  .message-bubble {
-    max-width: 85%;
+
+  .btn-mobile-back {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 1.25rem;
+    cursor: pointer;
+    color: var(--text);
+    padding: 0.25rem 0.5rem;
   }
-}
+
+  .chat-messages-feed {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  /* Message Rows & Bubbles */
+  .date-separator {
+    text-align: center;
+    margin: 0.75rem 0;
+  }
+
+  .date-separator span {
+    background: var(--surface-alt);
+    color: var(--text-muted);
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 0.2rem 0.65rem;
+    border-radius: 9999px;
+    border: 1px solid var(--border);
+  }
+
+  .message-system-row {
+    text-align: center;
+    margin: 0.4rem 0;
+  }
+
+  .system-pill {
+    background: rgba(99, 102, 241, 0.08);
+    color: var(--primary);
+    font-size: 0.78rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    display: inline-block;
+  }
+
+  .message-row {
+    display: flex;
+    width: 100%;
+  }
+
+  .message-sent {
+    justify-content: flex-end;
+  }
+
+  .message-received {
+    justify-content: flex-start;
+  }
+
+  .message-bubble {
+    max-width: 68%;
+    padding: 0.65rem 0.95rem;
+    border-radius: 14px;
+    font-size: 0.92rem;
+    line-height: 1.45;
+    position: relative;
+    word-break: break-word;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  }
+
+  .message-sent .message-bubble {
+    background: var(--primary-gradient);
+    color: #ffffff;
+    border-bottom-right-radius: 3px;
+  }
+
+  .message-received .message-bubble {
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-bottom-left-radius: 3px;
+  }
+
+  .message-sender-name {
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: var(--primary);
+    margin-bottom: 0.2rem;
+  }
+
+  .message-text {
+    white-space: pre-wrap;
+  }
+
+  .message-meta {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.25rem;
+    margin-top: 0.3rem;
+    font-size: 0.68rem;
+    opacity: 0.8;
+  }
+
+  .message-sent .message-meta {
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  .message-received .message-meta {
+    color: var(--text-muted);
+  }
+
+  .message-checkmarks {
+    font-size: 0.75rem;
+  }
+
+  .message-attachments-list {
+    margin-top: 0.5rem;
+  }
+
+  .attachment-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.65rem;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-decoration: none;
+    background: rgba(255, 255, 255, 0.2);
+    color: inherit;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+
+  .message-received .attachment-chip {
+    background: var(--surface-alt);
+    color: var(--text);
+    border-color: var(--border);
+  }
+
+  /* Chat Input Bar */
+  .chat-input-form {
+    padding: 0.75rem 1rem;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    position: relative;
+  }
+
+  .chat-input-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.5rem;
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0.4rem 0.6rem;
+    transition: border-color 0.15s ease;
+  }
+
+  .chat-input-row:focus-within {
+    border-color: var(--primary);
+    background: var(--surface);
+  }
+
+  .chat-textarea {
+    flex: 1;
+    background: none;
+    border: none;
+    resize: none;
+    padding: 0.35rem 0.5rem;
+    font-size: 0.92rem;
+    font-family: inherit;
+    line-height: 1.4;
+    outline: none;
+    max-height: 120px;
+  }
+
+  .btn-input-tool {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0.4rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.15s ease, background 0.15s ease;
+  }
+
+  .btn-input-tool:hover {
+    color: var(--primary);
+    background: rgba(37, 99, 235, 0.1);
+  }
+
+  .btn-send {
+    border-radius: 8px;
+    padding: 0.45rem 0.75rem;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .file-preview-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.4rem 1rem;
+    background: var(--surface-alt);
+    border-top: 1px solid var(--border);
+  }
+
+  .emoji-popover {
+    position: absolute;
+    bottom: 68px;
+    left: 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.5rem;
+    display: flex;
+    gap: 0.5rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    z-index: 20;
+  }
+
+  .emoji-popover span {
+    font-size: 1.3rem;
+    cursor: pointer;
+    transition: transform 0.1s ease;
+  }
+
+  .emoji-popover span:hover {
+    transform: scale(1.25);
+  }
+
+  /* 3. Right Sidebar */
+  .chat-sidebar-right {
+    width: 300px;
+    border-left: 1px solid var(--border);
+    background: var(--surface);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    transition: transform 0.25s ease;
+  }
+
+  .chat-sidebar-right.collapsed {
+    display: none;
+  }
+
+  .info-sidebar-header {
+    padding: 1.15rem 1rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .btn-close-info {
+    background: none;
+    border: none;
+    font-size: 1.3rem;
+    cursor: pointer;
+    color: var(--text-muted);
+  }
+
+  .info-sidebar-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.25rem 1rem;
+  }
+
+  .info-large-avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: var(--primary-gradient);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    font-weight: 800;
+    margin: 0 auto;
+  }
+
+  /* Empty states */
+  .empty-chat-welcome {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    text-align: center;
+  }
+
+  .empty-chat-box {
+    margin: auto;
+    text-align: center;
+    padding: 2rem 1rem;
+  }
+
+  .empty-conversations-box {
+    text-align: center;
+    padding: 2.5rem 1rem;
+  }
+
+  .student-pick-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.65rem 0.85rem;
+    border-radius: 8px;
+    text-decoration: none;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    transition: all 0.15s ease;
+  }
+
+  .student-pick-item:hover {
+    border-color: var(--primary);
+    background: var(--surface-alt);
+  }
+
+  /* Mobile Responsiveness */
+  @media (max-width: 900px) {
+    .chat-sidebar-right {
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      z-index: 50;
+      box-shadow: -5px 0 20px rgba(0, 0, 0, 0.15);
+    }
+  }
+
+  @media (max-width: 768px) {
+    .chat-app-container {
+      height: calc(100vh - 100px);
+      border-radius: 0;
+      border: none;
+    }
+
+    .chat-sidebar-left {
+      width: 100%;
+    }
+
+    .chat-main-window {
+      display: none;
+    }
+
+    .chat-app-container.mobile-chat-active .chat-sidebar-left {
+      display: none;
+    }
+
+    .chat-app-container.mobile-chat-active .chat-main-window {
+      display: flex;
+    }
+
+    .btn-mobile-back {
+      display: inline-block;
+    }
+
+    .message-bubble {
+      max-width: 85%;
+    }
+  }
 </style>
 
 <script>
-const chatContainer = document.querySelector('.chat-app-container');
-const activeConvId = (chatContainer && chatContainer.getAttribute('data-active-conv-id'))
-  ? parseInt(chatContainer.getAttribute('data-active-conv-id'), 10)
-  : null;
-let lastMessageId = (chatContainer && chatContainer.getAttribute('data-last-message-id'))
-  ? parseInt(chatContainer.getAttribute('data-last-message-id'), 10)
-  : 0;
-let pollingTimer = null;
-let unreadPollingTimer = null;
-let selectedFile = null;
+  const chatContainer = document.querySelector('.chat-app-container');
+  const activeConvId = (chatContainer && chatContainer.getAttribute('data-active-conv-id'))
+    ? parseInt(chatContainer.getAttribute('data-active-conv-id'), 10)
+    : null;
+  let lastMessageId = (chatContainer && chatContainer.getAttribute('data-last-message-id'))
+    ? parseInt(chatContainer.getAttribute('data-last-message-id'), 10)
+    : 0;
+  let pollingTimer = null;
+  let unreadPollingTimer = null;
+  let selectedFile = null;
 
-// Initialize View State
-document.addEventListener('DOMContentLoaded', function() {
-  scrollToLatestMessage();
+  // Initialize View State
+  document.addEventListener('DOMContentLoaded', function () {
+    scrollToLatestMessage();
 
-  if (activeConvId) {
-    if (window.innerWidth <= 768) {
-      document.querySelector('.chat-app-container').classList.add('mobile-chat-active');
+    if (activeConvId) {
+      if (window.innerWidth <= 768) {
+        document.querySelector('.chat-app-container').classList.add('mobile-chat-active');
+      }
+      // Start active conversation polling every 2.5s
+      pollingTimer = setInterval(pollNewMessages, 2500);
     }
-    // Start active conversation polling every 2.5s
-    pollingTimer = setInterval(pollNewMessages, 2500);
-  }
 
-  // Poll global unread badges every 5s
-  unreadPollingTimer = setInterval(pollUnreadCounts, 5000);
-});
-
-function scrollToLatestMessage() {
-  const feed = document.getElementById('messagesFeed');
-  if (feed) {
-    feed.scrollTop = feed.scrollHeight;
-  }
-}
-
-function showMobileSidebar() {
-  document.querySelector('.chat-app-container').classList.remove('mobile-chat-active');
-}
-
-function toggleInfoSidebar() {
-  const rightSidebar = document.getElementById('chatSidebarRight');
-  if (rightSidebar) {
-    rightSidebar.classList.toggle('collapsed');
-  }
-}
-
-// Search & Filter Conversations in Left Sidebar
-function filterConversations() {
-  const term = document.getElementById('conversationSearchInput').value.toLowerCase().trim();
-  const cards = document.querySelectorAll('.conversation-card');
-  cards.forEach(card => {
-    const name = card.getAttribute('data-conv-name') || '';
-    if (name.includes(term)) {
-      card.style.display = 'flex';
-    } else {
-      card.style.display = 'none';
-    }
+    // Poll global unread badges every 5s
+    unreadPollingTimer = setInterval(pollUnreadCounts, 5000);
   });
-}
 
-function setFilterTab(tabType, btn) {
-  document.querySelectorAll('.tab-chip').forEach(t => t.classList.remove('active'));
-  btn.classList.add('active');
-
-  const cards = document.querySelectorAll('.conversation-card');
-  cards.forEach(card => {
-    const cType = card.getAttribute('data-conv-type');
-    const unread = parseInt(card.getAttribute('data-unread') || '0', 10);
-
-    if (tabType === 'all') {
-      card.style.display = 'flex';
-    } else if (tabType === 'direct') {
-      card.style.display = (cType === 'direct') ? 'flex' : 'none';
-    } else if (tabType === 'project_group') {
-      card.style.display = (cType === 'project_group') ? 'flex' : 'none';
-    } else if (tabType === 'unread') {
-      card.style.display = (unread > 0) ? 'flex' : 'none';
+  function scrollToLatestMessage() {
+    const feed = document.getElementById('messagesFeed');
+    if (feed) {
+      feed.scrollTop = feed.scrollHeight;
     }
-  });
-}
-
-// Auto-expand Textarea & Enter-to-send
-function handleTextareaKeydown(e) {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault();
-    document.getElementById('chatInputForm').requestSubmit();
   }
-}
 
-// Emoji Picker
-function toggleEmojiPopover() {
-  const pop = document.getElementById('emojiPopover');
-  if (pop) {
-    pop.style.display = (pop.style.display === 'none') ? 'flex' : 'none';
+  function showMobileSidebar() {
+    document.querySelector('.chat-app-container').classList.remove('mobile-chat-active');
   }
-}
 
-function insertEmoji(emoji) {
-  const textarea = document.getElementById('messageTextInput');
-  if (textarea) {
-    textarea.value += emoji;
-    textarea.focus();
+  function toggleInfoSidebar() {
+    const rightSidebar = document.getElementById('chatSidebarRight');
+    if (rightSidebar) {
+      rightSidebar.classList.toggle('collapsed');
+    }
   }
-  const pop = document.getElementById('emojiPopover');
-  if (pop) {
-    pop.style.display = 'none';
-  }
-}
 
-// File Attachment handling
-function handleFileSelected(input) {
-  if (input.files && input.files[0]) {
-    selectedFile = input.files[0];
-    const previewName = document.getElementById('previewFileName');
+  // Search & Filter Conversations in Left Sidebar
+  function filterConversations() {
+    const term = document.getElementById('conversationSearchInput').value.toLowerCase().trim();
+    const cards = document.querySelectorAll('.conversation-card');
+    cards.forEach(card => {
+      const name = card.getAttribute('data-conv-name') || '';
+      if (name.includes(term)) {
+        card.style.display = 'flex';
+      } else {
+        card.style.display = 'none';
+      }
+    });
+  }
+
+  function setFilterTab(tabType, btn) {
+    document.querySelectorAll('.tab-chip').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+
+    const cards = document.querySelectorAll('.conversation-card');
+    cards.forEach(card => {
+      const cType = card.getAttribute('data-conv-type');
+      const unread = parseInt(card.getAttribute('data-unread') || '0', 10);
+
+      if (tabType === 'all') {
+        card.style.display = 'flex';
+      } else if (tabType === 'direct') {
+        card.style.display = (cType === 'direct') ? 'flex' : 'none';
+      } else if (tabType === 'project_group') {
+        card.style.display = (cType === 'project_group') ? 'flex' : 'none';
+      } else if (tabType === 'unread') {
+        card.style.display = (unread > 0) ? 'flex' : 'none';
+      }
+    });
+  }
+
+  // Auto-expand Textarea & Enter-to-send
+  function handleTextareaKeydown(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      document.getElementById('chatInputForm').requestSubmit();
+    }
+  }
+
+  // Emoji Picker
+  function toggleEmojiPopover() {
+    const pop = document.getElementById('emojiPopover');
+    if (pop) {
+      pop.style.display = (pop.style.display === 'none') ? 'flex' : 'none';
+    }
+  }
+
+  function insertEmoji(emoji) {
+    const textarea = document.getElementById('messageTextInput');
+    if (textarea) {
+      textarea.value += emoji;
+      textarea.focus();
+    }
+    const pop = document.getElementById('emojiPopover');
+    if (pop) {
+      pop.style.display = 'none';
+    }
+  }
+
+  // File Attachment handling
+  function handleFileSelected(input) {
+    if (input.files && input.files[0]) {
+      selectedFile = input.files[0];
+      const previewName = document.getElementById('previewFileName');
+      const previewBar = document.getElementById('filePreviewBar');
+      if (previewName) {
+        previewName.textContent = selectedFile.name + ` (${(selectedFile.size / 1024).toFixed(1)} KB)`;
+      }
+      if (previewBar) {
+        previewBar.style.display = 'flex';
+      }
+    }
+  }
+
+  function clearSelectedAttachment() {
+    selectedFile = null;
+    const fileInput = document.getElementById('fileAttachmentInput');
     const previewBar = document.getElementById('filePreviewBar');
-    if (previewName) {
-      previewName.textContent = selectedFile.name + ` (${(selectedFile.size / 1024).toFixed(1)} KB)`;
+    if (fileInput) {
+      fileInput.value = '';
     }
     if (previewBar) {
-      previewBar.style.display = 'flex';
+      previewBar.style.display = 'none';
     }
   }
-}
 
-function clearSelectedAttachment() {
-  selectedFile = null;
-  const fileInput = document.getElementById('fileAttachmentInput');
-  const previewBar = document.getElementById('filePreviewBar');
-  if (fileInput) {
-    fileInput.value = '';
-  }
-  if (previewBar) {
-    previewBar.style.display = 'none';
-  }
-}
+  // Send Message API Call
+  async function handleSendMessage(e) {
+    e.preventDefault();
+    if (!activeConvId) return;
 
-// Send Message API Call
-async function handleSendMessage(e) {
-  e.preventDefault();
-  if (!activeConvId) return;
+    const textInput = document.getElementById('messageTextInput');
+    const content = textInput.value.trim();
 
-  const textInput = document.getElementById('messageTextInput');
-  const content = textInput.value.trim();
-
-  if (!content && !selectedFile) {
-    return;
-  }
-
-  const formData = new FormData();
-  formData.append('content', content);
-  if (selectedFile) {
-    formData.append('attachment', selectedFile);
-  }
-
-  const sendBtn = document.getElementById('btnSend');
-  sendBtn.disabled = true;
-
-  try {
-    const res = await fetch(`/api/messages/${activeConvId}/send`, {
-      method: 'POST',
-      body: formData
-    });
-    const data = await res.json();
-
-    if (data.success && data.message) {
-      textInput.value = '';
-      clearSelectedAttachment();
-      const pop = document.getElementById('emojiPopover');
-      if (pop) pop.style.display = 'none';
-      appendMessageToFeed(data.message);
-      lastMessageId = Math.max(lastMessageId, data.message.id);
-
-      // Update sidebar preview
-      const previewSpan = document.getElementById(`lastMsgPreview-${activeConvId}`);
-      if (previewSpan) previewSpan.textContent = data.message.content;
-    } else {
-      alert(data.error || 'Failed to send message.');
+    if (!content && !selectedFile) {
+      return;
     }
-  } catch (err) {
-    console.error('Send message error:', err);
-  } finally {
-    sendBtn.disabled = false;
-    textInput.focus();
-  }
-}
 
-// Real-Time Message Polling
-async function pollNewMessages() {
-  if (!activeConvId) return;
+    const formData = new FormData();
+    formData.append('content', content);
+    if (selectedFile) {
+      formData.append('attachment', selectedFile);
+    }
 
-  try {
-    const res = await fetch(`/api/messages/${activeConvId}/updates?after=${lastMessageId}`);
-    const data = await res.json();
+    const sendBtn = document.getElementById('btnSend');
+    sendBtn.disabled = true;
 
-    if (data.success && data.messages && data.messages.length > 0) {
-      data.messages.forEach(msg => {
-        // Only append if not already in DOM
-        if (!document.getElementById(`msg-${msg.id}`)) {
-          appendMessageToFeed(msg);
-          lastMessageId = Math.max(lastMessageId, msg.id);
-
-          const previewSpan = document.getElementById(`lastMsgPreview-${activeConvId}`);
-          if (previewSpan) previewSpan.textContent = msg.content;
-        }
+    try {
+      const res = await fetch(`/api/messages/${activeConvId}/send`, {
+        method: 'POST',
+        body: formData
       });
+      const data = await res.json();
+
+      if (data.success && data.message) {
+        textInput.value = '';
+        clearSelectedAttachment();
+        const pop = document.getElementById('emojiPopover');
+        if (pop) pop.style.display = 'none';
+        appendMessageToFeed(data.message);
+        lastMessageId = Math.max(lastMessageId, data.message.id);
+
+        // Update sidebar preview
+        const previewSpan = document.getElementById(`lastMsgPreview-${activeConvId}`);
+        if (previewSpan) previewSpan.textContent = data.message.content;
+      } else {
+        alert(data.error || 'Failed to send message.');
+      }
+    } catch (err) {
+      console.error('Send message error:', err);
+    } finally {
+      sendBtn.disabled = false;
+      textInput.focus();
     }
-  } catch (err) {
-    console.error('Poll error:', err);
   }
-}
 
-// Append new message node to DOM
-function appendMessageToFeed(msg) {
-  const feed = document.getElementById('messagesFeed');
-  if (!feed) return;
+  // Real-Time Message Polling
+  async function pollNewMessages() {
+    if (!activeConvId) return;
 
-  // Remove empty chat state if present
-  const emptyBox = feed.querySelector('.empty-chat-box');
-  if (emptyBox) emptyBox.remove();
+    try {
+      const res = await fetch(`/api/messages/${activeConvId}/updates?after=${lastMessageId}`);
+      const data = await res.json();
 
-  const msgRow = document.createElement('div');
-  msgRow.id = `msg-${msg.id}`;
-  msgRow.className = `message-row ${msg.is_me ? 'message-sent' : 'message-received'}`;
+      if (data.success && data.messages && data.messages.length > 0) {
+        data.messages.forEach(msg => {
+          // Only append if not already in DOM
+          if (!document.getElementById(`msg-${msg.id}`)) {
+            appendMessageToFeed(msg);
+            lastMessageId = Math.max(lastMessageId, msg.id);
 
-  let attachmentHtml = '';
-  if (msg.attachments && msg.attachments.length > 0) {
-    msg.attachments.forEach(att => {
-      attachmentHtml += `
+            const previewSpan = document.getElementById(`lastMsgPreview-${activeConvId}`);
+            if (previewSpan) previewSpan.textContent = msg.content;
+          }
+        });
+      }
+    } catch (err) {
+      console.error('Poll error:', err);
+    }
+  }
+
+  // Append new message node to DOM
+  function appendMessageToFeed(msg) {
+    const feed = document.getElementById('messagesFeed');
+    if (!feed) return;
+
+    // Remove empty chat state if present
+    const emptyBox = feed.querySelector('.empty-chat-box');
+    if (emptyBox) emptyBox.remove();
+
+    const msgRow = document.createElement('div');
+    msgRow.id = `msg-${msg.id}`;
+    msgRow.className = `message-row ${msg.is_me ? 'message-sent' : 'message-received'}`;
+
+    let attachmentHtml = '';
+    if (msg.attachments && msg.attachments.length > 0) {
+      msg.attachments.forEach(att => {
+        attachmentHtml += `
         <a href="/messages/attachments/${att.id}" class="attachment-chip" target="_blank">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
           <span class="attachment-name">${escapeHtml(att.file_name)}</span>
           <span class="attachment-size">(${(att.file_size / 1024).toFixed(1)} KB)</span>
         </a>
       `;
-    });
-  }
+      });
+    }
 
-  msgRow.innerHTML = `
+    msgRow.innerHTML = `
     <div class="message-bubble">
       ${!msg.is_me ? `<div class="message-sender-name">${escapeHtml(msg.sender_name)}</div>` : ''}
       ${msg.content ? `<div class="message-text">${escapeHtml(msg.content)}</div>` : ''}
@@ -1208,81 +1335,81 @@ function appendMessageToFeed(msg) {
     </div>
   `;
 
-  feed.appendChild(msgRow);
-  scrollToLatestMessage();
-}
-
-// Poll Unread Counts for Navbar & Conversations List
-async function pollUnreadCounts() {
-  try {
-    const res = await fetch('/api/messages/unread');
-    const data = await res.json();
-
-    // Update Navbar Badge
-    const navBadge = document.getElementById('navUnreadMessagesBadge');
-    if (navBadge) {
-      if (data.total_unread > 0) {
-        navBadge.textContent = data.total_unread;
-        navBadge.style.display = 'inline-block';
-      } else {
-        navBadge.style.display = 'none';
-      }
-    }
-
-    // Update Conversation item badges
-    if (data.conversations) {
-      Object.keys(data.conversations).forEach(cid => {
-        const cnt = data.conversations[cid];
-        const badge = document.getElementById(`unreadBadge-${cid}`);
-        const card = document.querySelector(`.conversation-card[data-conv-id="${cid}"]`);
-        if (badge) {
-          if (cnt > 0 && parseInt(cid, 10) !== activeConvId) {
-            badge.textContent = cnt;
-            badge.style.display = 'inline-block';
-          } else {
-            badge.style.display = 'none';
-          }
-        }
-        if (card) {
-          card.setAttribute('data-unread', cnt);
-        }
-      });
-    }
-  } catch (e) {
-    console.error('Unread counts poll error:', e);
+    feed.appendChild(msgRow);
+    scrollToLatestMessage();
   }
-}
 
-// Modal: New Chat
-function openNewChatModal() {
-  const modal = document.getElementById('newChatModal');
-  const searchInput = document.getElementById('studentSearchFilter');
-  if (modal) modal.style.display = 'flex';
-  if (searchInput) searchInput.focus();
-}
+  // Poll Unread Counts for Navbar & Conversations List
+  async function pollUnreadCounts() {
+    try {
+      const res = await fetch('/api/messages/unread');
+      const data = await res.json();
 
-function closeNewChatModal() {
-  const modal = document.getElementById('newChatModal');
-  if (modal) modal.style.display = 'none';
-}
+      // Update Navbar Badge
+      const navBadge = document.getElementById('navUnreadMessagesBadge');
+      if (navBadge) {
+        if (data.total_unread > 0) {
+          navBadge.textContent = data.total_unread;
+          navBadge.style.display = 'inline-block';
+        } else {
+          navBadge.style.display = 'none';
+        }
+      }
 
-function filterStudentDirectory() {
-  const query = document.getElementById('studentSearchFilter').value.toLowerCase().trim();
-  const items = document.querySelectorAll('.student-pick-item');
-  items.forEach(item => {
-    const name = item.getAttribute('data-student-name') || '';
-    const branch = item.getAttribute('data-student-branch') || '';
-    if (name.includes(query) || branch.includes(query)) {
-      item.style.display = 'flex';
-    } else {
-      item.style.display = 'none';
+      // Update Conversation item badges
+      if (data.conversations) {
+        Object.keys(data.conversations).forEach(cid => {
+          const cnt = data.conversations[cid];
+          const badge = document.getElementById(`unreadBadge-${cid}`);
+          const card = document.querySelector(`.conversation-card[data-conv-id="${cid}"]`);
+          if (badge) {
+            if (cnt > 0 && parseInt(cid, 10) !== activeConvId) {
+              badge.textContent = cnt;
+              badge.style.display = 'inline-block';
+            } else {
+              badge.style.display = 'none';
+            }
+          }
+          if (card) {
+            card.setAttribute('data-unread', cnt);
+          }
+        });
+      }
+    } catch (e) {
+      console.error('Unread counts poll error:', e);
     }
-  });
-}
+  }
 
-function escapeHtml(text) {
-  const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
-  return text.replace(/[&<>"']/g, function(m) { return map[m]; });
-}
+  // Modal: New Chat
+  function openNewChatModal() {
+    const modal = document.getElementById('newChatModal');
+    const searchInput = document.getElementById('studentSearchFilter');
+    if (modal) modal.style.display = 'flex';
+    if (searchInput) searchInput.focus();
+  }
+
+  function closeNewChatModal() {
+    const modal = document.getElementById('newChatModal');
+    if (modal) modal.style.display = 'none';
+  }
+
+  function filterStudentDirectory() {
+    const query = document.getElementById('studentSearchFilter').value.toLowerCase().trim();
+    const items = document.querySelectorAll('.student-pick-item');
+    items.forEach(item => {
+      const name = item.getAttribute('data-student-name') || '';
+      const branch = item.getAttribute('data-student-branch') || '';
+      if (name.includes(query) || branch.includes(query)) {
+        item.style.display = 'flex';
+      } else {
+        item.style.display = 'none';
+      }
+    });
+  }
+
+  function escapeHtml(text) {
+    const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+    return text.replace(/[&<>"']/g, function (m) { return map[m]; });
+  }
 </script>
 {% endblock %}

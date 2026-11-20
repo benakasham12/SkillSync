@@ -76,8 +76,10 @@ def test_landing_page_renders_successfully(client):
     navbar_and_hero = html.split('<footer')[0]
     assert "BMSIT&amp;M CSE 13" not in navbar_and_hero
     assert "brand-badge" not in html
-    assert "Student Skill &amp; Project Team Finder &bull; BMSIT&amp;M IDT" not in html
-    assert "Student Skill &amp; Project Team Finder" in html
+    # Verify complete removal of hero pill banner "Student Skill & Project Team Finder"
+    assert "Student Skill &amp; Project Team Finder" not in html
+    assert "hero-badge" not in html
+    assert "badge-pulsing-dot" not in html
     assert '<span class="brand-name">SkillSync</span>' in html
 
 

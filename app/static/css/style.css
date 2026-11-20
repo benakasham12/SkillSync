@@ -1165,40 +1165,6 @@ textarea.form-control {
   gap: 1.75rem;
 }
 
-/* Eyebrow Pill */
-.hero-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.6rem;
-  background: rgba(255, 255, 255, 0.95);
-  border: 1px solid rgba(99, 102, 241, 0.25);
-  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.1);
-  padding: 0.4rem 1.1rem;
-  border-radius: 9999px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--accent-indigo);
-  width: fit-content;
-  backdrop-filter: blur(10px);
-}
-.badge-pulsing-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #10b981;
-  box-shadow: 0 0 0 rgba(16, 185, 129, 0.4);
-  animation: pulseDot 2s infinite;
-}
-@keyframes pulseDot {
-  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-  70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
-}
-.badge-arrow {
-  color: var(--accent-indigo);
-  font-weight: 700;
-}
-
 /* Headline */
 .hero-headline {
   font-size: clamp(2.6rem, 5vw, 4rem);
@@ -3180,11 +3146,6 @@ html:not([data-theme="dark"]) .sidebar-theme-toggle .theme-icon-moon {
 }
 [data-theme="dark"] .hero-subtitle {
   color: var(--text-muted);
-}
-[data-theme="dark"] .hero-badge {
-  background: rgba(59, 130, 246, 0.15);
-  border-color: rgba(59, 130, 246, 0.3);
-  color: #93c5fd;
 }
 [data-theme="dark"] .hero-trust-text {
   color: var(--text-muted);
