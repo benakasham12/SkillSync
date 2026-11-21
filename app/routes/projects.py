@@ -70,13 +70,52 @@ def parse_submitted_skills(form_data=None, json_data=None):
     form_data = form_data or {}
     json_data = json_data or {}
 
-    # 1. Check if sent as json string in form or dict
-    raw_skills = (
-        form_data.get('skills_json')
-        or json_data.get('skills_json')
-        or form_data.get('skills')
-        or json_data.get('skills')
-    )
+    def extract_item(item):
+        if isinstance(item, str) and item.strip():
+            return {
+                'name': item.strip(),
+                'priority': 'must-have',
+                'proficiency': 'Intermediate'
+            }
+        if isinstance(item, dict):
+            s_name = (
+                item.get('name')
+                or item.get('skill')
+                or item.get('skill_name')
+                or item.get('skillName')
+                or item.get('title')
+            )
+            if s_name:
+                prio = (
+                    item.get('priority')
+                    or item.get('importance')
+                    or item.get('priority_level')
+                    or 'must-have'
+                )
+                prof = (
+                    item.get('proficiency')
+                    or item.get('proficiency_level')
+                    or item.get('level')
+                    or 'Intermediate'
+                )
+                return {
+                    'name': str(s_name).strip(),
+                    'priority': str(prio).strip(),
+                    'proficiency': str(prof).strip()
+                }
+        return None
+
+    candidate_keys = [
+        'skills_json', 'skills', 'required_skills', 'project_skills',
+        'skill_requirements', 'skill_list'
+    ]
+    raw_skills = None
+    for k in candidate_keys:
+        val = form_data.get(k) or json_data.get(k)
+        if val:
+            raw_skills = val
+            break
+
     if raw_skills:
         if isinstance(raw_skills, str):
             try:
@@ -87,24 +126,16 @@ def parse_submitted_skills(form_data=None, json_data=None):
                 pass
         if isinstance(raw_skills, list):
             for item in raw_skills:
-                if isinstance(item, dict) and item.get('name'):
-                    skills_data.append({
-                        'name': str(item['name']).strip(),
-                        'priority': str(item.get('priority', 'must-have')).strip(),
-                        'proficiency': str(item.get('proficiency', 'Intermediate')).strip()
-                    })
+                extracted = extract_item(item)
+                if extracted:
+                    skills_data.append(extracted)
 
-    # 2. Check if sent as direct 'skills' array in JSON
     if not skills_data and 'skills' in json_data and isinstance(json_data['skills'], list):
         for item in json_data['skills']:
-            if isinstance(item, dict) and item.get('name'):
-                skills_data.append({
-                    'name': str(item['name']).strip(),
-                    'priority': str(item.get('priority', 'must-have')).strip(),
-                    'proficiency': str(item.get('proficiency', 'Intermediate')).strip()
-                })
+            extracted = extract_item(item)
+            if extracted:
+                skills_data.append(extracted)
 
-    # 3. Check if sent as standard multi-field inputs
     if not skills_data and hasattr(form_data, 'getlist'):
         names = form_data.getlist('skill_name') or form_data.getlist('skill_names[]')
         priorities = form_data.getlist('skill_priority') or form_data.getlist('skill_priorities[]')
@@ -527,9 +558,18 @@ def render_create_template(form_data=None):
 
 
 @projects_bp.route('/projects/create', methods=['GET', 'POST'])
+@projects_bp.route('/project/create', methods=['GET', 'POST'])
+@projects_bp.route('/projects/new', methods=['GET', 'POST'])
+@projects_bp.route('/project/new', methods=['GET', 'POST'])
+@projects_bp.route('/api/projects', methods=['POST'])
+@projects_bp.route('/api/projects/', methods=['POST'])
+@projects_bp.route('/api/project', methods=['POST'])
 @projects_bp.route('/api/projects/create', methods=['POST'])
+@projects_bp.route('/api/project/create', methods=['POST'])
 @projects_bp.route('/api/projects/publish', methods=['POST'])
+@projects_bp.route('/api/project/publish', methods=['POST'])
 @projects_bp.route('/projects/publish', methods=['POST'])
+@projects_bp.route('/project/publish', methods=['POST'])
 @login_required
 def create_project():
     """Create a new course project with multi-step support, skills requirements, and draft/publish actions."""
@@ -549,19 +589,36 @@ def create_project():
                 return form_data.get(key, default)
             return json_data.get(key, default)
 
-        title = str(get_val('title', '')).strip()
-        description = str(get_val('description', '')).strip()
-        category = str(get_val('category', 'Web Development')).strip()
+        title = str(
+            get_val('title', '')
+            or get_val('name', '')
+            or get_val('projectName', '')
+            or get_val('project_name', '')
+        ).strip()
+        description = str(
+            get_val('description', '')
+            or get_val('desc', '')
+            or get_val('projectDescription', '')
+            or get_val('project_description', '')
+        ).strip()
+        category = str(get_val('category', get_val('projectCategory', 'Web Development'))).strip()
         objectives = str(get_val('objectives', '')).strip()
-        technologies = str(get_val('technologies', '')).strip()
+        technologies = str(get_val('technologies', get_val('tech_stack', get_val('techStack', '')))).strip()
         duration = str(get_val('duration', '2–3 Months')).strip()
-        collaboration_mode = str(get_val('collaboration_mode', 'Hybrid')).strip()
+        collaboration_mode = str(get_val('collaboration_mode', get_val('mode', 'Hybrid'))).strip()
         availability = str(get_val('availability', 'Flexible')).strip()
         additional_requirements = str(get_val('additional_requirements', '')).strip()
         course_context = str(get_val('course_context', 'Innovation & Design Thinking (IDT)')).strip()
 
         # Team size parsing
-        team_size_max_input = str(get_val('team_size_max', '4')).strip()
+        team_size_max_input = str(
+            get_val('team_size_max', '')
+            or get_val('team_size', '')
+            or get_val('teamSize', '')
+            or get_val('target_team_size', '')
+            or get_val('targetTeamSize', '')
+            or get_val('max_members', '4')
+        ).strip()
         if team_size_max_input == 'custom':
             try:
                 team_size_max = int(get_val('custom_team_size', 4))
@@ -575,13 +632,15 @@ def create_project():
         team_size_max = max(2, min(20, team_size_max))
 
         try:
-            team_size_min = int(get_val('team_size_min', 2))
+            team_size_min = int(get_val('team_size_min', get_val('teamSizeMin', 2)))
         except (ValueError, TypeError):
             team_size_min = 2
         team_size_min = max(1, min(team_size_max, team_size_min))
 
         schedule_notes = str(get_val('schedule_notes', availability)).strip()
-        action = str(get_val('action', get_val('submit_action', 'publish'))).strip().lower()
+        action = str(get_val('action', get_val('submit_action', get_val('status', 'publish')))).strip().lower()
+        if request.path.endswith('/publish'):
+            action = 'publish'
 
         # Parse skills
         skills_data = parse_submitted_skills(form_data, json_data)
@@ -1223,44 +1282,125 @@ def update_requirements(project_id):
     return redirect(url_for('projects.project_detail', project_id=project_id))
 
 
-@projects_bp.route('/projects/<int:project_id>/publish', methods=['POST'])
-@projects_bp.route('/api/projects/<int:project_id>/publish', methods=['POST'])
+@projects_bp.route('/projects/<project_id>/publish', methods=['POST'])
+@projects_bp.route('/api/projects/<project_id>/publish', methods=['POST'])
+@projects_bp.route('/project/<project_id>/publish', methods=['POST'])
+@projects_bp.route('/api/project/<project_id>/publish', methods=['POST'])
 @login_required
 def publish_project(project_id):
-    """Publish draft project. Validates that at least 1 required skill exists."""
+    """Publish a draft project or create & publish atomically if project_id is unassigned or payload is provided."""
     user_id = session['user_id']
     is_ajax = (
         request.is_json
         or request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         or 'application/json' in request.headers.get('Accept', '')
     )
-    project = query_db("SELECT * FROM projects WHERE id = ?", (project_id,), one=True)
-    if not project or project['owner_id'] != user_id:
+
+    # 1. Parse project_id as integer if possible
+    pid_int = None
+    try:
+        pid_int = int(project_id)
+    except (ValueError, TypeError):
+        pid_int = None
+
+    project = None
+    if pid_int is not None and pid_int > 0:
+        project = query_db("SELECT * FROM projects WHERE id = ?", (pid_int,), one=True)
+
+    # 2. If project does not exist (e.g. project_id is 'undefined', 'null', 'new', 0, or not found):
+    if not project:
+        # Check if project creation payload was submitted with this request
+        json_data = request.get_json(silent=True) or {}
+        form_data = request.form
+        has_title = bool(
+            form_data.get('title') or form_data.get('name') or
+            json_data.get('title') or json_data.get('name') or
+            form_data.get('project_name') or json_data.get('project_name')
+        )
+        has_desc = bool(
+            form_data.get('description') or form_data.get('desc') or
+            json_data.get('description') or json_data.get('desc')
+        )
+        has_skills = bool(
+            form_data.get('skills_json') or json_data.get('skills_json') or
+            form_data.get('skills') or json_data.get('skills') or
+            form_data.get('required_skills') or json_data.get('required_skills')
+        )
+
+        if has_title or has_desc or has_skills:
+            # Delegate directly to create_project() to create and publish atomically
+            return create_project()
+
+        # Truly not found and no creation data
         if is_ajax:
-            return jsonify({'success': False, 'error': 'Unauthorized action or project not found.'}), 403
+            return jsonify({'success': False, 'error': f'Project resource "{project_id}" not found.'}), 404
+        flash('Project not found.', 'danger')
+        return redirect(url_for('projects.list_projects'))
+
+    # 3. Ownership check for existing project
+    if project['owner_id'] != user_id:
+        if is_ajax:
+            return jsonify({'success': False, 'error': 'Unauthorized action: You do not own this project.'}), 403
         flash('Unauthorized action.', 'danger')
         return redirect(url_for('projects.list_projects'))
 
-    req_cnt_row = query_db("SELECT COUNT(*) as cnt FROM project_skill_requirements WHERE project_id = ?", (project_id,), one=True)
+    # 4. If new skills were submitted with the publish request, save them
+    json_data = request.get_json(silent=True) or {}
+    form_data = request.form
+    new_skills = parse_submitted_skills(form_data, json_data)
+    if new_skills:
+        conn = get_db()
+        cur = conn.cursor()
+        for item in new_skills:
+            s_name = str(item.get('name', '')).strip()
+            if not s_name:
+                continue
+            prio_raw = str(item.get('priority', 'must-have')).strip().lower()
+            prio = 'must-have' if prio_raw in ['must have', 'must-have', 'must_have'] else 'preferred'
+            weight = 3.0 if prio == 'must-have' else 1.0
+            prof = str(item.get('proficiency', 'Intermediate')).strip().capitalize()
+            if prof not in ['Beginner', 'Intermediate', 'Advanced', 'Expert']:
+                prof = 'Intermediate'
+
+            cur.execute("SELECT id FROM skills WHERE LOWER(name) = LOWER(?)", (s_name,))
+            s_row = cur.fetchone()
+            if s_row:
+                s_id = s_row['id']
+            else:
+                cur.execute("INSERT INTO skills (name, category, active) VALUES (?, 'Other', 1)", (s_name,))
+                s_id = cur.lastrowid
+
+            cur.execute("""
+                INSERT OR REPLACE INTO project_skill_requirements (project_id, skill_id, priority, proficiency_level, weight)
+                VALUES (?, ?, ?, ?, ?)
+            """, (pid_int, s_id, prio, prof, weight))
+        conn.commit()
+        conn.close()
+
+    # 5. Validate that at least 1 required skill exists
+    req_cnt_row = query_db("SELECT COUNT(*) as cnt FROM project_skill_requirements WHERE project_id = ?", (pid_int,), one=True)
     req_cnt = req_cnt_row['cnt'] if req_cnt_row else 0
     if req_cnt == 0:
         if is_ajax:
             return jsonify({'success': False, 'error': 'Cannot publish project: You must declare at least one required skill first.'}), 400
         flash('Cannot publish project: You must declare at least one required skill first.', 'danger')
-        return redirect(url_for('projects.project_detail', project_id=project_id))
+        return redirect(url_for('projects.project_detail', project_id=pid_int))
 
-    execute_db("UPDATE projects SET status = 'published', updated_at = CURRENT_TIMESTAMP WHERE id = ?", (project_id,))
-    log_event('project_published', actor_id=user_id, target_type='project', target_id=project_id)
+    # 6. Update status to published
+    execute_db("UPDATE projects SET status = 'published', updated_at = CURRENT_TIMESTAMP WHERE id = ?", (pid_int,))
+    log_event('project_published', actor_id=user_id, target_type='project', target_id=pid_int)
+
     if is_ajax:
         return jsonify({
             'success': True,
             'message': 'Project published! Classmates can now discover it and apply.',
-            'project_id': project_id,
-            'redirect_url': url_for('projects.project_detail', project_id=project_id),
+            'project_id': pid_int,
+            'redirect_url': url_for('projects.project_detail', project_id=pid_int),
             'status': 'published'
         }), 200
+
     flash('Project published! Classmates can now discover it and apply.', 'success')
-    return redirect(url_for('projects.project_detail', project_id=project_id))
+    return redirect(url_for('projects.project_detail', project_id=pid_int))
 
 
 @projects_bp.route('/projects/<int:project_id>/close', methods=['POST'])

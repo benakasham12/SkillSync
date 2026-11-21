@@ -402,3 +402,96 @@ def test_close_reopen_and_delete_project(client, app):
     assert b"Project and all associated records deleted successfully" in res_del.data
     proj_deleted = query_db("SELECT id FROM projects WHERE id = ?", (proj_id,), one=True, db_path=db_path)
     assert proj_deleted is None
+
+
+def test_publish_project_ben_with_python_skill(client, app):
+    """Verify publishing project with user's exact test data: ben, Python skill (Nice to Have, Beginner)."""
+    db_path = app.config['DATABASE']
+    uid = create_test_student(app, 'ben_owner@bmsit.in', 'Ben Tester')
+    login_student(client, uid, 'ben_owner@bmsit.in', 'Ben Tester')
+
+    payload = {
+        'title': 'ben',
+        'category': 'Web Development',
+        'duration': '2–3 Months',
+        'collaboration_mode': 'Hybrid',
+        'availability': 'Flexible',
+        'description': 'hii',
+        'team_size_max': '4',
+        'action': 'publish',
+        'submit_action': 'publish',
+        'skills_json': json.dumps([{'name': 'Python', 'priority': 'Nice to Have', 'proficiency': 'Beginner'}])
+    }
+
+    res = client.post('/projects/create', data=payload, headers={'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest'})
+    assert res.status_code == 201
+    data = res.get_json()
+    assert data['success'] is True
+    assert data['status'] == 'published'
+    proj_id = data['project_id']
+
+    # 1. DB persistence
+    proj = query_db("SELECT * FROM projects WHERE id = ?", (proj_id,), one=True, db_path=db_path)
+    assert proj is not None
+    assert proj['title'] == 'ben'
+    assert proj['status'] == 'published'
+    assert proj['owner_id'] == uid
+
+    # 2. Skill association
+    reqs = query_db("""
+        SELECT psr.*, s.name as skill_name FROM project_skill_requirements psr
+        JOIN skills s ON psr.skill_id = s.id
+        WHERE psr.project_id = ?
+    """, (proj_id,), db_path=db_path)
+    assert len(reqs) == 1
+    assert reqs[0]['skill_name'] == 'Python'
+
+    # 3. Visible in discovery
+    res_list = client.get('/projects')
+    assert res_list.status_code == 200
+    assert b'ben' in res_list.data
+
+    # 4. Detail page accessible and published
+    res_det = client.get(f'/projects/{proj_id}')
+    assert res_det.status_code == 200
+    assert b'Published' in res_det.data
+
+
+def test_publish_via_alternate_and_undefined_endpoints(client, app):
+    """Verify that calling /api/projects/undefined/publish, /api/projects, etc. creates and publishes seamlessly."""
+    db_path = app.config['DATABASE']
+    uid = create_test_student(app, 'api_tester@bmsit.in', 'API Tester')
+    login_student(client, uid, 'api_tester@bmsit.in', 'API Tester')
+
+    # Test /api/projects/undefined/publish with project creation payload
+    payload_undef = {
+        'name': 'Project via Undefined URL',
+        'category': 'Web Development',
+        'description': 'Created when client had undefined project ID',
+        'skills': [{'skill': 'Python', 'importance': 'Nice to Have', 'proficiency': 'Beginner'}]
+    }
+    res_undef = client.post('/api/projects/undefined/publish', json=payload_undef)
+    assert res_undef.status_code == 201
+    d_undef = res_undef.get_json()
+    assert d_undef['success'] is True
+    pid1 = d_undef['project_id']
+
+    proj1 = query_db("SELECT * FROM projects WHERE id = ?", (pid1,), one=True, db_path=db_path)
+    assert proj1 is not None
+    assert proj1['status'] == 'published'
+
+    # Test /api/projects REST endpoint
+    payload_rest = {
+        'title': 'Project via REST API',
+        'description': 'Direct creation on /api/projects',
+        'skills': [{'name': 'Python', 'priority': 'must-have', 'proficiency': 'Intermediate'}]
+    }
+    res_rest = client.post('/api/projects', json=payload_rest)
+    assert res_rest.status_code == 201
+    assert res_rest.get_json()['success'] is True
+
+    # Test unauthenticated call returns 401 JSON
+    client_unauth = app.test_client()
+    res_unauth = client_unauth.post('/api/projects/publish', json=payload_rest, headers={'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest'})
+    assert res_unauth.status_code == 401
+    assert res_unauth.get_json()['success'] is False

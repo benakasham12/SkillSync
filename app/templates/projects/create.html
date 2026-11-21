@@ -839,9 +839,12 @@ projectForm.addEventListener('submit', async function(e) {
     formData.set('skills_json', JSON.stringify(projectSkills));
 
     // Safely retrieve form action URL without DOM property shadowing
-    const targetUrl = projectForm.getAttribute('action') || "{{ url_for('projects.create_project') }}";
+    let targetUrl = projectForm.getAttribute('action') || "{{ url_for('projects.create_project') }}";
+    if (!targetUrl || targetUrl.includes('[object') || targetUrl.trim() === '') {
+      targetUrl = "{{ url_for('projects.create_project') }}";
+    }
 
-    const response = await fetch(targetUrl, {
+    let response = await fetch(targetUrl, {
       method: 'POST',
       body: formData,
       headers: {
@@ -849,6 +852,18 @@ projectForm.addEventListener('submit', async function(e) {
         'X-Requested-With': 'XMLHttpRequest'
       }
     });
+
+    // Fallback: If 404, retry against direct /api/projects/publish
+    if (response.status === 404 && targetUrl !== "{{ url_for('projects.create_project') }}") {
+      response = await fetch("{{ url_for('projects.create_project') }}", {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      });
+    }
 
     const result = await response.json().catch(() => null);
 
