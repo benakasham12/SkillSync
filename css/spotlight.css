@@ -1,0 +1,210 @@
+/* ==========================================================================
+   SkillSync - Spotlight Background Component
+   Atmospheric 3-Beam Animated Lighting System (Left, Middle, Right)
+   ========================================================================== */
+
+/* Outer wrapper pinned inside the hero section behind all content */
+.spotlight-background-wrapper {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 1;
+  isolation: isolate;
+}
+
+/* Individual Spotlight Beam Base Styles */
+.spotlight-beam {
+  position: absolute;
+  border-radius: 9999px;
+  pointer-events: none;
+  will-change: transform, opacity;
+  transform-origin: center center;
+  mix-blend-mode: screen;
+}
+
+/* --------------------------------------------------------------------------
+   1. Left Spotlight: Soft purple lighting, smooth diagonal movement, subtle rotation
+   -------------------------------------------------------------------------- */
+.spotlight-beam-left {
+  top: 8%;
+  left: 10%;
+  width: clamp(340px, 42vw, 560px);
+  height: clamp(340px, 42vw, 560px);
+  background: radial-gradient(circle at 45% 45%,
+    rgba(168, 85, 247, 0.48) 0%,
+    rgba(147, 51, 234, 0.30) 35%,
+    rgba(126, 34, 206, 0.12) 60%,
+    transparent 75%);
+  filter: blur(68px);
+  animation: spotlightBeamLeftMove 12s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+}
+
+/* --------------------------------------------------------------------------
+   2. Middle Spotlight: Violet lighting, slow floating movement, smooth transitions
+   -------------------------------------------------------------------------- */
+.spotlight-beam-mid {
+  top: 22%;
+  left: 45%;
+  width: clamp(380px, 48vw, 640px);
+  height: clamp(380px, 48vw, 640px);
+  background: radial-gradient(circle at center,
+    rgba(139, 92, 246, 0.45) 0%,
+    rgba(124, 58, 237, 0.28) 40%,
+    rgba(109, 40, 217, 0.12) 65%,
+    transparent 78%);
+  filter: blur(75px);
+  animation: spotlightBeamMidMove 15s cubic-bezier(0.42, 0, 0.58, 1) infinite;
+  animation-delay: 2s;
+}
+
+/* --------------------------------------------------------------------------
+   3. Right Spotlight: Purple and blue lighting, subtle rotation, continuous movement
+   -------------------------------------------------------------------------- */
+.spotlight-beam-right {
+  top: 10%;
+  right: 8%;
+  width: clamp(360px, 44vw, 580px);
+  height: clamp(360px, 44vw, 580px);
+  background: radial-gradient(circle at center,
+    rgba(99, 102, 241, 0.46) 0%,
+    rgba(139, 92, 246, 0.26) 35%,
+    rgba(59, 130, 246, 0.14) 60%,
+    transparent 75%);
+  filter: blur(70px);
+  animation: spotlightBeamRightMove 18s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+  animation-delay: 3.5s;
+}
+
+/* --------------------------------------------------------------------------
+   Light Mode Overrides (Contrast & Readability Protection)
+   -------------------------------------------------------------------------- */
+[data-theme="light"] .spotlight-beam {
+  mix-blend-mode: multiply;
+}
+
+[data-theme="light"] .spotlight-beam-left {
+  background: radial-gradient(circle at 45% 45%,
+    rgba(168, 85, 247, 0.24) 0%,
+    rgba(147, 51, 234, 0.14) 40%,
+    transparent 70%);
+  filter: blur(55px);
+}
+
+[data-theme="light"] .spotlight-beam-mid {
+  background: radial-gradient(circle at center,
+    rgba(139, 92, 246, 0.22) 0%,
+    rgba(124, 58, 237, 0.12) 40%,
+    transparent 70%);
+  filter: blur(60px);
+}
+
+[data-theme="light"] .spotlight-beam-right {
+  background: radial-gradient(circle at center,
+    rgba(99, 102, 241, 0.24) 0%,
+    rgba(59, 130, 246, 0.13) 40%,
+    transparent 70%);
+  filter: blur(55px);
+}
+
+/* --------------------------------------------------------------------------
+   Keyframe Animations for Smooth Infinite Floating & Rotating Motion
+   -------------------------------------------------------------------------- */
+
+/* Left Spotlight: smooth diagonal movement + subtle rotation */
+@keyframes spotlightBeamLeftMove {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  33% {
+    transform: translate(-30%, -70%) rotate(15deg);
+  }
+  66% {
+    transform: translate(-70%, -30%) rotate(-15deg);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+}
+
+/* Middle Spotlight: slow floating movement + smooth transitions */
+@keyframes spotlightBeamMidMove {
+  0% {
+    transform: translate(0%, 0%) rotate(-20deg);
+  }
+  33% {
+    transform: translate(20%, 30%) rotate(0deg);
+  }
+  66% {
+    transform: translate(-20%, 10%) rotate(20deg);
+  }
+  100% {
+    transform: translate(0%, 0%) rotate(-20deg);
+  }
+}
+
+/* Right Spotlight: subtle rotation + continuous floating */
+@keyframes spotlightBeamRightMove {
+  0% {
+    transform: translate(0%, 0%) rotate(10deg);
+  }
+  33% {
+    transform: translate(-30%, -20%) rotate(-10deg);
+  }
+  66% {
+    transform: translate(10%, 20%) rotate(25deg);
+  }
+  100% {
+    transform: translate(0%, 0%) rotate(10deg);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Mesh Overlay for Text Protection & Background Depth
+   -------------------------------------------------------------------------- */
+.spotlight-mesh-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 50%, rgba(8, 12, 22, 0.15) 0%, rgba(8, 12, 22, 0.55) 100%);
+  z-index: 2;
+}
+
+[data-theme="light"] .spotlight-mesh-overlay {
+  background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.2) 0%, rgba(248, 250, 252, 0.6) 100%);
+}
+
+/* --------------------------------------------------------------------------
+   Mobile & Tablet Responsiveness
+   -------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+  .spotlight-beam-left {
+    width: 270px;
+    height: 270px;
+    filter: blur(45px);
+  }
+  .spotlight-beam-mid {
+    width: 310px;
+    height: 310px;
+    filter: blur(50px);
+  }
+  .spotlight-beam-right {
+    width: 280px;
+    height: 280px;
+    filter: blur(45px);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Accessibility: Prefers-Reduced-Motion Support
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .spotlight-beam-left,
+  .spotlight-beam-mid,
+  .spotlight-beam-right {
+    animation: none !important;
+    transform: translate(-50%, -50%) rotate(0deg) !important;
+  }
+}

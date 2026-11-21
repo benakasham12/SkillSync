@@ -116,6 +116,51 @@ def test_beams_background_only_on_homepage(client):
         assert 'beams-background-wrapper' not in html
 
 
+def test_spotlight_background_on_homepage(client):
+    """Verify that Spotlight Background with 3 beams is rendered on the homepage hero and properly scoped."""
+    # 1. Homepage has the spotlight wrapper and all 3 beams
+    home_res = client.get('/')
+    assert home_res.status_code == 200
+    home_html = home_res.data.decode('utf-8')
+    assert 'spotlight-background-wrapper' in home_html
+    assert 'spotlight-beam-left' in home_html
+    assert 'spotlight-beam-mid' in home_html
+    assert 'spotlight-beam-right' in home_html
+    assert 'spotlight-mesh-overlay' in home_html
+    assert 'spotlight.css' in home_html
+    assert 'spotlight.js' in home_html
+
+    # 2. Other pages MUST NOT have the spotlight hero wrapper
+    for path in ['/login', '/register', '/projects']:
+        res = client.get(path)
+        assert res.status_code == 200
+        html = res.data.decode('utf-8')
+        assert 'spotlight-background-wrapper' not in html
+
+
+def test_spotlight_assets_and_animations():
+    """Verify spotlight CSS and JS files exist, contain keyframe animations and reduced motion support."""
+    from pathlib import Path
+    css_path = Path("app/static/css/spotlight.css")
+    js_path = Path("app/static/js/spotlight.js")
+
+    assert css_path.exists(), "app/static/css/spotlight.css not found"
+    assert js_path.exists(), "app/static/js/spotlight.js not found"
+
+    css_code = css_path.read_text(encoding="utf-8")
+    assert "spotlightBeamLeftMove" in css_code
+    assert "spotlightBeamMidMove" in css_code
+    assert "spotlightBeamRightMove" in css_code
+    assert "prefers-reduced-motion" in css_code
+    assert "spotlight-beam-left" in css_code
+    assert "spotlight-beam-mid" in css_code
+    assert "spotlight-beam-right" in css_code
+
+    js_code = js_path.read_text(encoding="utf-8")
+    assert "SkillSyncSpotlight" in js_code
+    assert "initSpotlightBackground" in js_code
+
+
 def test_beams_background_react_component_file():
     """Verify the /components/ui/beams-background.tsx React component exists and is valid."""
     from pathlib import Path
