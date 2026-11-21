@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}Server Error (500) – SkillSync{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 680px; margin: 5rem auto; text-align: center; padding: 2rem;">
+  <div style="font-size: 4rem; font-weight: 800; color: var(--danger); line-height: 1; margin-bottom: 1rem;">
+    500
+  </div>
+  <h1 style="font-size: 1.8rem; font-weight: 800; margin-bottom: 1rem; color: var(--text);">
+    Something Went Wrong
+  </h1>
+  <p style="color: var(--text-muted); font-size: 1rem; line-height: 1.6; margin-bottom: 2rem;">
+    The server encountered an unexpected error processing your request. Your entered project data and session remain safe.
+  </p>
+  {% if error %}
+  <div style="background: var(--surface-alt); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: left; font-family: monospace; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 2rem; overflow-x: auto;">
+    {{ error }}
+  </div>
+  {% endif %}
+  <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+    <a href="javascript:history.back()" class="btn btn-secondary">
+      &larr; Go Back
+    </a>
+    <a href="{{ url_for('projects.landing') }}" class="btn btn-primary">
+      Return to Home
+    </a>
+  </div>
+</div>
+{% endblock %}

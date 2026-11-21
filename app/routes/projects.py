@@ -11,7 +11,7 @@ Projects management routes implementing complete Project Creation and Management
 
 import json
 from flask import Blueprint, request, session, render_template, redirect, url_for, flash, jsonify
-from app.models import query_db, execute_db
+from app.models import query_db, execute_db, get_db
 from app.routes.auth import login_required
 from app.matching import calculate_matches_for_project, compute_team_skill_coverage
 from app.analytics import log_event
@@ -64,31 +64,46 @@ def get_project_team_count(project_id, owner_id):
     return res['cnt'] if res else 1
 
 
-def parse_submitted_skills(form):
-    """Parse skill requirements from either JSON payload or multi-field inputs."""
+def parse_submitted_skills(form_data=None, json_data=None):
+    """Parse skill requirements from JSON payload, raw skills array, or multi-field inputs."""
     skills_data = []
+    form_data = form_data or {}
+    json_data = json_data or {}
 
-    # 1. Check if sent as JSON from dynamic UI
-    skills_json = form.get('skills_json')
-    if skills_json:
-        try:
-            parsed = json.loads(skills_json)
-            if isinstance(parsed, list):
-                for item in parsed:
-                    if isinstance(item, dict) and item.get('name'):
-                        skills_data.append({
-                            'name': str(item['name']).strip(),
-                            'priority': str(item.get('priority', 'must-have')).strip(),
-                            'proficiency': str(item.get('proficiency', 'Intermediate')).strip()
-                        })
-        except Exception:
-            pass
+    # 1. Check if sent as json string in form or dict
+    raw_skills = form_data.get('skills_json') or json_data.get('skills_json')
+    if raw_skills:
+        if isinstance(raw_skills, str):
+            try:
+                parsed = json.loads(raw_skills)
+                if isinstance(parsed, list):
+                    raw_skills = parsed
+            except Exception:
+                raw_skills = []
+        if isinstance(raw_skills, list):
+            for item in raw_skills:
+                if isinstance(item, dict) and item.get('name'):
+                    skills_data.append({
+                        'name': str(item['name']).strip(),
+                        'priority': str(item.get('priority', 'must-have')).strip(),
+                        'proficiency': str(item.get('proficiency', 'Intermediate')).strip()
+                    })
 
-    # 2. Check if sent as standard multi-field inputs
-    if not skills_data:
-        names = form.getlist('skill_name') or form.getlist('skill_names[]')
-        priorities = form.getlist('skill_priority') or form.getlist('skill_priorities[]')
-        proficiencies = form.getlist('skill_proficiency') or form.getlist('skill_proficiencies[]')
+    # 2. Check if sent as direct 'skills' array in JSON
+    if not skills_data and 'skills' in json_data and isinstance(json_data['skills'], list):
+        for item in json_data['skills']:
+            if isinstance(item, dict) and item.get('name'):
+                skills_data.append({
+                    'name': str(item['name']).strip(),
+                    'priority': str(item.get('priority', 'must-have')).strip(),
+                    'proficiency': str(item.get('proficiency', 'Intermediate')).strip()
+                })
+
+    # 3. Check if sent as standard multi-field inputs
+    if not skills_data and hasattr(form_data, 'getlist'):
+        names = form_data.getlist('skill_name') or form_data.getlist('skill_names[]')
+        priorities = form_data.getlist('skill_priority') or form_data.getlist('skill_priorities[]')
+        proficiencies = form_data.getlist('skill_proficiency') or form_data.getlist('skill_proficiencies[]')
 
         for i, name in enumerate(names):
             clean_name = name.strip()
@@ -147,7 +162,7 @@ def landing():
                    (SELECT COUNT(*) FROM team_members WHERE project_id = p.id) + 1 as current_team_count
             FROM projects p
             JOIN users u ON p.owner_id = u.id
-            JOIN student_profiles sp ON u.id = sp.user_id
+            LEFT JOIN student_profiles sp ON u.id = sp.user_id
             WHERE p.status = 'published'
             ORDER BY p.created_at DESC
             LIMIT 3
@@ -246,7 +261,7 @@ def list_projects():
                )) as current_team_count
         FROM projects p
         JOIN users u ON p.owner_id = u.id
-        JOIN student_profiles sp ON u.id = sp.user_id
+        LEFT JOIN student_profiles sp ON u.id = sp.user_id
         WHERE (p.status = 'published' OR p.owner_id = ?)
     """
     params = [user_id if user_id else -1]
@@ -321,144 +336,7 @@ def list_projects():
     )
 
 
-@projects_bp.route('/projects/create', methods=['GET', 'POST'])
-@login_required
-def create_project():
-    """Create a new course project with multi-step support, skills requirements, and draft/publish actions."""
-    user_id = session['user_id']
-
-    if request.method == 'POST':
-        title = request.form.get('title', '').strip()
-        description = request.form.get('description', '').strip()
-        category = request.form.get('category', 'Web Development').strip()
-        objectives = request.form.get('objectives', '').strip()
-        technologies = request.form.get('technologies', '').strip()
-        duration = request.form.get('duration', '2–3 Months').strip()
-        collaboration_mode = request.form.get('collaboration_mode', 'Hybrid').strip()
-        availability = request.form.get('availability', 'Flexible').strip()
-        additional_requirements = request.form.get('additional_requirements', '').strip()
-        course_context = request.form.get('course_context', 'Innovation & Design Thinking (IDT)').strip()
-
-        # Team size
-        team_size_max_input = request.form.get('team_size_max', '4').strip()
-        if team_size_max_input == 'custom':
-            try:
-                team_size_max = int(request.form.get('custom_team_size', 4))
-            except (ValueError, TypeError):
-                team_size_max = 4
-        else:
-            try:
-                team_size_max = int(team_size_max_input)
-            except (ValueError, TypeError):
-                team_size_max = 4
-        team_size_max = max(2, min(20, team_size_max))
-        team_size_min = int(request.form.get('team_size_min', 2))
-        schedule_notes = request.form.get('schedule_notes', availability).strip()
-
-        action = request.form.get('action', 'publish')
-        skills_data = parse_submitted_skills(request.form)
-
-        # Validation for Publish
-        if action == 'publish':
-            if not title:
-                flash('Project name is required to publish.', 'danger')
-                return render_template(
-                    'projects/create.html',
-                    categories=PROJECT_CATEGORIES,
-                    durations=PROJECT_DURATIONS,
-                    collaboration_modes=COLLABORATION_MODES,
-                    availabilities=AVAILABILITY_OPTIONS,
-                    proficiencies=PROFICIENCY_LEVELS,
-                    all_skills=query_db("SELECT * FROM skills WHERE active = 1 ORDER BY category, name"),
-                    all_interests=query_db("SELECT * FROM interests ORDER BY category, name"),
-                    days=DAYS,
-                    time_blocks=TIME_BLOCKS
-                )
-            if not description:
-                flash('Project description is required to publish.', 'danger')
-                return render_template(
-                    'projects/create.html',
-                    categories=PROJECT_CATEGORIES,
-                    durations=PROJECT_DURATIONS,
-                    collaboration_modes=COLLABORATION_MODES,
-                    availabilities=AVAILABILITY_OPTIONS,
-                    proficiencies=PROFICIENCY_LEVELS,
-                    all_skills=query_db("SELECT * FROM skills WHERE active = 1 ORDER BY category, name"),
-                    all_interests=query_db("SELECT * FROM interests ORDER BY category, name"),
-                    days=DAYS,
-                    time_blocks=TIME_BLOCKS
-                )
-            if not skills_data:
-                flash('Cannot publish project: You must declare at least one required skill before publishing.', 'danger')
-                return render_template(
-                    'projects/create.html',
-                    categories=PROJECT_CATEGORIES,
-                    durations=PROJECT_DURATIONS,
-                    collaboration_modes=COLLABORATION_MODES,
-                    availabilities=AVAILABILITY_OPTIONS,
-                    proficiencies=PROFICIENCY_LEVELS,
-                    all_skills=query_db("SELECT * FROM skills WHERE active = 1 ORDER BY category, name"),
-                    all_interests=query_db("SELECT * FROM interests ORDER BY category, name"),
-                    days=DAYS,
-                    time_blocks=TIME_BLOCKS
-                )
-            status = 'published'
-        else:
-            # Save as Draft
-            if not title:
-                title = 'Untitled Project (Draft)'
-            status = 'draft'
-
-        proj_id = execute_db("""
-            INSERT INTO projects (
-                owner_id, title, description, category, objectives, technologies,
-                duration, collaboration_mode, availability, additional_requirements,
-                course_context, team_size_min, team_size_max, schedule_notes, status
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            user_id, title, description, category, objectives, technologies,
-            duration, collaboration_mode, availability, additional_requirements,
-            course_context, team_size_min, team_size_max, schedule_notes, status
-        ))
-
-        # Add creator to team_members
-        execute_db("""
-            INSERT OR IGNORE INTO team_members (project_id, user_id, role, joined_at)
-            VALUES (?, ?, 'owner', CURRENT_TIMESTAMP)
-        """, (proj_id, user_id))
-
-        # Initialize project group chat
-        from app.routes.messages import get_or_create_project_group
-        get_or_create_project_group(proj_id)
-
-        # Save required skills
-        save_project_skills(proj_id, skills_data, category)
-
-        # Desired schedule slots
-        selected_slots = request.form.getlist('slots')
-        for slot_str in selected_slots:
-            if '|' in slot_str:
-                day, block = slot_str.split('|', 1)
-                execute_db("INSERT OR IGNORE INTO project_availability_slots (project_id, day_of_week, time_block) VALUES (?, ?, ?)", (proj_id, day, block))
-
-        # Project interests
-        selected_interests = request.form.getlist('interest_ids')
-        for iid in selected_interests:
-            try:
-                execute_db("INSERT OR IGNORE INTO project_interests (project_id, interest_id) VALUES (?, ?)", (proj_id, int(iid)))
-            except Exception:
-                pass
-
-        if status == 'published':
-            log_event('project_published', actor_id=user_id, target_type='project', target_id=proj_id)
-            flash('Project published successfully! It is now visible in Active Projects seeking teammates.', 'success')
-        else:
-            log_event('project_created', actor_id=user_id, target_type='project', target_id=proj_id)
-            flash('Project saved as draft! Only you can view and edit it until you publish.', 'info')
-
-        return redirect(url_for('projects.project_detail', project_id=proj_id))
-
+def render_create_template(form_data=None):
     all_skills = query_db("SELECT * FROM skills WHERE active = 1 ORDER BY category, name")
     all_interests = query_db("SELECT * FROM interests ORDER BY category, name")
     return render_template(
@@ -471,8 +349,226 @@ def create_project():
         all_skills=all_skills,
         all_interests=all_interests,
         days=DAYS,
-        time_blocks=TIME_BLOCKS
+        time_blocks=TIME_BLOCKS,
+        form_data=form_data or {}
     )
+
+
+@projects_bp.route('/projects/create', methods=['GET', 'POST'])
+@login_required
+def create_project():
+    """Create a new course project with multi-step support, skills requirements, and draft/publish actions."""
+    user_id = session['user_id']
+    is_ajax = (
+        request.is_json
+        or request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+        or 'application/json' in request.headers.get('Accept', '')
+    )
+
+    if request.method == 'POST':
+        json_data = request.get_json(silent=True) or {}
+        form_data = request.form
+
+        def get_val(key, default=''):
+            if form_data and key in form_data:
+                return form_data.get(key, default)
+            return json_data.get(key, default)
+
+        title = str(get_val('title', '')).strip()
+        description = str(get_val('description', '')).strip()
+        category = str(get_val('category', 'Web Development')).strip()
+        objectives = str(get_val('objectives', '')).strip()
+        technologies = str(get_val('technologies', '')).strip()
+        duration = str(get_val('duration', '2–3 Months')).strip()
+        collaboration_mode = str(get_val('collaboration_mode', 'Hybrid')).strip()
+        availability = str(get_val('availability', 'Flexible')).strip()
+        additional_requirements = str(get_val('additional_requirements', '')).strip()
+        course_context = str(get_val('course_context', 'Innovation & Design Thinking (IDT)')).strip()
+
+        # Team size parsing
+        team_size_max_input = str(get_val('team_size_max', '4')).strip()
+        if team_size_max_input == 'custom':
+            try:
+                team_size_max = int(get_val('custom_team_size', 4))
+            except (ValueError, TypeError):
+                team_size_max = 4
+        else:
+            try:
+                team_size_max = int(team_size_max_input)
+            except (ValueError, TypeError):
+                team_size_max = 4
+        team_size_max = max(2, min(20, team_size_max))
+
+        try:
+            team_size_min = int(get_val('team_size_min', 2))
+        except (ValueError, TypeError):
+            team_size_min = 2
+        team_size_min = max(1, min(team_size_max, team_size_min))
+
+        schedule_notes = str(get_val('schedule_notes', availability)).strip()
+        action = str(get_val('action', 'publish')).strip().lower()
+
+        # Parse skills
+        skills_data = parse_submitted_skills(form_data, json_data)
+
+        # Validation for Publish
+        if action == 'publish':
+            if not title:
+                err_msg = 'Project name is required to publish.'
+                if is_ajax:
+                    return jsonify({'success': False, 'error': err_msg}), 400
+                flash(err_msg, 'danger')
+                return render_create_template(form_data=request.form)
+
+            if not description:
+                err_msg = 'Project description is required to publish.'
+                if is_ajax:
+                    return jsonify({'success': False, 'error': err_msg}), 400
+                flash(err_msg, 'danger')
+                return render_create_template(form_data=request.form)
+
+            if not skills_data:
+                err_msg = 'Cannot publish project: You must declare at least one required skill before publishing.'
+                if is_ajax:
+                    return jsonify({'success': False, 'error': err_msg}), 400
+                flash(err_msg, 'danger')
+                return render_create_template(form_data=request.form)
+
+            status = 'published'
+        else:
+            # Save as Draft
+            if not title:
+                title = 'Untitled Project (Draft)'
+            status = 'draft'
+
+        # Atomic transaction execution
+        conn = get_db()
+        try:
+            cur = conn.cursor()
+
+            # Insert into projects
+            cur.execute("""
+                INSERT INTO projects (
+                    owner_id, title, description, category, objectives, technologies,
+                    duration, collaboration_mode, availability, additional_requirements,
+                    course_context, team_size_min, team_size_max, schedule_notes, status
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                user_id, title, description, category, objectives, technologies,
+                duration, collaboration_mode, availability, additional_requirements,
+                course_context, team_size_min, team_size_max, schedule_notes, status
+            ))
+            proj_id = cur.lastrowid
+
+            # Add creator as owner in team_members
+            cur.execute("""
+                INSERT OR IGNORE INTO team_members (project_id, user_id, role, joined_at)
+                VALUES (?, ?, 'owner', CURRENT_TIMESTAMP)
+            """, (proj_id, user_id))
+
+            # Initialize project group chat
+            group_name = f"{title} – Team Chat"
+            cur.execute("""
+                INSERT INTO conversations (conversation_type, project_id, conversation_name)
+                VALUES ('project_group', ?, ?)
+            """, (proj_id, group_name))
+            conv_id = cur.lastrowid
+
+            cur.execute("""
+                INSERT OR IGNORE INTO conversation_participants (conversation_id, student_id, membership_status)
+                VALUES (?, ?, 'active')
+            """, (conv_id, user_id))
+
+            # Save required skills
+            seen_skills = set()
+            for item in skills_data:
+                s_name = str(item.get('name', '')).strip()
+                if not s_name or s_name.lower() in seen_skills:
+                    continue
+                seen_skills.add(s_name.lower())
+
+                priority_raw = str(item.get('priority', 'must-have')).strip().lower()
+                if priority_raw in ['must have', 'must-have', 'must_have']:
+                    priority = 'must-have'
+                    weight = 3.0
+                else:
+                    priority = 'preferred'
+                    weight = 1.0
+
+                proficiency = str(item.get('proficiency', 'Intermediate')).strip().capitalize()
+                if proficiency not in ['Beginner', 'Intermediate', 'Advanced', 'Expert']:
+                    proficiency = 'Intermediate'
+
+                # Catalog check or insertion
+                cur.execute("SELECT id FROM skills WHERE LOWER(name) = LOWER(?)", (s_name,))
+                skill_row = cur.fetchone()
+                if skill_row:
+                    skill_id = skill_row['id']
+                else:
+                    cur.execute("INSERT INTO skills (name, category, active) VALUES (?, ?, 1)", (s_name, category or 'Other'))
+                    skill_id = cur.lastrowid
+
+                cur.execute("""
+                    INSERT OR REPLACE INTO project_skill_requirements (project_id, skill_id, priority, proficiency_level, weight)
+                    VALUES (?, ?, ?, ?, ?)
+                """, (proj_id, skill_id, priority, proficiency, weight))
+
+            # Schedule availability slots
+            selected_slots = form_data.getlist('slots') if hasattr(form_data, 'getlist') else json_data.get('slots', [])
+            for slot_str in selected_slots:
+                if '|' in slot_str:
+                    day, block = slot_str.split('|', 1)
+                    cur.execute("INSERT OR IGNORE INTO project_availability_slots (project_id, day_of_week, time_block) VALUES (?, ?, ?)", (proj_id, day, block))
+
+            # Project interests
+            selected_interests = form_data.getlist('interest_ids') if hasattr(form_data, 'getlist') else json_data.get('interest_ids', [])
+            for iid in selected_interests:
+                try:
+                    cur.execute("INSERT OR IGNORE INTO project_interests (project_id, interest_id) VALUES (?, ?)", (proj_id, int(iid)))
+                except Exception:
+                    pass
+
+            conn.commit()
+
+        except Exception as e:
+            conn.rollback()
+            err_msg = f"Database operation failed: {str(e)}"
+            if is_ajax:
+                return jsonify({'success': False, 'error': err_msg}), 500
+            flash(err_msg, 'danger')
+            return render_create_template(form_data=request.form)
+        finally:
+            conn.close()
+
+        # Audit logging (non-fatal)
+        try:
+            if status == 'published':
+                log_event('project_published', actor_id=user_id, target_type='project', target_id=proj_id)
+            else:
+                log_event('project_created', actor_id=user_id, target_type='project', target_id=proj_id)
+        except Exception:
+            pass
+
+        success_msg = (
+            'Project published successfully! It is now visible in Active Projects seeking teammates.'
+            if status == 'published' else
+            'Project saved as draft! Only you can view and edit it until you publish.'
+        )
+
+        if is_ajax:
+            return jsonify({
+                'success': True,
+                'message': success_msg,
+                'project_id': proj_id,
+                'redirect_url': url_for('projects.project_detail', project_id=proj_id),
+                'status': status
+            }), 201
+
+        flash(success_msg, 'success' if status == 'published' else 'info')
+        return redirect(url_for('projects.project_detail', project_id=proj_id))
+
+    return render_create_template()
 
 
 @projects_bp.route('/projects/<int:project_id>/edit', methods=['GET', 'POST'])
@@ -597,7 +693,7 @@ def project_detail(project_id):
                sp.institution as owner_institution, u.email as owner_email
         FROM projects p
         JOIN users u ON p.owner_id = u.id
-        JOIN student_profiles sp ON u.id = sp.user_id
+        LEFT JOIN student_profiles sp ON u.id = sp.user_id
         WHERE p.id = ?
     """, (project_id,), one=True)
 
@@ -616,7 +712,7 @@ def project_detail(project_id):
         SELECT tm.*, sp.display_name, sp.branch, sp.year, sp.section, sp.bio, u.email
         FROM team_members tm
         JOIN users u ON tm.user_id = u.id
-        JOIN student_profiles sp ON u.id = sp.user_id
+        LEFT JOIN student_profiles sp ON u.id = sp.user_id
         WHERE tm.project_id = ? AND tm.role != 'owner'
         ORDER BY tm.joined_at ASC
     """, (project_id,))
@@ -655,7 +751,7 @@ def project_detail(project_id):
                        u.email as applicant_email
                 FROM project_applications pa
                 JOIN users u ON pa.applicant_id = u.id
-                JOIN student_profiles sp ON u.id = sp.user_id
+                LEFT JOIN student_profiles sp ON u.id = sp.user_id
                 WHERE pa.project_id = ?
                 ORDER BY CASE pa.application_status WHEN 'pending' THEN 1 ELSE 2 END, pa.created_at DESC
             """, (project_id,))
@@ -671,7 +767,7 @@ def project_detail(project_id):
             SELECT inv.*, sp.display_name as invitee_name, sp.usn as invitee_usn, sp.branch, sp.year, sp.section
             FROM invitations inv
             JOIN users u ON inv.invitee_id = u.id
-            JOIN student_profiles sp ON u.id = sp.user_id
+            LEFT JOIN student_profiles sp ON u.id = sp.user_id
             WHERE inv.project_id = ? AND inv.status = 'pending'
             ORDER BY inv.created_at DESC
         """, (project_id,))

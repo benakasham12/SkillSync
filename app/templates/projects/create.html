@@ -60,7 +60,7 @@
       <!-- Project Name -->
       <div class="form-group">
         <label class="form-label" for="projectTitle">Project Name <span style="color: var(--danger);">*</span></label>
-        <input type="text" id="projectTitle" name="title" class="form-control" placeholder="Enter your project name (e.g. AI Healthcare Diagnostic Assistant)" required autofocus>
+        <input type="text" id="projectTitle" name="title" class="form-control" value="{{ form_data.get('title', '') }}" placeholder="Enter your project name (e.g. AI Healthcare Diagnostic Assistant)" required autofocus>
         <div class="form-hint">Choose a clear, descriptive title that immediately conveys what you are building.</div>
       </div>
 
@@ -88,27 +88,27 @@
       <!-- Project Description -->
       <div class="form-group">
         <label class="form-label" for="projectDesc">Project Description <span style="color: var(--danger);">*</span></label>
-        <textarea id="projectDesc" name="description" class="form-control" rows="4" placeholder="Describe what your project is about, the target users, core features, and architectural scope..." required></textarea>
+        <textarea id="projectDesc" name="description" class="form-control" rows="4" placeholder="Describe what your project is about, the target users, core features, and architectural scope..." required>{{ form_data.get('description', '') }}</textarea>
         <div class="form-hint">Provide enough detail so potential teammates understand the idea and workload.</div>
       </div>
 
       <!-- Project Objectives -->
       <div class="form-group">
         <label class="form-label" for="projectObjectives">Project Objectives &amp; Milestones</label>
-        <textarea id="projectObjectives" name="objectives" class="form-control" rows="3" placeholder="What specific milestones do you aim to achieve? (e.g. Build MVP for hackathon, submit capstone, deploy to cloud)"></textarea>
+        <textarea id="projectObjectives" name="objectives" class="form-control" rows="3" placeholder="What specific milestones do you aim to achieve? (e.g. Build MVP for hackathon, submit capstone, deploy to cloud)">{{ form_data.get('objectives', '') }}</textarea>
       </div>
 
       <!-- Technologies and Tools -->
       <div class="form-group">
         <label class="form-label" for="projectTech">Technologies and Tools</label>
-        <input type="text" id="projectTech" name="technologies" class="form-control" placeholder="e.g. Python, React, Flask, FastAPI, PyTorch, MongoDB, Docker">
+        <input type="text" id="projectTech" name="technologies" class="form-control" value="{{ form_data.get('technologies', '') }}" placeholder="e.g. Python, React, Flask, FastAPI, PyTorch, MongoDB, Docker">
         <div class="form-hint">Separate multiple technologies with commas.</div>
       </div>
 
       <!-- Course Context -->
       <div class="form-group">
         <label class="form-label" for="courseContext">Course Context / Initiative</label>
-        <input type="text" id="courseContext" name="course_context" class="form-control" value="Innovation & Design Thinking (IDT)">
+        <input type="text" id="courseContext" name="course_context" class="form-control" value="{{ form_data.get('course_context', 'Innovation & Design Thinking (IDT)') }}">
         <div class="form-hint">e.g. Innovation &amp; Design Thinking (IDT), Web Tech Lab, Capstone Project, Hackathon.</div>
       </div>
 
@@ -310,6 +310,15 @@
         </p>
       </div>
 
+      <!-- Publish Status & Inline Error Alert Container -->
+      <div id="publishAlertBanner" style="display: none; padding: 1rem 1.25rem; border-radius: 8px; margin-bottom: 1.5rem; font-weight: 600; font-size: 0.92rem; align-items: center; justify-content: space-between; gap: 0.75rem;">
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <span id="publishAlertIcon" style="font-size: 1.2rem;"></span>
+          <span id="publishAlertText" style="flex: 1; line-height: 1.4;"></span>
+        </div>
+        <button type="button" onclick="hidePublishAlert()" style="background: none; border: none; color: inherit; font-size: 1.3rem; cursor: pointer; padding: 0 0.25rem; line-height: 1;" title="Dismiss">&times;</button>
+      </div>
+
       <!-- Summary Preview Card -->
       <div class="card" style="background: var(--surface-alt); padding: 1.5rem; margin-bottom: 2rem; border: 1px solid var(--border);">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
@@ -480,7 +489,43 @@
 <script>
 // Skills State Array
 let projectSkills = [];
+try {
+  const initialSkillsJson = {{ form_data.get('skills_json', '[]')|tojson }};
+  if (initialSkillsJson) {
+    const parsed = (typeof initialSkillsJson === 'string') ? JSON.parse(initialSkillsJson) : initialSkillsJson;
+    if (Array.isArray(parsed)) {
+      projectSkills = parsed;
+    }
+  }
+} catch (e) {}
 let formIsDirty = false;
+
+function showPublishAlert(message, type) {
+  const banner = document.getElementById('publishAlertBanner');
+  const icon = document.getElementById('publishAlertIcon');
+  const text = document.getElementById('publishAlertText');
+  if (!banner) return;
+
+  if (type === 'success') {
+    banner.style.background = 'rgba(16, 185, 129, 0.12)';
+    banner.style.border = '1px solid rgba(16, 185, 129, 0.35)';
+    banner.style.color = 'var(--success, #10b981)';
+    icon.innerHTML = '&#10003;';
+  } else {
+    banner.style.background = 'rgba(239, 68, 68, 0.12)';
+    banner.style.border = '1px solid rgba(239, 68, 68, 0.35)';
+    banner.style.color = 'var(--danger, #ef4444)';
+    icon.innerHTML = '&#9888;';
+  }
+  text.textContent = message;
+  banner.style.display = 'flex';
+  banner.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function hidePublishAlert() {
+  const banner = document.getElementById('publishAlertBanner');
+  if (banner) banner.style.display = 'none';
+}
 
 // Track dirty form
 document.addEventListener('input', function() {
@@ -734,5 +779,98 @@ document.getElementById('skillNameInput').addEventListener('keydown', function(e
     handleAddSkill();
   }
 });
+
+// Intercept Form Submission to provide seamless in-app error handling and loading feedback
+const projectForm = document.getElementById('projectCreateForm');
+let isSubmitting = false;
+
+projectForm.addEventListener('submit', async function(e) {
+  e.preventDefault();
+  if (isSubmitting) return;
+
+  const submitter = e.submitter || document.activeElement;
+  const action = (submitter && submitter.value === 'draft') ? 'draft' : 'publish';
+
+  const title = document.getElementById('projectTitle').value.trim();
+  const desc = document.getElementById('projectDesc').value.trim();
+
+  // Client validation
+  if (action === 'publish') {
+    if (!title) {
+      goToStep(1);
+      document.getElementById('projectTitle').focus();
+      showPublishAlert('Project Name is required to publish.', 'danger');
+      return;
+    }
+    if (!desc) {
+      goToStep(1);
+      document.getElementById('projectDesc').focus();
+      showPublishAlert('Project Description is required to publish.', 'danger');
+      return;
+    }
+    if (projectSkills.length === 0) {
+      goToStep(2);
+      document.getElementById('skillNameInput').focus();
+      showPublishAlert('Cannot publish project: You must declare at least one required skill before publishing.', 'danger');
+      return;
+    }
+  }
+
+  // Update hidden skills input
+  document.getElementById('skillsJsonInput').value = JSON.stringify(projectSkills);
+
+  // Set loading state
+  isSubmitting = true;
+  hidePublishAlert();
+
+  const publishButtons = projectForm.querySelectorAll('button[type="submit"]');
+  publishButtons.forEach(b => { b.disabled = true; });
+  const activeBtn = (action === 'publish') ? document.querySelector('button[value="publish"]') : document.querySelector('button[value="draft"]');
+  const originalHtml = activeBtn ? activeBtn.innerHTML : '';
+  if (activeBtn) {
+    activeBtn.innerHTML = `<span>${action === 'publish' ? 'Publishing Project...' : 'Saving Draft...'}</span>`;
+  }
+
+  try {
+    const formData = new FormData(projectForm);
+    formData.set('action', action);
+    formData.set('skills_json', JSON.stringify(projectSkills));
+
+    const response = await fetch(projectForm.action, {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    });
+
+    const result = await response.json().catch(() => null);
+
+    if (response.ok && result && result.success) {
+      showPublishAlert(result.message || 'Project published successfully! Redirecting...', 'success');
+      formIsDirty = false;
+      setTimeout(() => {
+        window.location.href = result.redirect_url || `/projects/${result.project_id}`;
+      }, 700);
+    } else {
+      const errMsg = (result && result.error) ? result.error : `Server error (${response.status}). Please check your project details and try again.`;
+      showPublishAlert(errMsg, 'danger');
+      isSubmitting = false;
+      publishButtons.forEach(b => { b.disabled = false; });
+      if (activeBtn) activeBtn.innerHTML = originalHtml;
+    }
+  } catch (netErr) {
+    showPublishAlert('Unable to connect to the server. Please check your internet connection and try again.', 'danger');
+    isSubmitting = false;
+    publishButtons.forEach(b => { b.disabled = false; });
+    if (activeBtn) activeBtn.innerHTML = originalHtml;
+  }
+});
+
+// Render initial skills if restored
+if (projectSkills.length > 0) {
+  renderSkillsList();
+}
 </script>
 {% endblock %}

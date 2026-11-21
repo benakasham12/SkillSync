@@ -3,7 +3,7 @@ Flask Application Factory for SkillSync.
 """
 
 import os
-from flask import Flask, session
+from flask import Flask, session, request, jsonify, render_template
 from app.models import init_db, query_db
 
 
@@ -86,5 +86,29 @@ def create_app(db_path=None, test_config=None):
             'unread_invites_count': unread_invites_count,
             'unread_messages_count': unread_messages_count
         }
+
+    @app.errorhandler(500)
+    def handle_500_error(e):
+        is_json_req = (
+            request.is_json
+            or request.path.startswith('/api/')
+            or request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+            or 'application/json' in request.headers.get('Accept', '')
+        )
+        if is_json_req:
+            return jsonify({'success': False, 'error': 'Internal server error occurred.'}), 500
+        return render_template('errors/500.html', error=str(e)), 500
+
+    @app.errorhandler(404)
+    def handle_404_error(e):
+        is_json_req = (
+            request.is_json
+            or request.path.startswith('/api/')
+            or request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+            or 'application/json' in request.headers.get('Accept', '')
+        )
+        if is_json_req:
+            return jsonify({'success': False, 'error': 'Resource not found.'}), 404
+        return render_template('errors/404.html'), 404
 
     return app

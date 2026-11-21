@@ -16,11 +16,21 @@ auth_bp = Blueprint('auth', __name__)
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if 'user_id' not in session:
-            if request.is_json or request.path.startswith('/api/'):
-                return jsonify({'error': 'Authentication required'}), 401
+        uid = session.get('user_id')
+        if not uid:
+            if request.is_json or request.path.startswith('/api/') or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'error': 'Authentication required', 'success': False}), 401
             flash('Please log in to continue.', 'warning')
             return redirect(url_for('auth.login', next=request.path))
+
+        user = query_db("SELECT id, email, role, status FROM users WHERE id = ?", (uid,), one=True)
+        if not user or user.get('status') == 'deactivated':
+            session.clear()
+            if request.is_json or request.path.startswith('/api/') or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'error': 'Session expired or invalid user account. Please log in again.', 'success': False}), 401
+            flash('Your session has expired. Please log in again.', 'warning')
+            return redirect(url_for('auth.login', next=request.path))
+
         return f(*args, **kwargs)
     return decorated_function
 

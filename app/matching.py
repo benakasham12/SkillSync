@@ -268,16 +268,16 @@ def compute_team_skill_coverage(project_id, db_path=None):
 
     # All accepted members (including owner)
     members = query_db("""
-        SELECT u.id as user_id, u.email, sp.display_name, sp.usn, tm.role, tm.joined_at
+        SELECT u.id as user_id, u.email, COALESCE(sp.display_name, u.email) as display_name, sp.usn, tm.role, tm.joined_at
         FROM team_members tm
         JOIN users u ON tm.user_id = u.id
-        JOIN student_profiles sp ON u.id = sp.user_id
+        LEFT JOIN student_profiles sp ON u.id = sp.user_id
         WHERE tm.project_id = ?
         UNION
-        SELECT u.id as user_id, u.email, sp.display_name, sp.usn, 'owner' as role, p.created_at as joined_at
+        SELECT u.id as user_id, u.email, COALESCE(sp.display_name, u.email) as display_name, sp.usn, 'owner' as role, p.created_at as joined_at
         FROM projects p
         JOIN users u ON p.owner_id = u.id
-        JOIN student_profiles sp ON u.id = sp.user_id
+        LEFT JOIN student_profiles sp ON u.id = sp.user_id
         WHERE p.id = ?
         ORDER BY role DESC, display_name ASC
     """, (project_id, project_id), db_path=db_path)
