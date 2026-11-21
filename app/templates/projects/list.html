@@ -286,7 +286,7 @@
 
           <!-- Buttons -->
           <div style="display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap;">
-            {% if current_user_id == p.owner_id %}
+            {% if p.is_owner or current_user_id == p.owner_id or (current_user_id and current_user_id|string == p.owner_id|string) %}
               <a href="{{ url_for('projects.edit_project', project_id=p.id) }}" class="btn btn-ghost btn-sm" title="Edit Project">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                 <span>Edit</span>

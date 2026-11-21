@@ -26,26 +26,28 @@ def seed_database(db_path=None):
     conn = get_db(db_path)
     cur = conn.cursor()
 
-    # Clear existing demo projects and relations to ensure clean idempotency
-    cur.execute("DELETE FROM message_attachments")
-    cur.execute("DELETE FROM message_read_status")
-    cur.execute("DELETE FROM messages")
-    cur.execute("DELETE FROM conversation_participants")
-    cur.execute("DELETE FROM conversations")
-    cur.execute("DELETE FROM reports")
-    cur.execute("DELETE FROM invitations")
-    cur.execute("DELETE FROM team_members")
-    cur.execute("DELETE FROM project_availability_slots")
-    cur.execute("DELETE FROM project_interests")
-    cur.execute("DELETE FROM project_skill_requirements")
-    cur.execute("DELETE FROM projects")
-    cur.execute("DELETE FROM availability_slots")
-    cur.execute("DELETE FROM student_interests")
-    cur.execute("DELETE FROM student_skills")
-    cur.execute("DELETE FROM student_profiles")
-    cur.execute("DELETE FROM users")
-    cur.execute("DELETE FROM audit_events")
-    conn.commit()
+    # Only clear tables if database has no existing projects, preserving user data
+    existing_p_cnt = cur.execute("SELECT count(*) FROM projects").fetchone()[0]
+    if existing_p_cnt == 0:
+        cur.execute("DELETE FROM message_attachments")
+        cur.execute("DELETE FROM message_read_status")
+        cur.execute("DELETE FROM messages")
+        cur.execute("DELETE FROM conversation_participants")
+        cur.execute("DELETE FROM conversations")
+        cur.execute("DELETE FROM reports")
+        cur.execute("DELETE FROM invitations")
+        cur.execute("DELETE FROM team_members")
+        cur.execute("DELETE FROM project_availability_slots")
+        cur.execute("DELETE FROM project_interests")
+        cur.execute("DELETE FROM project_skill_requirements")
+        cur.execute("DELETE FROM projects")
+        cur.execute("DELETE FROM availability_slots")
+        cur.execute("DELETE FROM student_interests")
+        cur.execute("DELETE FROM student_skills")
+        cur.execute("DELETE FROM student_profiles")
+        cur.execute("DELETE FROM users")
+        cur.execute("DELETE FROM audit_events")
+        conn.commit()
 
     # 1. Seed Skills Catalog
     skills_to_insert = [(s['name'], s['category']) for s in data.get('skills_catalog', [])]

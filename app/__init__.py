@@ -3,6 +3,7 @@ Flask Application Factory for SkillSync.
 """
 
 import os
+from datetime import timedelta
 import app.env_loader  # Automatically loads .env configuration securely
 from flask import Flask, session, request, jsonify, render_template
 from app.models import init_db, query_db
@@ -11,6 +12,9 @@ from app.models import init_db, query_db
 def create_app(db_path=None, test_config=None):
     app = Flask(__name__)
     app.config['SECRET_KEY'] = 'skillsync-bmsit-cse13-secret-key-2026'
+    app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=14)
+    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+    app.config['SESSION_COOKIE_HTTPONLY'] = True
 
     if os.environ.get('VERCEL'):
         default_db = '/tmp/skillsync_listings.db'
@@ -25,6 +29,11 @@ def create_app(db_path=None, test_config=None):
     # Initialize DB schema if not exists
     with app.app_context():
         init_db(app.config['DATABASE'])
+
+    @app.before_request
+    def ensure_session_persistence():
+        if 'user_id' in session:
+            session.permanent = True
 
     # Register blueprints
     from app.routes.auth import auth_bp

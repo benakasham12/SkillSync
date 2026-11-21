@@ -9,6 +9,7 @@ Invitations routes implementing PRD FR-10, FR-11:
 from flask import Blueprint, request, session, render_template, redirect, url_for, flash, jsonify
 from app.models import query_db, execute_db
 from app.routes.auth import login_required
+from app.routes.projects import is_project_owner
 from app.matching import compute_team_skill_coverage
 from app.analytics import log_event
 
@@ -53,7 +54,7 @@ def send_invitation(project_id):
     """Send an invitation to a candidate (FR-10)."""
     user_id = session['user_id']
     project = query_db("SELECT * FROM projects WHERE id = ?", (project_id,), one=True)
-    if not project or project['owner_id'] != user_id:
+    if not project or not is_project_owner(project, user_id):
         flash('Unauthorized: Only the project owner can send invitations.', 'danger')
         return redirect(url_for('projects.project_detail', project_id=project_id))
 

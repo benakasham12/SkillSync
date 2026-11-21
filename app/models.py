@@ -430,8 +430,9 @@ def init_listings_db(listings_path=None):
 
 def _migrate_legacy_data_if_needed(listings_path, users_path):
     """
-    If legacy skillsync.db exists and either new database has no tables/rows,
-    seamlessly migrate all data into listings.db and users.db.
+    If legacy skillsync.db exists, safely synchronizes any missing records
+    into listings.db and users.db using INSERT OR IGNORE so no user projects
+    or profile data are ever lost.
     Only runs for the main application database, never for test databases.
     """
     if os.path.abspath(listings_path) != os.path.abspath(LISTINGS_DB_PATH):
@@ -442,16 +443,6 @@ def _migrate_legacy_data_if_needed(listings_path, users_path):
         return
 
     try:
-        # Check if listings.db already has projects
-        conn_l = sqlite3.connect(listings_path)
-        p_cnt = conn_l.execute("SELECT count(*) FROM sqlite_master WHERE type='table' AND name='projects'").fetchone()[0]
-        if p_cnt > 0:
-            row_cnt = conn_l.execute("SELECT count(*) FROM projects").fetchone()[0]
-            if row_cnt > 0:
-                conn_l.close()
-                return
-        conn_l.close()
-
         old_conn = sqlite3.connect(legacy_path)
         old_conn.row_factory = sqlite3.Row
 
@@ -465,7 +456,7 @@ def _migrate_legacy_data_if_needed(listings_path, users_path):
                     cols = rows[0].keys()
                     placeholders = ', '.join(['?'] * len(cols))
                     col_names = ', '.join(cols)
-                    conn_u.executemany(f"INSERT OR REPLACE INTO {tbl} ({col_names}) VALUES ({placeholders})", [tuple(r) for r in rows])
+                    conn_u.executemany(f"INSERT OR IGNORE INTO {tbl} ({col_names}) VALUES ({placeholders})", [tuple(r) for r in rows])
             except Exception:
                 pass
 
@@ -476,7 +467,7 @@ def _migrate_legacy_data_if_needed(listings_path, users_path):
                     cols = rows[0].keys()
                     placeholders = ', '.join(['?'] * len(cols))
                     col_names = ', '.join(cols)
-                    conn_l.executemany(f"INSERT OR REPLACE INTO {tbl} ({col_names}) VALUES ({placeholders})", [tuple(r) for r in rows])
+                    conn_l.executemany(f"INSERT OR IGNORE INTO {tbl} ({col_names}) VALUES ({placeholders})", [tuple(r) for r in rows])
             except Exception:
                 pass
 

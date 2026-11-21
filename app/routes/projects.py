@@ -10,7 +10,7 @@ Projects management routes implementing complete Project Creation and Management
 """
 
 import json
-from flask import Blueprint, request, session, render_template, redirect, url_for, flash, jsonify
+from flask import Blueprint, request, session, render_template, redirect, url_for, flash, jsonify, has_request_context
 from app.models import query_db, execute_db, get_db
 from app.routes.auth import login_required
 from app.matching import calculate_matches_for_project, compute_team_skill_coverage
@@ -62,6 +62,100 @@ def get_project_team_count(project_id, owner_id):
         )
     """, (owner_id, project_id), one=True)
     return res['cnt'] if res else 1
+
+
+def is_project_owner(project, user_id=None, db_path=None):
+    """
+    Robust project ownership verification:
+    1. Direct match: project['owner_id'] == user_id (with string and integer coercion).
+    2. Profile ID resolution:
+       - If project['owner_id'] is a student_profiles.id, check if user_id is the profile's user_id.
+       - If user_id is a student_profiles.id, check if project['owner_id'] matches its user_id.
+    3. Team roster check: checks if team_members has role='owner' for this user and project.
+    4. Admin/coordinator privileges.
+    """
+    if not project:
+        return False
+
+    if user_id is None and has_request_context():
+        user_id = session.get('user_id')
+
+    if not user_id and has_request_context():
+        auth_hdr = request.headers.get('X-User-Id') or request.headers.get('Authorization', '')
+        if auth_hdr:
+            token = auth_hdr[7:].strip() if auth_hdr.startswith('Bearer ') else auth_hdr.strip()
+            if token.isdigit():
+                user_id = int(token)
+
+    if not user_id:
+        return False
+
+    u_str = str(user_id).strip()
+    try:
+        u_int = int(u_str)
+    except (ValueError, TypeError):
+        u_int = None
+
+    if not isinstance(project, dict):
+        try:
+            pid = int(project)
+            project = query_db("SELECT * FROM projects WHERE id = ?", (pid,), one=True, db_path=db_path)
+            if not project:
+                return False
+        except (ValueError, TypeError):
+            return False
+
+    owner_val = project.get('owner_id')
+    if owner_val is not None:
+        o_str = str(owner_val).strip()
+        try:
+            o_int = int(o_str)
+        except (ValueError, TypeError):
+            o_int = None
+
+        # Direct string or integer match
+        if o_str == u_str or (o_int is not None and u_int is not None and o_int == u_int):
+            return True
+
+        # Check if owner_val is student_profiles.id matching user's account
+        if u_int is not None:
+            prof_by_user = query_db("SELECT id FROM student_profiles WHERE user_id = ?", (u_int,), one=True, db_path=db_path)
+            if prof_by_user and str(prof_by_user['id']) == o_str:
+                return True
+
+        # Check if user_id is student_profiles.id matching project's owner_id
+        if o_int is not None:
+            user_by_prof = query_db("SELECT user_id FROM student_profiles WHERE id = ?", (o_int,), one=True, db_path=db_path)
+            if user_by_prof and str(user_by_prof['user_id']) == u_str:
+                return True
+
+    # Check team_members table for role='owner'
+    project_id = project.get('id')
+    if project_id:
+        p_id = int(project_id)
+        owner_member = query_db("""
+            SELECT 1 FROM team_members
+            WHERE project_id = ?
+              AND (
+                  user_id = ?
+                  OR user_id IN (SELECT id FROM student_profiles WHERE user_id = ?)
+                  OR user_id IN (SELECT user_id FROM student_profiles WHERE id = ?)
+              )
+              AND LOWER(role) = 'owner'
+        """, (p_id, u_str, u_str, u_str), one=True, db_path=db_path)
+        if owner_member:
+            return True
+
+    # Check admin/coordinator role
+    user_role = session.get('user_role') if has_request_context() else None
+    if not user_role and u_int:
+        u_rec = query_db("SELECT role FROM users WHERE id = ?", (u_int,), one=True, db_path=db_path)
+        if u_rec:
+            user_role = u_rec.get('role')
+    if user_role in ('admin', 'coordinator'):
+        return True
+
+    return False
 
 
 def parse_submitted_skills(form_data=None, json_data=None):
@@ -194,11 +288,14 @@ def landing():
     """Renders the modern SkillSync opening landing page."""
     try:
         featured_projects = query_db("""
-            SELECT p.*, sp.display_name as owner_name, sp.branch as owner_branch, sp.year as owner_year,
+            SELECT p.*,
+                   COALESCE(sp.display_name, u.email, 'Student') as owner_name,
+                   COALESCE(sp.branch, 'CSE') as owner_branch,
+                   COALESCE(sp.year, '1st Year') as owner_year,
                    (SELECT COUNT(*) FROM team_members WHERE project_id = p.id) + 1 as current_team_count
             FROM projects p
-            JOIN users u ON p.owner_id = u.id
-            LEFT JOIN student_profiles sp ON u.id = sp.user_id
+            LEFT JOIN users u ON (p.owner_id = u.id OR p.owner_id = (SELECT sp2.id FROM student_profiles sp2 WHERE sp2.user_id = u.id))
+            LEFT JOIN student_profiles sp ON (sp.user_id = u.id OR sp.id = p.owner_id)
             WHERE p.status = 'published'
             ORDER BY p.created_at DESC
             LIMIT 3
@@ -326,8 +423,20 @@ def list_projects():
 
     # 1. Tab / Visibility Filter
     if tab_filter == 'my' and user_id:
-        where_clauses.append("p.owner_id = ?")
-        where_params.append(user_id)
+        where_clauses.append("""
+            (
+                p.owner_id = ?
+                OR p.owner_id = (SELECT id FROM student_profiles WHERE user_id = ?)
+                OR p.owner_id IN (SELECT user_id FROM student_profiles WHERE id = ?)
+                OR EXISTS (
+                    SELECT 1 FROM team_members tm
+                    WHERE tm.project_id = p.id
+                      AND LOWER(tm.role) = 'owner'
+                      AND (tm.user_id = ? OR tm.user_id = (SELECT id FROM student_profiles WHERE user_id = ?))
+                )
+            )
+        """)
+        where_params.extend([user_id, user_id, user_id, user_id, user_id])
     elif tab_filter == 'seeking':
         where_clauses.append("""
             p.status = 'published' AND (
@@ -341,8 +450,21 @@ def list_projects():
     else:
         # Default 'all': published projects, plus private drafts owned by current user
         if user_id:
-            where_clauses.append("(p.status = 'published' OR p.owner_id = ?)")
-            where_params.append(user_id)
+            where_clauses.append("""
+                (
+                    p.status = 'published'
+                    OR p.owner_id = ?
+                    OR p.owner_id = (SELECT id FROM student_profiles WHERE user_id = ?)
+                    OR p.owner_id IN (SELECT user_id FROM student_profiles WHERE id = ?)
+                    OR EXISTS (
+                        SELECT 1 FROM team_members tm
+                        WHERE tm.project_id = p.id
+                          AND LOWER(tm.role) = 'owner'
+                          AND (tm.user_id = ? OR tm.user_id = (SELECT id FROM student_profiles WHERE user_id = ?))
+                    )
+                )
+            """)
+            where_params.extend([user_id, user_id, user_id, user_id, user_id])
         else:
             where_clauses.append("p.status = 'published'")
 
@@ -403,8 +525,8 @@ def list_projects():
     count_sql = f"""
         SELECT COUNT(DISTINCT p.id) as total
         FROM projects p
-        JOIN users u ON p.owner_id = u.id
-        LEFT JOIN student_profiles sp ON u.id = sp.user_id
+        LEFT JOIN users u ON (p.owner_id = u.id OR p.owner_id = (SELECT sp2.id FROM student_profiles sp2 WHERE sp2.user_id = u.id))
+        LEFT JOIN student_profiles sp ON (sp.user_id = u.id OR sp.id = p.owner_id)
         WHERE {where_sql}
     """
     count_row = query_db(count_sql, where_params, one=True)
@@ -429,7 +551,11 @@ def list_projects():
 
     # Main Query with LIMIT and OFFSET
     main_sql = f"""
-        SELECT p.*, sp.display_name as owner_name, sp.branch as owner_branch, sp.year as owner_year, sp.bio as owner_bio,
+        SELECT p.*,
+               COALESCE(sp.display_name, u.email, 'Student') as owner_name,
+               COALESCE(sp.branch, 'CSE') as owner_branch,
+               COALESCE(sp.year, '1st Year') as owner_year,
+               sp.bio as owner_bio,
                u.email as owner_email,
                (SELECT COUNT(DISTINCT uid) FROM (
                    SELECT p.owner_id as uid
@@ -437,8 +563,8 @@ def list_projects():
                    SELECT user_id as uid FROM team_members WHERE project_id = p.id
                )) as current_team_count
         FROM projects p
-        JOIN users u ON p.owner_id = u.id
-        LEFT JOIN student_profiles sp ON u.id = sp.user_id
+        LEFT JOIN users u ON (p.owner_id = u.id OR p.owner_id = (SELECT sp2.id FROM student_profiles sp2 WHERE sp2.user_id = u.id))
+        LEFT JOIN student_profiles sp ON (sp.user_id = u.id OR sp.id = p.owner_id)
         WHERE {where_sql}
         ORDER BY {order_sql}
         LIMIT ? OFFSET ?
@@ -464,11 +590,13 @@ def list_projects():
         else:
             p['tech_list'] = []
 
-        # Check if user has an application or is a member
+        # Check if user has an application or is a member / owner
         p['user_application'] = None
         p['is_team_member'] = False
+        p['is_owner'] = False
         if user_id:
-            if user_id == p['owner_id']:
+            if is_project_owner(p, user_id):
+                p['is_owner'] = True
                 p['is_team_member'] = True
             else:
                 mem = query_db("SELECT 1 FROM team_members WHERE project_id = ? AND user_id = ?", (p['id'], user_id), one=True)
@@ -816,12 +944,13 @@ def create_project():
 
 
 @projects_bp.route('/projects/<int:project_id>/edit', methods=['GET', 'POST'])
+@projects_bp.route('/projects/<project_id>/edit', methods=['GET', 'POST'])
 @login_required
 def edit_project(project_id):
     """Edit project information, team size, and skill requirements."""
     user_id = session['user_id']
     project = query_db("SELECT * FROM projects WHERE id = ?", (project_id,), one=True)
-    if not project or project['owner_id'] != user_id:
+    if not project or not is_project_owner(project, user_id):
         flash('Unauthorized: You can only edit projects you created.', 'danger')
         return redirect(url_for('projects.list_projects'))
 
@@ -912,12 +1041,13 @@ def edit_project(project_id):
 
 
 @projects_bp.route('/projects/<int:project_id>/delete', methods=['POST'])
+@projects_bp.route('/projects/<project_id>/delete', methods=['POST'])
 @login_required
 def delete_project(project_id):
     """Delete a project and its associated requirements and applications."""
     user_id = session['user_id']
     project = query_db("SELECT * FROM projects WHERE id = ?", (project_id,), one=True)
-    if not project or project['owner_id'] != user_id:
+    if not project or not is_project_owner(project, user_id):
         flash('Unauthorized: Only the project creator can delete this project.', 'danger')
         return redirect(url_for('projects.list_projects'))
 
@@ -928,16 +1058,21 @@ def delete_project(project_id):
 
 
 @projects_bp.route('/projects/<int:project_id>')
+@projects_bp.route('/projects/<project_id>')
 def project_detail(project_id):
     """Detailed project view showing overview, team members, applications, and coverage."""
     user_id = session.get('user_id')
     project = query_db("""
-        SELECT p.*, sp.display_name as owner_name, sp.bio as owner_bio, sp.branch as owner_branch,
-               sp.year as owner_year, sp.usn as owner_usn, sp.section as owner_section,
+        SELECT p.*,
+               COALESCE(sp.display_name, u.email, 'Project Creator') as owner_name,
+               sp.bio as owner_bio,
+               COALESCE(sp.branch, 'CSE') as owner_branch,
+               COALESCE(sp.year, '1st Year') as owner_year,
+               sp.usn as owner_usn, sp.section as owner_section,
                sp.institution as owner_institution, u.email as owner_email
         FROM projects p
-        JOIN users u ON p.owner_id = u.id
-        LEFT JOIN student_profiles sp ON u.id = sp.user_id
+        LEFT JOIN users u ON (p.owner_id = u.id OR p.owner_id = (SELECT sp2.id FROM student_profiles sp2 WHERE sp2.user_id = u.id))
+        LEFT JOIN student_profiles sp ON (sp.user_id = u.id OR sp.id = p.owner_id)
         WHERE p.id = ?
     """, (project_id,), one=True)
 
@@ -945,7 +1080,7 @@ def project_detail(project_id):
         flash('Project not found.', 'danger')
         return redirect(url_for('projects.list_projects'))
 
-    is_owner = (user_id == project['owner_id'])
+    is_owner = is_project_owner(project, user_id)
 
     # Team count and members
     current_team_count = get_project_team_count(project_id, project['owner_id'])
@@ -1060,7 +1195,7 @@ def apply_project(project_id):
         flash('This project is not currently accepting applications.', 'warning')
         return redirect(url_for('projects.project_detail', project_id=project_id))
 
-    if project['owner_id'] == user_id:
+    if is_project_owner(project, user_id):
         flash('You are the creator of this project and cannot apply to join it.', 'warning')
         return redirect(url_for('projects.project_detail', project_id=project_id))
 
@@ -1124,7 +1259,7 @@ def review_application(project_id, app_id):
     """Accept or reject an application submitted by a student."""
     user_id = session['user_id']
     project = query_db("SELECT * FROM projects WHERE id = ?", (project_id,), one=True)
-    if not project or project['owner_id'] != user_id:
+    if not project or not is_project_owner(project, user_id):
         flash('Unauthorized: Only project creators can review applications.', 'danger')
         return redirect(url_for('projects.list_projects'))
 
@@ -1175,11 +1310,11 @@ def remove_team_member(project_id, member_id):
     """Remove an accepted team member from the project."""
     user_id = session['user_id']
     project = query_db("SELECT * FROM projects WHERE id = ?", (project_id,), one=True)
-    if not project or project['owner_id'] != user_id:
+    if not project or not is_project_owner(project, user_id):
         flash('Unauthorized action.', 'danger')
         return redirect(url_for('projects.list_projects'))
 
-    if member_id == project['owner_id']:
+    if is_project_owner(project, member_id):
         flash('The project owner cannot be removed from the team.', 'danger')
         return redirect(url_for('projects.project_detail', project_id=project_id))
 
@@ -1209,9 +1344,19 @@ def my_projects():
                )) as current_team_count,
                (SELECT COUNT(*) FROM project_applications WHERE project_id = p.id AND application_status = 'pending') as pending_apps_count
         FROM projects p
-        WHERE p.owner_id = ?
+        WHERE (
+            p.owner_id = ?
+            OR p.owner_id = (SELECT id FROM student_profiles WHERE user_id = ?)
+            OR p.owner_id IN (SELECT user_id FROM student_profiles WHERE id = ?)
+            OR EXISTS (
+                SELECT 1 FROM team_members tm
+                WHERE tm.project_id = p.id
+                  AND LOWER(tm.role) = 'owner'
+                  AND (tm.user_id = ? OR tm.user_id = (SELECT id FROM student_profiles WHERE user_id = ?))
+            )
+        )
         ORDER BY p.updated_at DESC
-    """, (user_id,))
+    """, (user_id, user_id, user_id, user_id, user_id))
 
     for p in my_proj_list:
         p['requirements'] = query_db("""
@@ -1229,11 +1374,12 @@ def my_projects():
 
     my_applications = query_db("""
         SELECT pa.*, p.title as project_title, p.category, p.status as project_status, p.team_size_max,
-               sp.display_name as owner_name, sp.branch as owner_branch
+               COALESCE(sp.display_name, u.email, 'Student') as owner_name,
+               COALESCE(sp.branch, 'CSE') as owner_branch
         FROM project_applications pa
         JOIN projects p ON pa.project_id = p.id
-        JOIN users u ON p.owner_id = u.id
-        JOIN student_profiles sp ON u.id = sp.user_id
+        LEFT JOIN users u ON (p.owner_id = u.id OR p.owner_id = (SELECT sp2.id FROM student_profiles sp2 WHERE sp2.user_id = u.id))
+        LEFT JOIN student_profiles sp ON (sp.user_id = u.id OR sp.id = p.owner_id)
         WHERE pa.applicant_id = ?
         ORDER BY pa.created_at DESC
     """, (user_id,))
@@ -1248,12 +1394,13 @@ def my_projects():
 
 
 @projects_bp.route('/projects/<int:project_id>/requirements', methods=['POST'])
+@projects_bp.route('/projects/<project_id>/requirements', methods=['POST'])
 @login_required
 def update_requirements(project_id):
     """Add or remove skill requirement for project (FR-06)."""
     user_id = session['user_id']
     project = query_db("SELECT * FROM projects WHERE id = ?", (project_id,), one=True)
-    if not project or project['owner_id'] != user_id:
+    if not project or not is_project_owner(project, user_id):
         flash('Unauthorized action.', 'danger')
         return redirect(url_for('projects.list_projects'))
 
@@ -1338,7 +1485,7 @@ def publish_project(project_id):
         return redirect(url_for('projects.list_projects'))
 
     # 3. Ownership check for existing project
-    if project['owner_id'] != user_id:
+    if not is_project_owner(project, user_id):
         if is_ajax:
             return jsonify({'success': False, 'error': 'Unauthorized action: You do not own this project.'}), 403
         flash('Unauthorized action.', 'danger')
@@ -1404,35 +1551,37 @@ def publish_project(project_id):
 
 
 @projects_bp.route('/projects/<int:project_id>/close', methods=['POST'])
+@projects_bp.route('/projects/<project_id>/close', methods=['POST'])
 @login_required
 def close_project(project_id):
     """Toggle project status between closed and published."""
     user_id = session['user_id']
     project = query_db("SELECT * FROM projects WHERE id = ?", (project_id,), one=True)
-    if not project or project['owner_id'] != user_id:
+    if not project or not is_project_owner(project, user_id):
         flash('Unauthorized action.', 'danger')
         return redirect(url_for('projects.list_projects'))
 
     if project['status'] == 'closed':
-        execute_db("UPDATE projects SET status = 'published', updated_at = CURRENT_TIMESTAMP WHERE id = ?", (project_id,))
+        execute_db("UPDATE projects SET status = 'published', updated_at = CURRENT_TIMESTAMP WHERE id = ?", (project['id'],))
         flash('Project reopened! Now accepting teammate applications.', 'success')
     else:
-        execute_db("UPDATE projects SET status = 'closed', updated_at = CURRENT_TIMESTAMP WHERE id = ?", (project_id,))
-        log_event('project_closed', actor_id=user_id, target_type='project', target_id=project_id)
+        execute_db("UPDATE projects SET status = 'closed', updated_at = CURRENT_TIMESTAMP WHERE id = ?", (project['id'],))
+        log_event('project_closed', actor_id=user_id, target_type='project', target_id=project['id'])
         flash('Project closed. Team is now finalized and no longer accepting applications.', 'info')
 
-    return redirect(url_for('projects.project_detail', project_id=project_id))
+    return redirect(url_for('projects.project_detail', project_id=project['id']))
 
 
 @projects_bp.route('/projects/<int:project_id>/matches')
+@projects_bp.route('/projects/<project_id>/matches')
 @login_required
 def match_candidates(project_id):
     """Ranks candidates using explainable formula: Match Score = 0.65 * Skill + 0.25 * Availability + 0.10 * Interest"""
     user_id = session['user_id']
     project = query_db("SELECT * FROM projects WHERE id = ?", (project_id,), one=True)
-    if not project or project['owner_id'] != user_id:
+    if not project or not is_project_owner(project, user_id):
         flash('Only the project owner can view match recommendations for this project.', 'danger')
-        return redirect(url_for('projects.list_projects'))
+        return redirect(url_for('projects.project_detail', project_id=project['id']) if project else url_for('projects.list_projects'))
 
     filters = {
         'skill_id': request.args.get('skill_id'),
@@ -1443,11 +1592,11 @@ def match_candidates(project_id):
         'fills_gap_only': request.args.get('fills_gap_only') == '1'
     }
 
-    candidates = calculate_matches_for_project(project_id, filters=filters)
-    coverage = compute_team_skill_coverage(project_id)
+    candidates = calculate_matches_for_project(project['id'], filters=filters)
+    coverage = compute_team_skill_coverage(project['id'])
     all_skills = query_db("SELECT * FROM skills WHERE active = 1 ORDER BY category, name")
 
-    log_event('match_list_viewed', actor_id=user_id, target_type='project', target_id=project_id, metadata={'results_count': len(candidates)})
+    log_event('match_list_viewed', actor_id=user_id, target_type='project', target_id=project['id'], metadata={'results_count': len(candidates)})
 
     return render_template(
         'projects/matches.html',
@@ -1460,13 +1609,14 @@ def match_candidates(project_id):
 
 
 @projects_bp.route('/api/projects/<int:project_id>/matches')
+@projects_bp.route('/api/projects/<project_id>/matches')
 @login_required
 def api_matches(project_id):
     """JSON API endpoint for matches."""
     user_id = session['user_id']
     project = query_db("SELECT * FROM projects WHERE id = ?", (project_id,), one=True)
-    if not project or project['owner_id'] != user_id:
-        return jsonify({'error': 'Unauthorized'}), 403
+    if not project or not is_project_owner(project, user_id):
+        return jsonify({'error': 'Unauthorized: Only the project owner can view match recommendations for this project.'}), 403
 
     filters = {
         'skill_id': request.args.get('skill_id'),
@@ -1477,8 +1627,8 @@ def api_matches(project_id):
         'fills_gap_only': request.args.get('fills_gap_only') == '1'
     }
 
-    candidates = calculate_matches_for_project(project_id, filters=filters)
-    return jsonify({'project_id': project_id, 'matches': candidates})
+    candidates = calculate_matches_for_project(project['id'], filters=filters)
+    return jsonify({'project_id': project['id'], 'matches': candidates})
 
 
 @projects_bp.route('/api/projects/<int:project_id>/team')

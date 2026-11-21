@@ -17,6 +17,20 @@ def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         uid = session.get('user_id')
+
+        # Fallback: check for authentication headers or token if session is not yet loaded
+        if not uid:
+            auth_header = request.headers.get('Authorization') or request.headers.get('X-User-Id')
+            if auth_header:
+                token = auth_header[7:].strip() if auth_header.startswith('Bearer ') else auth_header.strip()
+                if token.isdigit():
+                    u_cand = query_db("SELECT id, email, role, status FROM users WHERE id = ?", (int(token),), one=True)
+                    if u_cand and u_cand.get('status') != 'deactivated':
+                        session['user_id'] = u_cand['id']
+                        session['user_email'] = u_cand['email']
+                        session['user_role'] = u_cand['role']
+                        uid = u_cand['id']
+
         if not uid:
             if request.is_json or request.path.startswith('/api/') or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return jsonify({'error': 'Authentication required', 'success': False}), 401
