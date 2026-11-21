@@ -479,10 +479,10 @@ def send_message_api(conversation_id):
 
     if request.is_json:
         data = request.get_json() or {}
-        content = data.get('content') or data.get('message_text') or ''
+        content = data.get('content') or data.get('message_text') or data.get('message_content') or ''
         file = None
     else:
-        content = request.form.get('content') or request.form.get('message_text') or ''
+        content = request.form.get('content') or request.form.get('message_text') or request.form.get('message_content') or ''
         file = request.files.get('attachment')
     content = content.strip()
 
