@@ -430,10 +430,11 @@ def init_listings_db(listings_path=None):
 
 def _migrate_legacy_data_if_needed(listings_path, users_path):
     """
-    If legacy skillsync.db exists, safely synchronizes any missing records
-    into listings.db and users.db using INSERT OR IGNORE so no user projects
-    or profile data are ever lost.
-    Only runs for the main application database, never for test databases.
+    Safely performs a one-time initial bootstrap migration from legacy skillsync.db
+    into listings.db and users.db.
+    If listings.db already contains projects, the migration is considered complete
+    and will NEVER re-import old projects so that deleted projects never reappear.
+    Once migrated, skillsync.db is safely archived to skillsync.db.migrated.
     """
     if os.path.abspath(listings_path) != os.path.abspath(LISTINGS_DB_PATH):
         return
@@ -443,6 +444,21 @@ def _migrate_legacy_data_if_needed(listings_path, users_path):
         return
 
     try:
+        conn_l_check = sqlite3.connect(listings_path)
+        existing_p_cnt = conn_l_check.execute("SELECT count(*) FROM projects").fetchone()[0]
+        conn_l_check.close()
+
+        # If listings already exist, legacy migration has completed.
+        # Archive legacy database and never re-import deleted projects!
+        if existing_p_cnt > 0:
+            try:
+                migrated_path = os.path.join(ROOT_DIR, 'skillsync.db.migrated')
+                if not os.path.exists(migrated_path):
+                    os.rename(legacy_path, migrated_path)
+            except Exception:
+                pass
+            return
+
         old_conn = sqlite3.connect(legacy_path)
         old_conn.row_factory = sqlite3.Row
 
@@ -476,6 +492,13 @@ def _migrate_legacy_data_if_needed(listings_path, users_path):
         conn_u.close()
         conn_l.close()
         old_conn.close()
+
+        try:
+            migrated_path = os.path.join(ROOT_DIR, 'skillsync.db.migrated')
+            if not os.path.exists(migrated_path):
+                os.rename(legacy_path, migrated_path)
+        except Exception:
+            pass
     except Exception:
         pass
 

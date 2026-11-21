@@ -10,6 +10,10 @@ from app.models import init_db, query_db
 
 
 def create_app(db_path=None, test_config=None):
+    if isinstance(db_path, dict) and test_config is None:
+        test_config = db_path
+        db_path = test_config.get('DATABASE')
+
     app = Flask(__name__)
     app.config['SECRET_KEY'] = 'skillsync-bmsit-cse13-secret-key-2026'
     app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=14)

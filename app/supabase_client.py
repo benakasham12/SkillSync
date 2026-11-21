@@ -151,10 +151,42 @@ def upsert_cloud_project(project_dict):
 
 
 def delete_cloud_project(project_id):
-    """Delete a project listing from Supabase cloud database."""
+    """
+    Permanently delete a project listing and all its associated child records from Supabase cloud database.
+    Cascade-deletes from dependent tables first:
+    - project_skill_requirements
+    - project_availability_slots
+    - project_interests
+    - team_members
+    - project_applications
+    - invitations
+    - projects
+    """
+    if not is_cloud_enabled():
+        return False, "Cloud sync is disabled."
+
+    p_param = {'project_id': f"eq.{project_id}"}
+    extra_headers = {'Prefer': 'return=representation'}
+
+    # 1. Clean up dependent child records
+    for child_table in [
+        'project_skill_requirements',
+        'project_availability_slots',
+        'project_interests',
+        'team_members',
+        'project_applications',
+        'invitations'
+    ]:
+        try:
+            supabase_request(child_table, method='DELETE', query_params=p_param, extra_headers=extra_headers)
+        except Exception:
+            pass
+
+    # 2. Delete parent project record
     params = {'id': f"eq.{project_id}"}
-    code, data = supabase_request('projects', method='DELETE', query_params=params)
-    return code in (200, 204), data
+    code, data = supabase_request('projects', method='DELETE', query_params=params, extra_headers=extra_headers)
+    success = code in (200, 204)
+    return success, data
 
 
 def sync_local_listings_to_cloud(db_path=None):

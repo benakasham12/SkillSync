@@ -9,6 +9,8 @@ Projects management routes implementing complete Project Creation and Management
 - Deterministic candidate ranking and skill coverage analysis
 """
 
+import os
+import sqlite3
 import json
 from flask import Blueprint, request, session, render_template, redirect, url_for, flash, jsonify, has_request_context
 from app.models import query_db, execute_db, get_db
@@ -1079,13 +1081,28 @@ def edit_project(project_id):
 @projects_bp.route('/projects/<project_id>/delete', methods=['POST'])
 @login_required
 def delete_project(project_id):
-    """Delete a project and its associated requirements and applications."""
+    """Permanently delete a project, its associated requirements, slots, and applications across local and cloud databases."""
     user_id = session['user_id']
+    user_role = session.get('user_role', 'student')
+    is_admin = user_role in ('admin', 'coordinator')
+
+    is_ajax = (
+        request.is_json
+        or request.path.startswith('/api/')
+        or request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+        or 'application/json' in request.headers.get('Accept', '')
+    )
+
     project = query_db("SELECT * FROM projects WHERE id = ?", (project_id,), one=True)
     if not project:
+        if is_ajax:
+            return jsonify({'success': False, 'error': 'Project not found.'}), 404
         flash('Project not found.', 'danger')
         return redirect(url_for('projects.list_projects'))
-    if not is_project_owner(project, user_id):
+
+    if not is_admin and not is_project_owner(project, user_id):
+        if is_ajax:
+            return jsonify({'success': False, 'error': 'Unauthorized: Only the project creator or an administrator can delete this project.'}), 403
         flash('Unauthorized: Only the project creator or an administrator can delete this project.', 'danger')
         return redirect(url_for('projects.list_projects'))
 
@@ -1096,19 +1113,49 @@ def delete_project(project_id):
     execute_db("DELETE FROM team_members WHERE project_id = ?", (project_id,))
     execute_db("DELETE FROM project_applications WHERE project_id = ?", (project_id,))
     execute_db("DELETE FROM invitations WHERE project_id = ?", (project_id,))
+    execute_db("DELETE FROM reports WHERE target_type = 'project' AND target_id = ?", (project_id,))
     execute_db("DELETE FROM projects WHERE id = ?", (project_id,))
 
-    # If cloud sync enabled, delete from Supabase
+    # Also clean up legacy skillsync.db and skillsync.db.migrated if present
+    from app.models import ROOT_DIR
+    for leg_name in ['skillsync.db', 'skillsync.db.migrated']:
+        leg_path = os.path.join(ROOT_DIR, leg_name)
+        if os.path.exists(leg_path):
+            try:
+                with sqlite3.connect(leg_path) as leg_conn:
+                    leg_conn.execute("DELETE FROM project_skill_requirements WHERE project_id = ?", (project_id,))
+                    leg_conn.execute("DELETE FROM project_availability_slots WHERE project_id = ?", (project_id,))
+                    leg_conn.execute("DELETE FROM project_interests WHERE project_id = ?", (project_id,))
+                    leg_conn.execute("DELETE FROM team_members WHERE project_id = ?", (project_id,))
+                    leg_conn.execute("DELETE FROM project_applications WHERE project_id = ?", (project_id,))
+                    leg_conn.execute("DELETE FROM invitations WHERE project_id = ?", (project_id,))
+                    leg_conn.execute("DELETE FROM projects WHERE id = ?", (project_id,))
+                    leg_conn.commit()
+            except Exception:
+                pass
+
+    # If cloud sync enabled, permanently delete from Supabase
+    cloud_deleted = False
     try:
         from app.supabase_client import is_cloud_enabled, delete_cloud_project
         if is_cloud_enabled():
-            delete_cloud_project(project_id)
+            ok, _ = delete_cloud_project(project_id)
+            cloud_deleted = ok
     except Exception:
         pass
 
     log_event('project_deleted', actor_id=user_id, target_type='project', target_id=project_id)
+
+    if is_ajax:
+        return jsonify({
+            'success': True,
+            'message': 'Project and all associated records deleted successfully.',
+            'project_id': project_id,
+            'cloud_deleted': cloud_deleted
+        }), 200
+
     flash('Project and all associated records deleted successfully.', 'info')
-    if session.get('user_role') in ('admin', 'coordinator'):
+    if is_admin:
         return redirect(request.referrer or url_for('admin.dashboard'))
     return redirect(url_for('projects.my_projects'))
 
@@ -1166,6 +1213,14 @@ def project_detail(project_id):
     """, (project_id,), one=True)
 
     if not project:
+        is_ajax = (
+            request.is_json
+            or request.path.startswith('/api/')
+            or request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+            or 'application/json' in request.headers.get('Accept', '')
+        )
+        if is_ajax:
+            return jsonify({'success': False, 'error': 'Project not found.'}), 404
         flash('Project not found.', 'danger')
         return redirect(url_for('projects.list_projects'))
 

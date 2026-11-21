@@ -6,8 +6,10 @@ Admin and Coordinator routes implementing PRD FR-13 and Section 9:
 - Complete Project Management (view, edit, delete any platform project)
 """
 
+import os
+import sqlite3
 from flask import Blueprint, request, session, render_template, redirect, url_for, flash, jsonify
-from app.models import query_db, execute_db
+from app.models import query_db, execute_db, ROOT_DIR
 from app.routes.auth import login_required, admin_required
 from app.analytics import get_analytics_summary, log_event
 
@@ -51,7 +53,25 @@ def delete_user_account(target_user_id, admin_id=None):
         execute_db("DELETE FROM team_members WHERE project_id = ?", (pid,))
         execute_db("DELETE FROM project_applications WHERE project_id = ?", (pid,))
         execute_db("DELETE FROM invitations WHERE project_id = ?", (pid,))
+        execute_db("DELETE FROM reports WHERE target_type = 'project' AND target_id = ?", (pid,))
         execute_db("DELETE FROM projects WHERE id = ?", (pid,))
+
+        # Clean legacy backup files if present
+        for leg_name in ['skillsync.db', 'skillsync.db.migrated']:
+            leg_path = os.path.join(ROOT_DIR, leg_name)
+            if os.path.exists(leg_path):
+                try:
+                    with sqlite3.connect(leg_path) as leg_conn:
+                        leg_conn.execute("DELETE FROM project_skill_requirements WHERE project_id = ?", (pid,))
+                        leg_conn.execute("DELETE FROM project_availability_slots WHERE project_id = ?", (pid,))
+                        leg_conn.execute("DELETE FROM project_interests WHERE project_id = ?", (pid,))
+                        leg_conn.execute("DELETE FROM team_members WHERE project_id = ?", (pid,))
+                        leg_conn.execute("DELETE FROM project_applications WHERE project_id = ?", (pid,))
+                        leg_conn.execute("DELETE FROM invitations WHERE project_id = ?", (pid,))
+                        leg_conn.execute("DELETE FROM projects WHERE id = ?", (pid,))
+                        leg_conn.commit()
+                except Exception:
+                    pass
 
         try:
             from app.supabase_client import is_cloud_enabled, delete_cloud_project
@@ -232,12 +252,22 @@ def delete_user(target_user_id):
 
 
 @admin_bp.route('/admin/projects/<int:project_id>/delete', methods=['POST'])
+@admin_bp.route('/admin/projects/<project_id>/delete', methods=['POST'])
 @login_required
 @admin_required
 def delete_project_admin(project_id):
-    """Admin route to delete any project on the platform."""
+    """Admin route to permanently delete any project on the platform across local and cloud databases."""
+    is_ajax = (
+        request.is_json
+        or request.path.startswith('/api/')
+        or request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+        or 'application/json' in request.headers.get('Accept', '')
+    )
+
     project = query_db("SELECT id, title FROM projects WHERE id = ?", (project_id,), one=True)
     if not project:
+        if is_ajax:
+            return jsonify({'success': False, 'error': 'Project not found.'}), 404
         flash('Project not found.', 'danger')
         return redirect(url_for('admin.dashboard'))
 
@@ -247,16 +277,45 @@ def delete_project_admin(project_id):
     execute_db("DELETE FROM team_members WHERE project_id = ?", (project_id,))
     execute_db("DELETE FROM project_applications WHERE project_id = ?", (project_id,))
     execute_db("DELETE FROM invitations WHERE project_id = ?", (project_id,))
+    execute_db("DELETE FROM reports WHERE target_type = 'project' AND target_id = ?", (project_id,))
     execute_db("DELETE FROM projects WHERE id = ?", (project_id,))
 
+    # Clean legacy backup files if present
+    for leg_name in ['skillsync.db', 'skillsync.db.migrated']:
+        leg_path = os.path.join(ROOT_DIR, leg_name)
+        if os.path.exists(leg_path):
+            try:
+                with sqlite3.connect(leg_path) as leg_conn:
+                    leg_conn.execute("DELETE FROM project_skill_requirements WHERE project_id = ?", (project_id,))
+                    leg_conn.execute("DELETE FROM project_availability_slots WHERE project_id = ?", (project_id,))
+                    leg_conn.execute("DELETE FROM project_interests WHERE project_id = ?", (project_id,))
+                    leg_conn.execute("DELETE FROM team_members WHERE project_id = ?", (project_id,))
+                    leg_conn.execute("DELETE FROM project_applications WHERE project_id = ?", (project_id,))
+                    leg_conn.execute("DELETE FROM invitations WHERE project_id = ?", (project_id,))
+                    leg_conn.execute("DELETE FROM projects WHERE id = ?", (project_id,))
+                    leg_conn.commit()
+            except Exception:
+                pass
+
+    cloud_deleted = False
     try:
         from app.supabase_client import is_cloud_enabled, delete_cloud_project
         if is_cloud_enabled():
-            delete_cloud_project(project_id)
+            ok, _ = delete_cloud_project(project_id)
+            cloud_deleted = ok
     except Exception:
         pass
 
     log_event('project_deleted_by_admin', actor_id=session['user_id'], target_type='project', target_id=project_id)
+
+    if is_ajax:
+        return jsonify({
+            'success': True,
+            'message': f"Project '{project['title']}' and all associated requirements and applications were deleted successfully.",
+            'project_id': project_id,
+            'cloud_deleted': cloud_deleted
+        }), 200
+
     flash(f"Project '{project['title']}' and all associated requirements and applications were deleted successfully.", 'info')
     return redirect(url_for('admin.dashboard'))
 

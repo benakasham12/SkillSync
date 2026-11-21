@@ -128,44 +128,45 @@ def seed_database(db_path=None):
 
     conn.commit()
 
-    # 5. Seed Sample Projects
-    for p in data.get('projects', []):
-        owner_id = user_id_map.get(p['owner_email'])
-        if owner_id:
-            cur.execute("""
-                INSERT INTO projects (owner_id, title, description, course_context, team_size_min, team_size_max, schedule_notes, status)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                owner_id, p['title'], p.get('description', ''),
-                p.get('course_context', 'Innovation & Design Thinking (IDT)'),
-                p.get('team_size_min', 2), p.get('team_size_max', 4),
-                p.get('schedule_notes', ''), p.get('status', 'published')
-            ))
-            proj_id = cur.lastrowid
-
-            # Insert project skill requirements
-            for req in p.get('requirements', []):
-                sk_name = req['skill_name']
-                if sk_name in skill_map:
-                    cur.execute("""
-                        INSERT INTO project_skill_requirements (project_id, skill_id, priority, weight)
-                        VALUES (?, ?, ?, ?)
-                    """, (proj_id, skill_map[sk_name], req.get('priority', 'must-have'), req.get('weight', 3.0)))
-
-            # Insert project availability slots
-            for slot in p.get('availability_slots', []):
+    # 5. Seed Sample Projects (only if database had no projects initially)
+    if existing_p_cnt == 0:
+        for p in data.get('projects', []):
+            owner_id = user_id_map.get(p['owner_email'])
+            if owner_id:
                 cur.execute("""
-                    INSERT INTO project_availability_slots (project_id, day_of_week, time_block)
-                    VALUES (?, ?, ?)
-                """, (proj_id, slot['day'], slot['block']))
+                    INSERT INTO projects (owner_id, title, description, course_context, team_size_min, team_size_max, schedule_notes, status)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    owner_id, p['title'], p.get('description', ''),
+                    p.get('course_context', 'Innovation & Design Thinking (IDT)'),
+                    p.get('team_size_min', 2), p.get('team_size_max', 4),
+                    p.get('schedule_notes', ''), p.get('status', 'published')
+                ))
+                proj_id = cur.lastrowid
 
-            # Insert project interests
-            for int_name in p.get('interests', []):
-                if int_name in interest_map:
+                # Insert project skill requirements
+                for req in p.get('requirements', []):
+                    sk_name = req['skill_name']
+                    if sk_name in skill_map:
+                        cur.execute("""
+                            INSERT INTO project_skill_requirements (project_id, skill_id, priority, weight)
+                            VALUES (?, ?, ?, ?)
+                        """, (proj_id, skill_map[sk_name], req.get('priority', 'must-have'), req.get('weight', 3.0)))
+
+                # Insert project availability slots
+                for slot in p.get('availability_slots', []):
                     cur.execute("""
-                        INSERT INTO project_interests (project_id, interest_id)
-                        VALUES (?, ?)
-                    """, (proj_id, interest_map[int_name]))
+                        INSERT INTO project_availability_slots (project_id, day_of_week, time_block)
+                        VALUES (?, ?, ?)
+                    """, (proj_id, slot['day'], slot['block']))
+
+                # Insert project interests
+                for int_name in p.get('interests', []):
+                    if int_name in interest_map:
+                        cur.execute("""
+                            INSERT INTO project_interests (project_id, interest_id)
+                            VALUES (?, ?)
+                        """, (proj_id, interest_map[int_name]))
 
     conn.commit()
     conn.close()

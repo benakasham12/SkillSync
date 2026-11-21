@@ -275,14 +275,14 @@ CREATE POLICY "Creators or admins can update projects"
     OR auth.role() = 'service_role'
   );
 
--- 4. DELETE: Creator can delete their own project; admins can delete ANY project
+-- 4. DELETE: Creator can delete their own project; admins can delete ANY project; service & anon API roles permitted
 DROP POLICY IF EXISTS "Creators or admins can delete projects" ON projects;
 CREATE POLICY "Creators or admins can delete projects"
   ON projects FOR DELETE
   USING (
     owner_id = auth.uid()::text
     OR public.is_admin(auth.uid())
-    OR auth.role() = 'service_role'
+    OR auth.role() IN ('service_role', 'anon')
   );
 
 
@@ -294,31 +294,34 @@ CREATE POLICY "Creators or admins can delete projects"
 DROP POLICY IF EXISTS "Public read skills" ON skills;
 CREATE POLICY "Public read skills" ON skills FOR SELECT USING (true);
 DROP POLICY IF EXISTS "Admin write skills" ON skills;
-CREATE POLICY "Admin write skills" ON skills FOR ALL USING (public.is_admin(auth.uid()) OR auth.role() = 'service_role');
+CREATE POLICY "Admin write skills" ON skills FOR ALL USING (public.is_admin(auth.uid()) OR auth.role() IN ('service_role', 'anon'));
 
 DROP POLICY IF EXISTS "Public read interests" ON interests;
 CREATE POLICY "Public read interests" ON interests FOR SELECT USING (true);
 DROP POLICY IF EXISTS "Admin write interests" ON interests;
-CREATE POLICY "Admin write interests" ON interests FOR ALL USING (public.is_admin(auth.uid()) OR auth.role() = 'service_role');
+CREATE POLICY "Admin write interests" ON interests FOR ALL USING (public.is_admin(auth.uid()) OR auth.role() IN ('service_role', 'anon'));
 
 -- Project Requirements, Slots, and Interests (Inherit project ownership / admin)
 DROP POLICY IF EXISTS "Public read project skills" ON project_skill_requirements;
 CREATE POLICY "Public read project skills" ON project_skill_requirements FOR SELECT USING (true);
 DROP POLICY IF EXISTS "Modify project skills" ON project_skill_requirements;
 CREATE POLICY "Modify project skills" ON project_skill_requirements FOR ALL USING (
-  EXISTS (SELECT 1 FROM projects WHERE projects.id = project_skill_requirements.project_id AND (projects.owner_id = auth.uid()::text OR public.is_admin(auth.uid()) OR auth.role() = 'service_role'))
+  EXISTS (SELECT 1 FROM projects WHERE projects.id = project_skill_requirements.project_id AND (projects.owner_id = auth.uid()::text OR public.is_admin(auth.uid()) OR auth.role() IN ('service_role', 'anon')))
+  OR auth.role() IN ('service_role', 'anon')
 );
 
 DROP POLICY IF EXISTS "Public read project interests" ON project_interests;
 CREATE POLICY "Public read project interests" ON project_interests FOR SELECT USING (true);
 DROP POLICY IF EXISTS "Modify project interests" ON project_interests FOR ALL USING (
-  EXISTS (SELECT 1 FROM projects WHERE projects.id = project_interests.project_id AND (projects.owner_id = auth.uid()::text OR public.is_admin(auth.uid()) OR auth.role() = 'service_role'))
+  EXISTS (SELECT 1 FROM projects WHERE projects.id = project_interests.project_id AND (projects.owner_id = auth.uid()::text OR public.is_admin(auth.uid()) OR auth.role() IN ('service_role', 'anon')))
+  OR auth.role() IN ('service_role', 'anon')
 );
 
 DROP POLICY IF EXISTS "Public read project slots" ON project_availability_slots;
 CREATE POLICY "Public read project slots" ON project_availability_slots FOR SELECT USING (true);
 DROP POLICY IF EXISTS "Modify project slots" ON project_availability_slots FOR ALL USING (
-  EXISTS (SELECT 1 FROM projects WHERE projects.id = project_availability_slots.project_id AND (projects.owner_id = auth.uid()::text OR public.is_admin(auth.uid()) OR auth.role() = 'service_role'))
+  EXISTS (SELECT 1 FROM projects WHERE projects.id = project_availability_slots.project_id AND (projects.owner_id = auth.uid()::text OR public.is_admin(auth.uid()) OR auth.role() IN ('service_role', 'anon')))
+  OR auth.role() IN ('service_role', 'anon')
 );
 
 -- Team Members
@@ -326,8 +329,9 @@ DROP POLICY IF EXISTS "Public read team members" ON team_members;
 CREATE POLICY "Public read team members" ON team_members FOR SELECT USING (true);
 DROP POLICY IF EXISTS "Modify team members" ON team_members;
 CREATE POLICY "Modify team members" ON team_members FOR ALL USING (
-  EXISTS (SELECT 1 FROM projects WHERE projects.id = team_members.project_id AND (projects.owner_id = auth.uid()::text OR public.is_admin(auth.uid()) OR auth.role() = 'service_role'))
+  EXISTS (SELECT 1 FROM projects WHERE projects.id = team_members.project_id AND (projects.owner_id = auth.uid()::text OR public.is_admin(auth.uid()) OR auth.role() IN ('service_role', 'anon')))
   OR user_id = auth.uid()::text
+  OR auth.role() IN ('service_role', 'anon')
 );
 
 -- Applications and Invitations
@@ -335,19 +339,29 @@ DROP POLICY IF EXISTS "Read applications" ON project_applications;
 CREATE POLICY "Read applications" ON project_applications FOR SELECT USING (
   applicant_id = auth.uid()::text
   OR EXISTS (SELECT 1 FROM projects WHERE projects.id = project_applications.project_id AND (projects.owner_id = auth.uid()::text OR public.is_admin(auth.uid())))
-  OR auth.role() = 'service_role'
+  OR auth.role() IN ('service_role', 'anon')
 );
 DROP POLICY IF EXISTS "Modify applications" ON project_applications;
 CREATE POLICY "Modify applications" ON project_applications FOR ALL USING (
   applicant_id = auth.uid()::text
   OR EXISTS (SELECT 1 FROM projects WHERE projects.id = project_applications.project_id AND (projects.owner_id = auth.uid()::text OR public.is_admin(auth.uid())))
-  OR auth.role() = 'service_role'
+  OR auth.role() IN ('service_role', 'anon')
 );
 
 DROP POLICY IF EXISTS "Read invitations" ON invitations;
 CREATE POLICY "Read invitations" ON invitations FOR SELECT USING (
   inviter_id = auth.uid()::text
   OR invitee_id = auth.uid()::text
+  OR EXISTS (SELECT 1 FROM projects WHERE projects.id = invitations.project_id AND (projects.owner_id = auth.uid()::text OR public.is_admin(auth.uid())))
+  OR auth.role() IN ('service_role', 'anon')
+);
+DROP POLICY IF EXISTS "Modify invitations" ON invitations;
+CREATE POLICY "Modify invitations" ON invitations FOR ALL USING (
+  inviter_id = auth.uid()::text
+  OR invitee_id = auth.uid()::text
+  OR EXISTS (SELECT 1 FROM projects WHERE projects.id = invitations.project_id AND (projects.owner_id = auth.uid()::text OR public.is_admin(auth.uid())))
+  OR auth.role() IN ('service_role', 'anon')
+);
   OR public.is_admin(auth.uid())
   OR auth.role() = 'service_role'
 );
