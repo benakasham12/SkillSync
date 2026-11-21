@@ -81,8 +81,9 @@
                   </a>
                 </h3>
                 {% if cand.fills_unmet_team_gap %}
-                  <span class="badge badge-published" style="text-transform: none;">
-                    &#127919; Fills Missing Team Skill
+                  <span class="badge badge-published" style="text-transform: none; display: inline-flex; align-items: center; gap: 0.35rem;">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="3"></circle></svg>
+                    <span>Fills Missing Team Skill</span>
                   </span>
                 {% endif %}
               </div>
@@ -138,7 +139,7 @@
             <div class="skill-tags">
               {% for m in cand.matched_skills %}
                 <span class="skill-pill matched">
-                  &#10003; {{ m.name }}
+                  {{ m.name }}
                   <span class="badge badge-{{ m.proficiency }}">{{ m.proficiency }}</span>
                   <span style="font-size: 0.7rem; color: var(--text-muted);">({{ m.priority }})</span>
                 </span>
@@ -153,11 +154,11 @@
           {% if cand.missing_must_haves %}
             <div style="margin-bottom: 0.75rem;">
               <div style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--danger); margin-bottom: 0.25rem;">
-                &#9888; Uncovered Must-Have Requirements:
+                Uncovered Must-Have Requirements:
               </div>
               <div class="skill-tags">
                 {% for gap in cand.missing_must_haves %}
-                  <span class="skill-pill missing">&#10007; Missing: {{ gap }}</span>
+                  <span class="skill-pill missing">Missing: {{ gap }}</span>
                 {% endfor %}
               </div>
             </div>
@@ -186,7 +187,7 @@
             <div>
               {% if cand.pending_invitation_id %}
                 <span class="badge badge-draft" style="padding: 0.45rem 0.75rem; font-size: 0.85rem;">
-                  &#9993; Invitation Pending
+                  Invitation Pending
                 </span>
               {% elif coverage.is_team_full %}
                 <span class="badge badge-closed" style="padding: 0.45rem 0.75rem; font-size: 0.85rem;">
@@ -197,7 +198,7 @@
                 <form method="POST" action="{{ url_for('invitations.send_invitation', project_id=project.id) }}" style="display: flex; gap: 0.5rem; align-items: center;">
                   <input type="hidden" name="invitee_id" value="{{ cand.user_id }}">
                   <input type="text" name="message" class="form-control" placeholder="Add message (optional)" style="width: 180px; padding: 0.35rem 0.6rem; font-size: 0.8rem;">
-                  <button type="submit" class="btn btn-primary btn-sm">&#9993; Invite to Team</button>
+                  <button type="submit" class="btn btn-primary btn-sm">Invite to Team</button>
                 </form>
               {% endif %}
             </div>

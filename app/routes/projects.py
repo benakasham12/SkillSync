@@ -504,8 +504,16 @@ def list_projects():
                 p.title LIKE ?
                 OR p.description LIKE ?
                 OR p.technologies LIKE ?
-                OR sp.display_name LIKE ?
-                OR u.email LIKE ?
+                OR EXISTS (
+                    SELECT 1 FROM student_profiles sp_s
+                    WHERE (sp_s.user_id = p.owner_id OR sp_s.id = p.owner_id)
+                      AND sp_s.display_name LIKE ?
+                )
+                OR EXISTS (
+                    SELECT 1 FROM users u_s
+                    WHERE (u_s.id = p.owner_id OR u_s.id IN (SELECT sp_s2.user_id FROM student_profiles sp_s2 WHERE sp_s2.id = p.owner_id))
+                      AND u_s.email LIKE ?
+                )
                 OR EXISTS (
                     SELECT 1 FROM project_skill_requirements psr_s
                     JOIN skills sk_s ON psr_s.skill_id = sk_s.id
@@ -530,10 +538,8 @@ def list_projects():
 
     # Count Query for Smart Pagination
     count_sql = f"""
-        SELECT COUNT(DISTINCT p.id) as total
+        SELECT COUNT(p.id) as total
         FROM projects p
-        LEFT JOIN users u ON (p.owner_id = u.id OR p.owner_id = (SELECT sp2.id FROM student_profiles sp2 WHERE sp2.user_id = u.id))
-        LEFT JOIN student_profiles sp ON (sp.user_id = u.id OR sp.id = p.owner_id)
         WHERE {where_sql}
     """
     count_row = query_db(count_sql, where_params, one=True)
@@ -556,22 +562,41 @@ def list_projects():
         sort_by = 'recent'
         order_sql = "p.created_at DESC, p.id DESC"
 
-    # Main Query with LIMIT and OFFSET
+    # Main Query with clean 1:1 owner resolution (guarantees zero duplicate project cards)
     main_sql = f"""
         SELECT p.*,
-               COALESCE(sp.display_name, u.email, 'Student') as owner_name,
-               COALESCE(sp.branch, 'CSE') as owner_branch,
-               COALESCE(sp.year, '1st Year') as owner_year,
-               sp.bio as owner_bio,
-               u.email as owner_email,
+               COALESCE(
+                   (SELECT sp.display_name FROM student_profiles sp WHERE sp.user_id = p.owner_id LIMIT 1),
+                   (SELECT sp.display_name FROM student_profiles sp WHERE sp.id = p.owner_id LIMIT 1),
+                   (SELECT u.email FROM users u WHERE u.id = p.owner_id LIMIT 1),
+                   'Project Creator'
+               ) as owner_name,
+               COALESCE(
+                   (SELECT sp.branch FROM student_profiles sp WHERE sp.user_id = p.owner_id LIMIT 1),
+                   (SELECT sp.branch FROM student_profiles sp WHERE sp.id = p.owner_id LIMIT 1),
+                   'CSE'
+               ) as owner_branch,
+               COALESCE(
+                   (SELECT sp.year FROM student_profiles sp WHERE sp.user_id = p.owner_id LIMIT 1),
+                   (SELECT sp.year FROM student_profiles sp WHERE sp.id = p.owner_id LIMIT 1),
+                   '1st Year'
+               ) as owner_year,
+               COALESCE(
+                   (SELECT sp.bio FROM student_profiles sp WHERE sp.user_id = p.owner_id LIMIT 1),
+                   (SELECT sp.bio FROM student_profiles sp WHERE sp.id = p.owner_id LIMIT 1),
+                   ''
+               ) as owner_bio,
+               COALESCE(
+                   (SELECT u.email FROM users u WHERE u.id = p.owner_id LIMIT 1),
+                   (SELECT u2.email FROM users u2 JOIN student_profiles sp2 ON u2.id = sp2.user_id WHERE sp2.id = p.owner_id LIMIT 1),
+                   ''
+               ) as owner_email,
                (SELECT COUNT(DISTINCT uid) FROM (
                    SELECT p.owner_id as uid
                    UNION
                    SELECT user_id as uid FROM team_members WHERE project_id = p.id
                )) as current_team_count
         FROM projects p
-        LEFT JOIN users u ON (p.owner_id = u.id OR p.owner_id = (SELECT sp2.id FROM student_profiles sp2 WHERE sp2.user_id = u.id))
-        LEFT JOIN student_profiles sp ON (sp.user_id = u.id OR sp.id = p.owner_id)
         WHERE {where_sql}
         ORDER BY {order_sql}
         LIMIT ? OFFSET ?
@@ -1095,15 +1120,48 @@ def project_detail(project_id):
     user_id = session.get('user_id')
     project = query_db("""
         SELECT p.*,
-               COALESCE(sp.display_name, u.email, 'Project Creator') as owner_name,
-               sp.bio as owner_bio,
-               COALESCE(sp.branch, 'CSE') as owner_branch,
-               COALESCE(sp.year, '1st Year') as owner_year,
-               sp.usn as owner_usn, sp.section as owner_section,
-               sp.institution as owner_institution, u.email as owner_email
+               COALESCE(
+                   (SELECT sp.display_name FROM student_profiles sp WHERE sp.user_id = p.owner_id LIMIT 1),
+                   (SELECT sp.display_name FROM student_profiles sp WHERE sp.id = p.owner_id LIMIT 1),
+                   (SELECT u.email FROM users u WHERE u.id = p.owner_id LIMIT 1),
+                   'Project Creator'
+               ) as owner_name,
+               COALESCE(
+                   (SELECT sp.bio FROM student_profiles sp WHERE sp.user_id = p.owner_id LIMIT 1),
+                   (SELECT sp.bio FROM student_profiles sp WHERE sp.id = p.owner_id LIMIT 1),
+                   ''
+               ) as owner_bio,
+               COALESCE(
+                   (SELECT sp.branch FROM student_profiles sp WHERE sp.user_id = p.owner_id LIMIT 1),
+                   (SELECT sp.branch FROM student_profiles sp WHERE sp.id = p.owner_id LIMIT 1),
+                   'CSE'
+               ) as owner_branch,
+               COALESCE(
+                   (SELECT sp.year FROM student_profiles sp WHERE sp.user_id = p.owner_id LIMIT 1),
+                   (SELECT sp.year FROM student_profiles sp WHERE sp.id = p.owner_id LIMIT 1),
+                   '1st Year'
+               ) as owner_year,
+               COALESCE(
+                   (SELECT sp.usn FROM student_profiles sp WHERE sp.user_id = p.owner_id LIMIT 1),
+                   (SELECT sp.usn FROM student_profiles sp WHERE sp.id = p.owner_id LIMIT 1),
+                   ''
+               ) as owner_usn,
+               COALESCE(
+                   (SELECT sp.section FROM student_profiles sp WHERE sp.user_id = p.owner_id LIMIT 1),
+                   (SELECT sp.section FROM student_profiles sp WHERE sp.id = p.owner_id LIMIT 1),
+                   ''
+               ) as owner_section,
+               COALESCE(
+                   (SELECT sp.institution FROM student_profiles sp WHERE sp.user_id = p.owner_id LIMIT 1),
+                   (SELECT sp.institution FROM student_profiles sp WHERE sp.id = p.owner_id LIMIT 1),
+                   'BMS Institute of Technology and Management'
+               ) as owner_institution,
+               COALESCE(
+                   (SELECT u.email FROM users u WHERE u.id = p.owner_id LIMIT 1),
+                   (SELECT u2.email FROM users u2 JOIN student_profiles sp2 ON u2.id = sp2.user_id WHERE sp2.id = p.owner_id LIMIT 1),
+                   ''
+               ) as owner_email
         FROM projects p
-        LEFT JOIN users u ON (p.owner_id = u.id OR p.owner_id = (SELECT sp2.id FROM student_profiles sp2 WHERE sp2.user_id = u.id))
-        LEFT JOIN student_profiles sp ON (sp.user_id = u.id OR sp.id = p.owner_id)
         WHERE p.id = ?
     """, (project_id,), one=True)
 

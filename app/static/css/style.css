@@ -999,12 +999,94 @@ body.sidebar-lock-scroll {
 }
 .badge-must-have { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
 .badge-preferred { background: #e0e7ff; color: #4338ca; border: 1px solid #c7d2fe; }
-.badge-published { background: #dcfce7; color: #15803d; }
-.badge-draft { background: #fef9c3; color: #a16207; }
-.badge-closed { background: #f1f5f9; color: #475569; }
-.badge-beginner { background: #e0f2fe; color: #0369a1; }
-.badge-intermediate { background: #dcfce7; color: #15803d; }
-.badge-advanced { background: #f3e8ff; color: #7e22ce; }
+.badge-published { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+.badge-draft { background: #fef9c3; color: #a16207; border: 1px solid #fef08a; }
+.badge-closed { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+.badge-beginner { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
+.badge-intermediate { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+.badge-advanced { background: #f3e8ff; color: #7e22ce; border: 1px solid #e9d5ff; }
+
+/* Dark mode badge refinements to eliminate raw clashing pastel blocks */
+[data-theme="dark"] .badge-must-have {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+[data-theme="dark"] .badge-preferred {
+  background: rgba(99, 102, 241, 0.15);
+  color: #a5b4fc;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+}
+[data-theme="dark"] .badge-published {
+  background: rgba(16, 185, 129, 0.15);
+  color: #6ee7b7;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+[data-theme="dark"] .badge-draft {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fcd34d;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+[data-theme="dark"] .badge-closed {
+  background: rgba(148, 163, 184, 0.15);
+  color: #cbd5e1;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+}
+[data-theme="dark"] .badge-beginner {
+  background: rgba(14, 165, 233, 0.15);
+  color: #7dd3fc;
+  border: 1px solid rgba(14, 165, 233, 0.3);
+}
+[data-theme="dark"] .badge-intermediate {
+  background: rgba(16, 185, 129, 0.15);
+  color: #6ee7b7;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+[data-theme="dark"] .badge-advanced {
+  background: rgba(168, 85, 247, 0.15);
+  color: #d8b4fe;
+  border: 1px solid rgba(168, 85, 247, 0.3);
+}
+
+/* Professional Skill Chip styling */
+.skill-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.55rem;
+  border-radius: 6px;
+  font-size: 0.74rem;
+  font-weight: 500;
+  line-height: 1.25;
+  transition: all 0.15s ease;
+}
+.skill-chip-must-have {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+.skill-chip-preferred {
+  background: #e0e7ff;
+  color: #3730a3;
+  border: 1px solid #c7d2fe;
+}
+[data-theme="dark"] .skill-chip-must-have {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+}
+[data-theme="dark"] .skill-chip-preferred {
+  background: rgba(99, 102, 241, 0.15);
+  color: #a5b4fc;
+  border: 1px solid rgba(99, 102, 241, 0.25);
+}
+.skill-chip-meta {
+  font-size: 0.65rem;
+  font-weight: 600;
+  opacity: 0.85;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
 
 /* Grid layouts */
 .grid-2 {

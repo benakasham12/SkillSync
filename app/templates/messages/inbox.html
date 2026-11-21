@@ -56,7 +56,9 @@
         <!-- Avatar -->
         <div class="conv-avatar-wrap">
           {% if conv.type == 'project_group' %}
-          <div class="conv-avatar group-avatar">&#128101;</div>
+          <div class="conv-avatar group-avatar">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+          </div>
           {% else %}
           <div class="conv-avatar direct-avatar">{{ conv.avatar_char }}</div>
           {% endif %}
@@ -86,7 +88,9 @@
       {% else %}
       <!-- Empty State: No conversations -->
       <div class="empty-conversations-box">
-        <div style="font-size: 2.2rem; margin-bottom: 0.5rem; color: var(--text-muted);">&#128172;</div>
+        <div style="margin-bottom: 0.5rem; display: flex; justify-content: center; color: var(--text-muted);">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+        </div>
         <h4 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 0.35rem; color: var(--text);">Your conversations
           will appear here.</h4>
         <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">
@@ -113,7 +117,9 @@
 
         <div class="chat-header-avatar">
           {% if active_conversation.type == 'project_group' %}
-          <div class="conv-avatar group-avatar" style="width: 40px; height: 40px; font-size: 1.1rem;">&#128101;</div>
+          <div class="conv-avatar group-avatar" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+          </div>
           {% else %}
           <div class="conv-avatar direct-avatar" style="width: 40px; height: 40px; font-size: 1.1rem;">{{
             active_conversation.avatar_char or (active_conversation.name)[:1] }}</div>
@@ -217,7 +223,9 @@
       {% else %}
       <!-- Empty State: No messages in active chat -->
       <div class="empty-chat-box">
-        <div style="font-size: 2rem; margin-bottom: 0.5rem; color: var(--text-muted);">&#128075;</div>
+        <div style="margin-bottom: 0.5rem; display: flex; justify-content: center; color: var(--text-muted);">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+        </div>
         <h4 style="font-size: 1.1rem; font-weight: 700; color: var(--text); margin-bottom: 0.35rem;">Start the
           conversation!</h4>
         <p style="font-size: 0.88rem; color: var(--text-muted); max-width: 380px; margin: 0 auto;">
@@ -299,7 +307,9 @@
     {% else %}
     <!-- Empty State: No active conversation selected -->
     <div class="empty-chat-welcome">
-      <div style="font-size: 3rem; margin-bottom: 0.75rem; color: var(--primary);">&#128172;</div>
+      <div style="margin-bottom: 0.75rem; display: flex; justify-content: center; color: var(--primary);">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+      </div>
       <h3 style="font-size: 1.4rem; font-weight: 800; color: var(--text); margin-bottom: 0.5rem;">SkillSync Messaging
       </h3>
       <p

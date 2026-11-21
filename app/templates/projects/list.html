@@ -40,18 +40,21 @@
       All Projects
     </a>
     <a href="{{ url_for('projects.list_projects', tab='seeking', q=search_q, category=category_filter, sort=sort_by, skill=skill_filter, page=1) }}" 
-       class="btn btn-sm {% if tab_filter == 'seeking' %}btn-primary{% else %}btn-ghost{% endif %}">
-      &#128065; Projects Looking for Members
+       class="btn btn-sm {% if tab_filter == 'seeking' %}btn-primary{% else %}btn-ghost{% endif %}" style="display: inline-flex; align-items: center; gap: 0.35rem;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+      <span>Looking for Members</span>
     </a>
     {% if current_user_id %}
       <a href="{{ url_for('projects.list_projects', tab='my', q=search_q, category=category_filter, sort=sort_by, skill=skill_filter, page=1) }}" 
-         class="btn btn-sm {% if tab_filter == 'my' %}btn-primary{% else %}btn-ghost{% endif %}">
-        &#128100; My Projects
+         class="btn btn-sm {% if tab_filter == 'my' %}btn-primary{% else %}btn-ghost{% endif %}" style="display: inline-flex; align-items: center; gap: 0.35rem;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+        <span>My Projects</span>
       </a>
     {% endif %}
     <a href="{{ url_for('projects.list_projects', tab='completed', q=search_q, category=category_filter, sort=sort_by, skill=skill_filter, page=1) }}" 
-       class="btn btn-sm {% if tab_filter == 'completed' %}btn-primary{% else %}btn-ghost{% endif %}">
-      &#10003; Completed Projects
+       class="btn btn-sm {% if tab_filter == 'completed' %}btn-primary{% else %}btn-ghost{% endif %}" style="display: inline-flex; align-items: center; gap: 0.35rem;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+      <span>Completed</span>
     </a>
   </div>
 
@@ -217,8 +220,9 @@
               </span>
             {% endif %}
             {% if p.course_context %}
-              <span style="display: inline-flex; align-items: center; gap: 0.25rem; color: var(--primary);">
-                &#128218; {{ p.course_context }}
+              <span style="display: inline-flex; align-items: center; gap: 0.35rem; color: var(--primary); font-weight: 500;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0;"><path d="M22 10v6M2 10l10-5 10 5-10 5z"></path><path d="M6 12v5c3 3 9 3 12 0v-5"></path></svg>
+                <span>{{ p.course_context }}</span>
               </span>
             {% endif %}
           </div>
@@ -243,20 +247,21 @@
 
           <!-- Required Skills with Priority & Proficiency -->
           <div style="margin-bottom: 1.25rem;">
-            <div style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700; color: var(--text-muted); margin-bottom: 0.4rem; letter-spacing: 0.04em;">
+            <div style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700; color: var(--text-muted); margin-bottom: 0.45rem; letter-spacing: 0.04em;">
               Required Skills
             </div>
-            <div class="skill-tags" style="display: flex; flex-wrap: wrap; gap: 0.35rem;">
+            <div class="skill-tags" style="display: flex; flex-wrap: wrap; gap: 0.4rem;">
               {% for req in p.requirements[:4] %}
-                <span class="badge {% if req.priority in ['must-have', 'Must Have'] %}badge-must-have{% else %}badge-preferred{% endif %}" 
-                      style="font-size: 0.72rem; padding: 0.2rem 0.5rem; text-transform: none;">
-                  <strong>{{ req.skill_name }}</strong> &bull; 
-                  {% if req.priority in ['must-have', 'Must Have'] %}Must Have{% else %}Nice to Have{% endif %}
-                  {% if req.proficiency_level %} &bull; {{ req.proficiency_level }}{% endif %}
+                <span class="skill-chip {% if req.priority in ['must-have', 'Must Have'] %}skill-chip-must-have{% else %}skill-chip-preferred{% endif %}">
+                  <span style="font-weight: 600;">{{ req.skill_name }}</span>
+                  <span class="skill-chip-meta">{{ 'Must Have' if req.priority in ['must-have', 'Must Have'] else 'Nice to Have' }}</span>
+                  {% if req.proficiency_level %}
+                    <span style="font-size: 0.68rem; opacity: 0.75;">&bull; {{ req.proficiency_level }}</span>
+                  {% endif %}
                 </span>
               {% endfor %}
               {% if p.requirements|length > 4 %}
-                <span class="badge" style="background: var(--surface-alt); color: var(--text-muted); font-size: 0.72rem;">
+                <span class="skill-chip" style="background: var(--surface-alt); color: var(--text-muted); border: 1px solid var(--border);">
                   +{{ p.requirements|length - 4 }} more
                 </span>
               {% endif %}
@@ -295,17 +300,20 @@
                 <span>Find Teammates</span>
               </a>
             {% elif p.is_team_member %}
-              <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: var(--success); font-weight: 700;">
-                &#10003; Team Member
+              <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: var(--success); font-weight: 700; display: inline-flex; align-items: center; gap: 0.25rem;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span>Team Member</span>
               </span>
             {% elif p.user_application %}
               {% if p.user_application.application_status == 'pending' %}
-                <span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #d97706; font-weight: 700;">
-                  &#9203; Applied (Pending)
+                <span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #d97706; font-weight: 700; display: inline-flex; align-items: center; gap: 0.25rem;">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                  <span>Pending Review</span>
                 </span>
               {% elif p.user_application.application_status == 'accepted' %}
-                <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: var(--success); font-weight: 700;">
-                  &#10003; Accepted
+                <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: var(--success); font-weight: 700; display: inline-flex; align-items: center; gap: 0.25rem;">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  <span>Accepted</span>
                 </span>
               {% elif p.user_application.application_status == 'rejected' %}
                 <span class="badge" style="background: rgba(239, 68, 68, 0.15); color: var(--danger); font-weight: 700;">
