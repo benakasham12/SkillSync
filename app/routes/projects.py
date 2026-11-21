@@ -355,6 +355,9 @@ def render_create_template(form_data=None):
 
 
 @projects_bp.route('/projects/create', methods=['GET', 'POST'])
+@projects_bp.route('/api/projects/create', methods=['POST'])
+@projects_bp.route('/api/projects/publish', methods=['POST'])
+@projects_bp.route('/projects/publish', methods=['POST'])
 @login_required
 def create_project():
     """Create a new course project with multi-step support, skills requirements, and draft/publish actions."""
@@ -406,7 +409,7 @@ def create_project():
         team_size_min = max(1, min(team_size_max, team_size_min))
 
         schedule_notes = str(get_val('schedule_notes', availability)).strip()
-        action = str(get_val('action', 'publish')).strip().lower()
+        action = str(get_val('action', get_val('submit_action', 'publish'))).strip().lower()
 
         # Parse skills
         skills_data = parse_submitted_skills(form_data, json_data)
@@ -1039,22 +1042,41 @@ def update_requirements(project_id):
 
 
 @projects_bp.route('/projects/<int:project_id>/publish', methods=['POST'])
+@projects_bp.route('/api/projects/<int:project_id>/publish', methods=['POST'])
 @login_required
 def publish_project(project_id):
     """Publish draft project. Validates that at least 1 required skill exists."""
     user_id = session['user_id']
+    is_ajax = (
+        request.is_json
+        or request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+        or 'application/json' in request.headers.get('Accept', '')
+    )
     project = query_db("SELECT * FROM projects WHERE id = ?", (project_id,), one=True)
     if not project or project['owner_id'] != user_id:
+        if is_ajax:
+            return jsonify({'success': False, 'error': 'Unauthorized action or project not found.'}), 403
         flash('Unauthorized action.', 'danger')
         return redirect(url_for('projects.list_projects'))
 
-    req_cnt = query_db("SELECT COUNT(*) as cnt FROM project_skill_requirements WHERE project_id = ?", (project_id,), one=True)['cnt']
+    req_cnt_row = query_db("SELECT COUNT(*) as cnt FROM project_skill_requirements WHERE project_id = ?", (project_id,), one=True)
+    req_cnt = req_cnt_row['cnt'] if req_cnt_row else 0
     if req_cnt == 0:
+        if is_ajax:
+            return jsonify({'success': False, 'error': 'Cannot publish project: You must declare at least one required skill first.'}), 400
         flash('Cannot publish project: You must declare at least one required skill first.', 'danger')
         return redirect(url_for('projects.project_detail', project_id=project_id))
 
     execute_db("UPDATE projects SET status = 'published', updated_at = CURRENT_TIMESTAMP WHERE id = ?", (project_id,))
     log_event('project_published', actor_id=user_id, target_type='project', target_id=project_id)
+    if is_ajax:
+        return jsonify({
+            'success': True,
+            'message': 'Project published! Classmates can now discover it and apply.',
+            'project_id': project_id,
+            'redirect_url': url_for('projects.project_detail', project_id=project_id),
+            'status': 'published'
+        }), 200
     flash('Project published! Classmates can now discover it and apply.', 'success')
     return redirect(url_for('projects.project_detail', project_id=project_id))
 
