@@ -1,34 +1,133 @@
 """
-Database configuration, schema and helper functions for SkillSync.
-Uses SQLite with sqlite3.Row for relational constraints, foreign keys and clean dict access.
+Database configuration, dual-database architecture and helper functions for SkillSync.
+
+Separates data into two dedicated local SQLite databases:
+1. listings.db (Listings Database):
+   Stores all publicly accessible project listings, skill criteria, availability requirements,
+   team members, and applications so everyone can view and discover them.
+2. users.db (Users Database):
+   Stores user accounts, student profiles, authentication credentials, availability slots,
+   messaging conversations, audit logs, and reports.
+
+Maintains seamless backwards compatibility with existing Flask routes and tests
+using SQLite's ATTACH DATABASE, TEMP VIEWs, and transparent write-routing.
 """
 
 import sqlite3
 import os
+import re
 import json
+import atexit
 from datetime import datetime
 from flask import current_app, has_app_context
 from werkzeug.security import generate_password_hash, check_password_hash
 
-DB_PATH = '/tmp/skillsync.db' if os.environ.get('VERCEL') else os.path.join(os.path.dirname(os.path.dirname(__file__)), 'skillsync.db')
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+if os.environ.get('VERCEL'):
+    LISTINGS_DB_PATH = '/tmp/skillsync_listings.db'
+    USERS_DB_PATH = '/tmp/skillsync_users.db'
+else:
+    LISTINGS_DB_PATH = os.path.join(ROOT_DIR, 'listings.db')
+    USERS_DB_PATH = os.path.join(ROOT_DIR, 'users.db')
+
+# Legacy alias for backwards compatibility
+DB_PATH = LISTINGS_DB_PATH
+
+USER_TABLES = {
+    'users', 'student_profiles', 'student_skills', 'student_interests',
+    'availability_slots', 'conversations', 'conversation_participants',
+    'messages', 'message_attachments', 'message_read_status', 'reports', 'audit_events'
+}
+
+LISTINGS_TABLES = {
+    'skills', 'interests', 'projects', 'project_skill_requirements',
+    'project_availability_slots', 'project_interests', 'team_members',
+    'project_applications', 'invitations'
+}
+
+_temp_dbs_to_clean = set()
 
 
-def get_db(db_path=None):
-    """Obtain a SQLite connection with foreign keys enabled and row factory set to sqlite3.Row."""
+def _cleanup_temp_dbs():
+    for p in list(_temp_dbs_to_clean):
+        try:
+            if os.path.exists(p):
+                os.remove(p)
+        except Exception:
+            pass
+
+
+atexit.register(_cleanup_temp_dbs)
+
+
+def resolve_db_paths(db_path=None):
+    """
+    Resolve listings and users database file paths from an optional db_path or app config.
+    """
     if not db_path and has_app_context() and current_app and 'DATABASE' in current_app.config:
         db_path = current_app.config['DATABASE']
-    if not db_path and os.environ.get('VERCEL'):
-        db_path = '/tmp/skillsync.db'
-    path = db_path or DB_PATH
+
+    if not db_path:
+        return LISTINGS_DB_PATH, USERS_DB_PATH
+
+    norm_path = os.path.abspath(db_path)
+    if norm_path.endswith('skillsync.db'):
+        listings_p = norm_path.replace('skillsync.db', 'listings.db')
+        users_p = norm_path.replace('skillsync.db', 'users.db')
+        return listings_p, users_p
+    elif norm_path.endswith('listings.db'):
+        listings_p = norm_path
+        users_p = norm_path[:-11] + 'users.db'
+        return listings_p, users_p
+    elif norm_path.endswith('users.db'):
+        users_p = norm_path
+        listings_p = norm_path[:-8] + 'listings.db'
+        return listings_p, users_p
+    elif norm_path.endswith('.db'):
+        listings_p = norm_path
+        users_p = norm_path[:-3] + '_users.db'
+        _temp_dbs_to_clean.add(users_p)
+        return listings_p, users_p
+
+    return norm_path, norm_path + '_users.db'
+
+
+def rewrite_user_query(query):
+    """
+    Rewrites INSERT, UPDATE, and DELETE queries targeting USER_TABLES
+    so they operate directly on the attached users_db database.
+    """
+    for tbl in USER_TABLES:
+        pattern = rf"\b(INSERT\s+(?:OR\s+\w+\s+)?INTO|UPDATE|DELETE\s+FROM)\s+{tbl}\b"
+        if re.search(pattern, query, flags=re.IGNORECASE):
+            query = re.sub(pattern, rf"\1 users_db.{tbl}", query, flags=re.IGNORECASE)
+    return query
+
+
+class DualCursor(sqlite3.Cursor):
+    def execute(self, sql, parameters=()):
+        return super().execute(rewrite_user_query(sql), parameters)
+
+    def executemany(self, sql, seq_of_parameters):
+        return super().executemany(rewrite_user_query(sql), seq_of_parameters)
+
+
+class DualConnection(sqlite3.Connection):
+    def cursor(self, factory=DualCursor):
+        return super().cursor(factory)
+
+    def execute(self, sql, parameters=()):
+        return super().execute(rewrite_user_query(sql), parameters)
+
+    def executemany(self, sql, seq_of_parameters):
+        return super().executemany(rewrite_user_query(sql), seq_of_parameters)
+
+
+def init_users_db(users_path=None):
+    """Initialize schema for the Users Database."""
+    path = users_path or USERS_DB_PATH
     conn = sqlite3.connect(path)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA foreign_keys = ON;")
-    return conn
-
-
-def init_db(db_path=None):
-    """Initialize database tables according to PRD Section 7.1 specification."""
-    conn = get_db(db_path)
     cursor = conn.cursor()
 
     cursor.executescript("""
@@ -37,8 +136,8 @@ def init_db(db_path=None):
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         email TEXT UNIQUE NOT NULL,
         password_hash TEXT NOT NULL,
-        role TEXT NOT NULL DEFAULT 'student', -- 'student', 'admin', 'coordinator'
-        status TEXT NOT NULL DEFAULT 'active', -- 'active', 'deactivated'
+        role TEXT NOT NULL DEFAULT 'student',
+        status TEXT NOT NULL DEFAULT 'active',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
@@ -56,43 +155,28 @@ def init_db(db_path=None):
         github_url TEXT,
         linkedin_url TEXT,
         portfolio_url TEXT,
-        visibility TEXT DEFAULT 'cohort_only', -- 'public', 'cohort_only', 'private'
+        visibility TEXT DEFAULT 'cohort_only',
         show_contact_after_accept INTEGER DEFAULT 1,
         is_match_ready INTEGER DEFAULT 0,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    -- Master Skills Catalog
-    CREATE TABLE IF NOT EXISTS skills (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT UNIQUE NOT NULL,
-        category TEXT NOT NULL, -- 'Frontend', 'Backend', 'Design', 'Data/AI', 'Tools', 'Soft Skills'
-        active INTEGER DEFAULT 1
     );
 
     -- Student Skills
     CREATE TABLE IF NOT EXISTS student_skills (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        skill_id INTEGER NOT NULL REFERENCES skills(id) ON DELETE CASCADE,
-        proficiency TEXT NOT NULL DEFAULT 'intermediate', -- 'beginner', 'intermediate', 'advanced'
+        skill_id INTEGER NOT NULL,
+        proficiency TEXT NOT NULL DEFAULT 'intermediate',
         self_reported INTEGER DEFAULT 1,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         UNIQUE(user_id, skill_id)
-    );
-
-    -- Master Interests Catalog
-    CREATE TABLE IF NOT EXISTS interests (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT UNIQUE NOT NULL,
-        category TEXT
     );
 
     -- Student Interests
     CREATE TABLE IF NOT EXISTS student_interests (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        interest_id INTEGER NOT NULL REFERENCES interests(id) ON DELETE CASCADE,
+        interest_id INTEGER NOT NULL,
         UNIQUE(user_id, interest_id)
     );
 
@@ -100,125 +184,16 @@ def init_db(db_path=None):
     CREATE TABLE IF NOT EXISTS availability_slots (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        day_of_week TEXT NOT NULL, -- 'Monday', 'Tuesday', etc.
-        time_block TEXT NOT NULL,  -- 'Morning (9AM-12PM)', 'Afternoon (1PM-4PM)', 'Evening (5PM-8PM)', 'Night (8PM-11PM)'
-        UNIQUE(user_id, day_of_week, time_block)
-    );
-
-    -- Projects Table
-    CREATE TABLE IF NOT EXISTS projects (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        owner_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        title TEXT NOT NULL,
-        description TEXT,
-        category TEXT DEFAULT 'Other',
-        objectives TEXT,
-        technologies TEXT,
-        duration TEXT DEFAULT '2–3 Months',
-        collaboration_mode TEXT DEFAULT 'Hybrid',
-        availability TEXT DEFAULT 'Flexible',
-        additional_requirements TEXT,
-        course_context TEXT DEFAULT 'Innovation & Design Thinking (IDT)',
-        team_size_min INTEGER DEFAULT 2,
-        team_size_max INTEGER DEFAULT 4,
-        schedule_notes TEXT,
-        status TEXT DEFAULT 'draft', -- 'draft', 'published', 'closed', 'archived'
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    -- Project Skill Requirements
-    CREATE TABLE IF NOT EXISTS project_skill_requirements (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-        skill_id INTEGER NOT NULL REFERENCES skills(id) ON DELETE CASCADE,
-        priority TEXT DEFAULT 'must-have', -- 'must-have', 'preferred'
-        proficiency_level TEXT DEFAULT 'intermediate', -- 'beginner', 'intermediate', 'advanced', 'expert'
-        weight REAL DEFAULT 3.0,          -- must-have default: 3.0, preferred default: 1.0
-        required_count INTEGER DEFAULT 1,
-        UNIQUE(project_id, skill_id)
-    );
-
-    -- Project Interests
-    CREATE TABLE IF NOT EXISTS project_interests (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-        interest_id INTEGER NOT NULL REFERENCES interests(id) ON DELETE CASCADE,
-        UNIQUE(project_id, interest_id)
-    );
-
-    -- Project Desired Availability Slots
-    CREATE TABLE IF NOT EXISTS project_availability_slots (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
         day_of_week TEXT NOT NULL,
         time_block TEXT NOT NULL,
-        UNIQUE(project_id, day_of_week, time_block)
-    );
-
-    -- Invitations
-    CREATE TABLE IF NOT EXISTS invitations (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-        inviter_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        invitee_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        status TEXT DEFAULT 'pending', -- 'pending', 'accepted', 'declined', 'cancelled'
-        message TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        responded_at TIMESTAMP
-    );
-
-    -- Team Members
-    CREATE TABLE IF NOT EXISTS team_members (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        role TEXT DEFAULT 'member', -- 'owner', 'member'
-        joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        UNIQUE(project_id, user_id)
-    );
-
-    -- Reports / Moderation
-    CREATE TABLE IF NOT EXISTS reports (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        reporter_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        target_type TEXT NOT NULL, -- 'profile', 'project'
-        target_id INTEGER NOT NULL,
-        reason TEXT NOT NULL,
-        status TEXT DEFAULT 'pending', -- 'pending', 'resolved', 'dismissed'
-        admin_notes TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        resolved_at TIMESTAMP
-    );
-
-    -- Audit Events / Product Analytics (PRD Section 9.1)
-    CREATE TABLE IF NOT EXISTS audit_events (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        event_name TEXT NOT NULL,
-        actor_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
-        target_type TEXT,
-        target_id INTEGER,
-        metadata_json TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    -- Project Applications (FR for Student Applications)
-    CREATE TABLE IF NOT EXISTS project_applications (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-        applicant_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        introduction TEXT,
-        application_status TEXT DEFAULT 'pending', -- 'pending', 'accepted', 'rejected', 'withdrawn'
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        UNIQUE(project_id, applicant_id)
+        UNIQUE(user_id, day_of_week, time_block)
     );
 
     -- Conversations (Direct & Project Group Chats)
     CREATE TABLE IF NOT EXISTS conversations (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        conversation_type TEXT NOT NULL, -- 'direct', 'project_group'
-        project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE,
+        conversation_type TEXT NOT NULL,
+        project_id INTEGER,
         conversation_name TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -232,7 +207,7 @@ def init_db(db_path=None):
         joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         last_read_at TIMESTAMP,
         last_read_message_id INTEGER DEFAULT 0,
-        membership_status TEXT DEFAULT 'active', -- 'active', 'removed', 'left'
+        membership_status TEXT DEFAULT 'active',
         UNIQUE(conversation_id, student_id)
     );
 
@@ -242,7 +217,7 @@ def init_db(db_path=None):
         conversation_id INTEGER NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
         sender_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         message_content TEXT NOT NULL,
-        message_type TEXT DEFAULT 'text', -- 'text', 'attachment', 'system'
+        message_type TEXT DEFAULT 'text',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
@@ -267,36 +242,47 @@ def init_db(db_path=None):
         UNIQUE(message_id, student_id)
     );
 
-    -- Indices for performance
+    -- Reports / Moderation
+    CREATE TABLE IF NOT EXISTS reports (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        reporter_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        target_type TEXT NOT NULL,
+        target_id INTEGER NOT NULL,
+        reason TEXT NOT NULL,
+        status TEXT DEFAULT 'pending',
+        admin_notes TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        resolved_at TIMESTAMP
+    );
+
+    -- Audit Events / Analytics
+    CREATE TABLE IF NOT EXISTS audit_events (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        event_name TEXT NOT NULL,
+        actor_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        target_type TEXT,
+        target_id INTEGER,
+        metadata_json TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- Indices
     CREATE INDEX IF NOT EXISTS idx_student_skills_user ON student_skills(user_id);
     CREATE INDEX IF NOT EXISTS idx_student_skills_skill ON student_skills(skill_id);
-    CREATE INDEX IF NOT EXISTS idx_project_skills_project ON project_skill_requirements(project_id);
-    CREATE INDEX IF NOT EXISTS idx_invitations_invitee ON invitations(invitee_id, status);
-    CREATE INDEX IF NOT EXISTS idx_team_members_project ON team_members(project_id);
-    CREATE INDEX IF NOT EXISTS idx_audit_events_name ON audit_events(event_name);
-    CREATE INDEX IF NOT EXISTS idx_project_applications_proj ON project_applications(project_id);
-    CREATE INDEX IF NOT EXISTS idx_project_applications_applicant ON project_applications(applicant_id);
     CREATE INDEX IF NOT EXISTS idx_conv_part_student ON conversation_participants(student_id, membership_status);
     CREATE INDEX IF NOT EXISTS idx_conv_part_conv ON conversation_participants(conversation_id);
     CREATE INDEX IF NOT EXISTS idx_messages_conv ON messages(conversation_id, created_at);
     CREATE INDEX IF NOT EXISTS idx_messages_sender ON messages(sender_id);
     CREATE INDEX IF NOT EXISTS idx_attachments_msg ON message_attachments(message_id);
     CREATE INDEX IF NOT EXISTS idx_read_status_student ON message_read_status(student_id);
+    CREATE INDEX IF NOT EXISTS idx_audit_events_name ON audit_events(event_name);
     """)
 
-    # Safe column migrations for existing SQLite databases
-    columns_to_add = [
-        ('projects', 'category', "TEXT DEFAULT 'Other'"),
-        ('projects', 'objectives', "TEXT"),
-        ('projects', 'technologies', "TEXT"),
-        ('projects', 'duration', "TEXT DEFAULT '2–3 Months'"),
-        ('projects', 'collaboration_mode', "TEXT DEFAULT 'Hybrid'"),
-        ('projects', 'availability', "TEXT DEFAULT 'Flexible'"),
-        ('projects', 'additional_requirements', "TEXT"),
-        ('project_skill_requirements', 'proficiency_level', "TEXT DEFAULT 'intermediate'"),
-        ('conversation_participants', 'last_read_message_id', "INTEGER DEFAULT 0")
+    # Safe column migrations
+    user_cols_to_add = [
+        ('conversation_participants', 'last_read_message_id', 'INTEGER DEFAULT 0')
     ]
-    for tbl, col, col_type in columns_to_add:
+    for tbl, col, col_type in user_cols_to_add:
         try:
             cursor.execute(f"ALTER TABLE {tbl} ADD COLUMN {col} {col_type};")
         except sqlite3.OperationalError:
@@ -304,6 +290,255 @@ def init_db(db_path=None):
 
     conn.commit()
     conn.close()
+
+
+def init_listings_db(listings_path=None):
+    """Initialize schema for the Listings Database."""
+    path = listings_path or LISTINGS_DB_PATH
+    conn = sqlite3.connect(path)
+    cursor = conn.cursor()
+
+    cursor.executescript("""
+    -- Master Skills Catalog
+    CREATE TABLE IF NOT EXISTS skills (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT UNIQUE NOT NULL,
+        category TEXT NOT NULL,
+        active INTEGER DEFAULT 1
+    );
+
+    -- Master Interests Catalog
+    CREATE TABLE IF NOT EXISTS interests (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT UNIQUE NOT NULL,
+        category TEXT
+    );
+
+    -- Projects Table
+    CREATE TABLE IF NOT EXISTS projects (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        owner_id INTEGER NOT NULL,
+        title TEXT NOT NULL,
+        description TEXT,
+        category TEXT DEFAULT 'Other',
+        objectives TEXT,
+        technologies TEXT,
+        duration TEXT DEFAULT '2–3 Months',
+        collaboration_mode TEXT DEFAULT 'Hybrid',
+        availability TEXT DEFAULT 'Flexible',
+        additional_requirements TEXT,
+        course_context TEXT DEFAULT 'Innovation & Design Thinking (IDT)',
+        team_size_min INTEGER DEFAULT 2,
+        team_size_max INTEGER DEFAULT 4,
+        schedule_notes TEXT,
+        status TEXT DEFAULT 'draft',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- Project Skill Requirements
+    CREATE TABLE IF NOT EXISTS project_skill_requirements (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+        skill_id INTEGER NOT NULL REFERENCES skills(id) ON DELETE CASCADE,
+        priority TEXT DEFAULT 'must-have',
+        proficiency_level TEXT DEFAULT 'intermediate',
+        weight REAL DEFAULT 3.0,
+        required_count INTEGER DEFAULT 1,
+        UNIQUE(project_id, skill_id)
+    );
+
+    -- Project Interests
+    CREATE TABLE IF NOT EXISTS project_interests (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+        interest_id INTEGER NOT NULL REFERENCES interests(id) ON DELETE CASCADE,
+        UNIQUE(project_id, interest_id)
+    );
+
+    -- Project Availability Slots
+    CREATE TABLE IF NOT EXISTS project_availability_slots (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+        day_of_week TEXT NOT NULL,
+        time_block TEXT NOT NULL,
+        UNIQUE(project_id, day_of_week, time_block)
+    );
+
+    -- Invitations
+    CREATE TABLE IF NOT EXISTS invitations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+        inviter_id INTEGER NOT NULL,
+        invitee_id INTEGER NOT NULL,
+        status TEXT DEFAULT 'pending',
+        message TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        responded_at TIMESTAMP
+    );
+
+    -- Team Members
+    CREATE TABLE IF NOT EXISTS team_members (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+        user_id INTEGER NOT NULL,
+        role TEXT DEFAULT 'member',
+        joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(project_id, user_id)
+    );
+
+    -- Project Applications
+    CREATE TABLE IF NOT EXISTS project_applications (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+        applicant_id INTEGER NOT NULL,
+        introduction TEXT,
+        application_status TEXT DEFAULT 'pending',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(project_id, applicant_id)
+    );
+
+    -- Indices
+    CREATE INDEX IF NOT EXISTS idx_project_skills_project ON project_skill_requirements(project_id);
+    CREATE INDEX IF NOT EXISTS idx_invitations_invitee ON invitations(invitee_id, status);
+    CREATE INDEX IF NOT EXISTS idx_team_members_project ON team_members(project_id);
+    CREATE INDEX IF NOT EXISTS idx_project_applications_proj ON project_applications(project_id);
+    CREATE INDEX IF NOT EXISTS idx_project_applications_applicant ON project_applications(applicant_id);
+    """)
+
+    # Safe column migrations
+    listing_cols_to_add = [
+        ('projects', 'category', "TEXT DEFAULT 'Other'"),
+        ('projects', 'objectives', "TEXT"),
+        ('projects', 'technologies', "TEXT"),
+        ('projects', 'duration', "TEXT DEFAULT '2–3 Months'"),
+        ('projects', 'collaboration_mode', "TEXT DEFAULT 'Hybrid'"),
+        ('projects', 'availability', "TEXT DEFAULT 'Flexible'"),
+        ('projects', 'additional_requirements', "TEXT"),
+        ('project_skill_requirements', 'proficiency_level', "TEXT DEFAULT 'intermediate'")
+    ]
+    for tbl, col, col_type in listing_cols_to_add:
+        try:
+            cursor.execute(f"ALTER TABLE {tbl} ADD COLUMN {col} {col_type};")
+        except sqlite3.OperationalError:
+            pass
+
+    conn.commit()
+    conn.close()
+
+
+def _migrate_legacy_data_if_needed(listings_path, users_path):
+    """
+    If legacy skillsync.db exists and either new database has no tables/rows,
+    seamlessly migrate all data into listings.db and users.db.
+    Only runs for the main application database, never for test databases.
+    """
+    if os.path.abspath(listings_path) != os.path.abspath(LISTINGS_DB_PATH):
+        return
+
+    legacy_path = os.path.join(ROOT_DIR, 'skillsync.db')
+    if not os.path.exists(legacy_path):
+        return
+
+    try:
+        # Check if listings.db already has projects
+        conn_l = sqlite3.connect(listings_path)
+        p_cnt = conn_l.execute("SELECT count(*) FROM sqlite_master WHERE type='table' AND name='projects'").fetchone()[0]
+        if p_cnt > 0:
+            row_cnt = conn_l.execute("SELECT count(*) FROM projects").fetchone()[0]
+            if row_cnt > 0:
+                conn_l.close()
+                return
+        conn_l.close()
+
+        old_conn = sqlite3.connect(legacy_path)
+        old_conn.row_factory = sqlite3.Row
+
+        conn_u = sqlite3.connect(users_path)
+        conn_l = sqlite3.connect(listings_path)
+
+        for tbl in USER_TABLES:
+            try:
+                rows = old_conn.execute(f"SELECT * FROM {tbl}").fetchall()
+                if rows:
+                    cols = rows[0].keys()
+                    placeholders = ', '.join(['?'] * len(cols))
+                    col_names = ', '.join(cols)
+                    conn_u.executemany(f"INSERT OR REPLACE INTO {tbl} ({col_names}) VALUES ({placeholders})", [tuple(r) for r in rows])
+            except Exception:
+                pass
+
+        for tbl in LISTINGS_TABLES:
+            try:
+                rows = old_conn.execute(f"SELECT * FROM {tbl}").fetchall()
+                if rows:
+                    cols = rows[0].keys()
+                    placeholders = ', '.join(['?'] * len(cols))
+                    col_names = ', '.join(cols)
+                    conn_l.executemany(f"INSERT OR REPLACE INTO {tbl} ({col_names}) VALUES ({placeholders})", [tuple(r) for r in rows])
+            except Exception:
+                pass
+
+        conn_u.commit()
+        conn_l.commit()
+        conn_u.close()
+        conn_l.close()
+        old_conn.close()
+    except Exception:
+        pass
+
+
+def init_db(db_path=None):
+    """Initialize both Listings and Users databases and apply migrations."""
+    listings_path, users_path = resolve_db_paths(db_path)
+    init_listings_db(listings_path)
+    init_users_db(users_path)
+    _migrate_legacy_data_if_needed(listings_path, users_path)
+
+
+def get_listings_db(db_path=None):
+    """Direct connection to the Listings Database."""
+    listings_path, _ = resolve_db_paths(db_path)
+    conn = sqlite3.connect(listings_path)
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA foreign_keys = ON;")
+    return conn
+
+
+def get_users_db(db_path=None):
+    """Direct connection to the Users Database."""
+    _, users_path = resolve_db_paths(db_path)
+    conn = sqlite3.connect(users_path)
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA foreign_keys = ON;")
+    return conn
+
+
+def get_db(db_path=None):
+    """
+    Unified application database connection.
+    Connects to listings.db as main and attaches users.db as users_db.
+    Provides TEMP VIEWs for transparent reading of user tables, and uses DualConnection
+    to seamlessly rewrite writes so queries targeting user tables write directly to users.db.
+    """
+    listings_path, users_path = resolve_db_paths(db_path)
+
+    # Ensure files and tables exist
+    if not os.path.exists(listings_path) or not os.path.exists(users_path):
+        init_db(listings_path)
+
+    conn = sqlite3.connect(listings_path, factory=DualConnection)
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA foreign_keys = ON;")
+
+    users_abs = os.path.abspath(users_path).replace('\\', '/')
+    conn.execute(f"ATTACH DATABASE '{users_abs}' AS users_db;")
+
+    for tbl in USER_TABLES:
+        conn.execute(f"CREATE TEMP VIEW IF NOT EXISTS {tbl} AS SELECT * FROM users_db.{tbl};")
+
+    return conn
 
 
 def query_db(query, args=(), one=False, db_path=None):

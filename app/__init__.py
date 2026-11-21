@@ -12,9 +12,9 @@ def create_app(db_path=None, test_config=None):
     app.config['SECRET_KEY'] = 'skillsync-bmsit-cse13-secret-key-2026'
 
     if os.environ.get('VERCEL'):
-        default_db = '/tmp/skillsync.db'
+        default_db = '/tmp/skillsync_listings.db'
     else:
-        default_db = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'skillsync.db')
+        default_db = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'listings.db')
 
     app.config['DATABASE'] = db_path or default_db
 
