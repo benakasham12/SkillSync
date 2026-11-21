@@ -26,3 +26,27 @@ def get_interests():
     """Returns all active interests."""
     interests = query_db("SELECT * FROM interests ORDER BY category, name")
     return jsonify(interests)
+
+
+@api_bp.route('/api/cloud/status')
+def cloud_status():
+    """Returns status and connectivity information for the Supabase cloud database."""
+    from app.supabase_client import get_supabase_config, ping_supabase, is_cloud_enabled
+    cfg = get_supabase_config()
+    is_online, msg = ping_supabase()
+    return jsonify({
+        'enabled': is_cloud_enabled(),
+        'configured': bool(cfg['url'] and cfg['key']),
+        'cloud_url': cfg['url'],
+        'connected': is_online,
+        'message': msg
+    })
+
+
+@api_bp.route('/api/cloud/sync', methods=['POST'])
+def cloud_sync():
+    """Triggers synchronization of local public listings to Supabase cloud."""
+    from app.supabase_client import sync_local_listings_to_cloud
+    result = sync_local_listings_to_cloud()
+    return jsonify(result), (200 if result.get('success') else 500)
+

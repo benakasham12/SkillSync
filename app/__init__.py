@@ -3,6 +3,7 @@ Flask Application Factory for SkillSync.
 """
 
 import os
+import app.env_loader  # Automatically loads .env configuration securely
 from flask import Flask, session, request, jsonify, render_template
 from app.models import init_db, query_db
 

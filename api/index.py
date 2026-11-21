@@ -11,6 +11,8 @@ root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 
+import app.env_loader  # Automatically loads .env configuration securely
+
 from app import create_app
 from app.models import init_db
 from app.seed_data import seed_database
