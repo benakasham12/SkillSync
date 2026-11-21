@@ -21,11 +21,11 @@ projects_bp = Blueprint('projects', __name__)
 PROJECT_CATEGORIES = [
     'Web Development',
     'App Development',
-    'Artificial Intelligence',
-    'Machine Learning',
+    'AI / Machine Learning',
     'Data Science',
-    'IoT & Hardware',
     'Cybersecurity',
+    'UI/UX Design',
+    'IoT & Hardware',
     'Cloud Computing',
     'Other'
 ]
@@ -246,17 +246,158 @@ def contact():
     return render_template('contact.html')
 
 
+def compute_pagination(current_page, total_pages, delta=2):
+    """Generates a clean list of page numbers and ellipses for UI pagination."""
+    if total_pages <= 7:
+        return list(range(1, total_pages + 1))
+
+    pages = []
+    left = max(1, current_page - delta)
+    right = min(total_pages, current_page + delta)
+
+    if left > 1:
+        pages.append(1)
+        if left > 2:
+            pages.append('...')
+
+    for p in range(left, right + 1):
+        pages.append(p)
+
+    if right < total_pages:
+        if right < total_pages - 1:
+            pages.append('...')
+        pages.append(total_pages)
+
+    return pages
+
+
 @projects_bp.route('/projects')
 def list_projects():
-    """List open and published projects, with filters, search, and dynamic status."""
+    """List open and published projects with smart pagination, search, category filters, and sorting."""
+    import math
+
     user_id = session.get('user_id')
+    page = request.args.get('page', 1, type=int)
+    if not page or page < 1:
+        page = 1
+    per_page = 9
+
     course_filter = request.args.get('course', '').strip()
     category_filter = request.args.get('category', '').strip()
     skill_filter = request.args.get('skill', '').strip()
     search_q = request.args.get('q', '').strip()
     tab_filter = request.args.get('tab', 'all').strip()
+    sort_by = request.args.get('sort', 'recent').strip().lower()
 
-    sql = """
+    # Build WHERE conditions
+    where_clauses = []
+    where_params = []
+
+    # 1. Tab / Visibility Filter
+    if tab_filter == 'my' and user_id:
+        where_clauses.append("p.owner_id = ?")
+        where_params.append(user_id)
+    elif tab_filter == 'seeking':
+        where_clauses.append("""
+            p.status = 'published' AND (
+                (SELECT COUNT(DISTINCT uid) FROM (
+                    SELECT p.owner_id as uid UNION SELECT user_id as uid FROM team_members WHERE project_id = p.id
+                )) < p.team_size_max
+            )
+        """)
+    elif tab_filter == 'completed':
+        where_clauses.append("p.status IN ('closed', 'completed', 'archived')")
+    else:
+        # Default 'all': published projects, plus private drafts owned by current user
+        if user_id:
+            where_clauses.append("(p.status = 'published' OR p.owner_id = ?)")
+            where_params.append(user_id)
+        else:
+            where_clauses.append("p.status = 'published'")
+
+    # 2. Category Filter
+    if category_filter:
+        if category_filter == 'AI / Machine Learning':
+            where_clauses.append("p.category IN ('AI / Machine Learning', 'AI & Machine Learning', 'Artificial Intelligence', 'Machine Learning')")
+        elif category_filter == 'Other':
+            where_clauses.append("""
+                (p.category = 'Other' OR p.category NOT IN (
+                    'Web Development', 'App Development', 'AI / Machine Learning', 'AI & Machine Learning',
+                    'Artificial Intelligence', 'Machine Learning', 'Data Science', 'Cybersecurity',
+                    'UI/UX Design', 'IoT & Hardware', 'Cloud Computing'
+                ))
+            """)
+        else:
+            where_clauses.append("p.category = ?")
+            where_params.append(category_filter)
+
+    # 3. Course Filter
+    if course_filter:
+        where_clauses.append("p.course_context LIKE ?")
+        where_params.append(f"%{course_filter}%")
+
+    # 4. Search Query (name, description, technology stack, skills required, project creator)
+    if search_q:
+        q_wildcard = f"%{search_q}%"
+        where_clauses.append("""
+            (
+                p.title LIKE ?
+                OR p.description LIKE ?
+                OR p.technologies LIKE ?
+                OR sp.display_name LIKE ?
+                OR u.email LIKE ?
+                OR EXISTS (
+                    SELECT 1 FROM project_skill_requirements psr_s
+                    JOIN skills sk_s ON psr_s.skill_id = sk_s.id
+                    WHERE psr_s.project_id = p.id AND sk_s.name LIKE ?
+                )
+            )
+        """)
+        where_params.extend([q_wildcard, q_wildcard, q_wildcard, q_wildcard, q_wildcard, q_wildcard])
+
+    # 5. Required Skill Filter
+    if skill_filter:
+        where_clauses.append("""
+            EXISTS (
+                SELECT 1 FROM project_skill_requirements psr_k
+                JOIN skills sk_k ON psr_k.skill_id = sk_k.id
+                WHERE psr_k.project_id = p.id AND LOWER(sk_k.name) = LOWER(?)
+            )
+        """)
+        where_params.append(skill_filter)
+
+    where_sql = " AND ".join(where_clauses) if where_clauses else "1=1"
+
+    # Count Query for Smart Pagination
+    count_sql = f"""
+        SELECT COUNT(DISTINCT p.id) as total
+        FROM projects p
+        JOIN users u ON p.owner_id = u.id
+        LEFT JOIN student_profiles sp ON u.id = sp.user_id
+        WHERE {where_sql}
+    """
+    count_row = query_db(count_sql, where_params, one=True)
+    total_count = count_row['total'] if count_row else 0
+    total_pages = max(1, math.ceil(total_count / per_page))
+
+    if page > total_pages and total_count > 0:
+        page = total_pages
+    offset = (page - 1) * per_page
+
+    # Sorting options
+    if sort_by == 'oldest':
+        order_sql = "p.created_at ASC, p.id ASC"
+    elif sort_by == 'popular':
+        order_sql = "current_team_count DESC, p.created_at DESC, p.id DESC"
+    elif sort_by == 'members_needed':
+        order_sql = "(p.team_size_max - current_team_count) DESC, p.created_at DESC, p.id DESC"
+    else:
+        # Default: recently added
+        sort_by = 'recent'
+        order_sql = "p.created_at DESC, p.id DESC"
+
+    # Main Query with LIMIT and OFFSET
+    main_sql = f"""
         SELECT p.*, sp.display_name as owner_name, sp.branch as owner_branch, sp.year as owner_year, sp.bio as owner_bio,
                u.email as owner_email,
                (SELECT COUNT(DISTINCT uid) FROM (
@@ -267,28 +408,12 @@ def list_projects():
         FROM projects p
         JOIN users u ON p.owner_id = u.id
         LEFT JOIN student_profiles sp ON u.id = sp.user_id
-        WHERE (p.status = 'published' OR p.owner_id = ?)
+        WHERE {where_sql}
+        ORDER BY {order_sql}
+        LIMIT ? OFFSET ?
     """
-    params = [user_id if user_id else -1]
-
-    if tab_filter == 'seeking':
-        sql += " AND p.status = 'published' AND ((SELECT COUNT(DISTINCT uid) FROM (SELECT p.owner_id as uid UNION SELECT user_id as uid FROM team_members WHERE project_id = p.id)) < p.team_size_max)"
-    elif tab_filter == 'my' and user_id:
-        sql += " AND p.owner_id = ?"
-        params.append(user_id)
-
-    if category_filter:
-        sql += " AND p.category = ?"
-        params.append(category_filter)
-    if course_filter:
-        sql += " AND p.course_context LIKE ?"
-        params.append(f"%{course_filter}%")
-    if search_q:
-        sql += " AND (p.title LIKE ? OR p.description LIKE ? OR p.technologies LIKE ?)"
-        params.extend([f"%{search_q}%", f"%{search_q}%", f"%{search_q}%"])
-
-    sql += " ORDER BY p.created_at DESC"
-    projects = query_db(sql, params)
+    query_params = list(where_params) + [per_page, offset]
+    projects = query_db(main_sql, query_params)
 
     # Attach required skills and user application status to each project card
     for p in projects:
@@ -322,11 +447,41 @@ def list_projects():
                     app_record = query_db("SELECT * FROM project_applications WHERE project_id = ? AND applicant_id = ?", (p['id'], user_id), one=True)
                     p['user_application'] = app_record
 
-    # Filter by skill in python if requested
-    if skill_filter:
-        projects = [p for p in projects if any(r['skill_name'].lower() == skill_filter.lower() for r in p['requirements'])]
-
     all_skills = query_db("SELECT name FROM skills WHERE active = 1 ORDER BY name")
+
+    start_item = (page - 1) * per_page + 1 if total_count > 0 else 0
+    end_item = min(page * per_page, total_count)
+    has_prev = page > 1
+    has_next = page < total_pages
+    prev_page = page - 1
+    next_page = page + 1
+    pagination_pages = compute_pagination(page, total_pages)
+
+    # Check for AJAX or JSON API requests
+    is_json_req = (
+        request.is_json
+        or request.path.startswith('/api/')
+        or request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+        or 'application/json' in request.headers.get('Accept', '')
+    )
+    if is_json_req:
+        return jsonify({
+            'success': True,
+            'projects': projects,
+            'pagination': {
+                'page': page,
+                'per_page': per_page,
+                'total_count': total_count,
+                'total_pages': total_pages,
+                'start_item': start_item,
+                'end_item': end_item,
+                'has_prev': has_prev,
+                'has_next': has_next,
+                'prev_page': prev_page,
+                'next_page': next_page,
+                'pages': pagination_pages
+            }
+        })
 
     return render_template(
         'projects/list.html',
@@ -337,7 +492,19 @@ def list_projects():
         category_filter=category_filter,
         skill_filter=skill_filter,
         search_q=search_q,
-        tab_filter=tab_filter
+        tab_filter=tab_filter,
+        sort_by=sort_by,
+        page=page,
+        per_page=per_page,
+        total_count=total_count,
+        total_pages=total_pages,
+        start_item=start_item,
+        end_item=end_item,
+        has_prev=has_prev,
+        has_next=has_next,
+        prev_page=prev_page,
+        next_page=next_page,
+        pagination_pages=pagination_pages
     )
 
 

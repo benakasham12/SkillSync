@@ -2,8 +2,8 @@
 {% block title %}Active Projects Seeking Teammates - SkillSync{% endblock %}
 
 {% block content %}
-<!-- Header & Context Banner -->
-<div class="page-header" style="align-items: flex-start; gap: 1.5rem; flex-wrap: wrap;">
+<!-- Page Header & Action Bar -->
+<div class="page-header" style="align-items: flex-start; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 2rem;">
   <div>
     <span class="badge" style="background: var(--surface-alt); color: var(--primary); border: 1px solid var(--border); padding: 0.25rem 0.6rem; border-radius: 6px; font-size: 0.75rem; font-weight: 600; margin-bottom: 0.5rem; text-transform: none; letter-spacing: normal;">
       Team Discovery &amp; Match Roster
@@ -31,72 +31,146 @@
   </div>
 </div>
 
-<!-- Tabs & Filter Bar -->
-<div class="card" style="padding: 1.25rem; margin-bottom: 2rem;">
-  <!-- Quick Filter Tabs -->
-  <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 1rem;">
-    <a href="{{ url_for('projects.list_projects', tab='all', q=search_q, category=category_filter, skill=skill_filter) }}" 
+<!-- Search, Filters, & Sorting Panel -->
+<div class="card" style="padding: 1.5rem; margin-bottom: 2rem; border: 1px solid var(--border); background: var(--surface);">
+  <!-- Row 1: Status / Scope Tabs -->
+  <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; border-bottom: 1px solid var(--border); padding-bottom: 1.25rem; margin-bottom: 1.25rem;">
+    <a href="{{ url_for('projects.list_projects', tab='all', q=search_q, category=category_filter, sort=sort_by, skill=skill_filter, page=1) }}" 
        class="btn btn-sm {% if tab_filter == 'all' or not tab_filter %}btn-primary{% else %}btn-ghost{% endif %}">
       All Projects
     </a>
-    <a href="{{ url_for('projects.list_projects', tab='seeking', q=search_q, category=category_filter, skill=skill_filter) }}" 
+    <a href="{{ url_for('projects.list_projects', tab='seeking', q=search_q, category=category_filter, sort=sort_by, skill=skill_filter, page=1) }}" 
        class="btn btn-sm {% if tab_filter == 'seeking' %}btn-primary{% else %}btn-ghost{% endif %}">
-      &#128065; Seeking Teammates
+      &#128065; Projects Looking for Members
     </a>
     {% if current_user_id %}
-      <a href="{{ url_for('projects.list_projects', tab='my') }}" 
+      <a href="{{ url_for('projects.list_projects', tab='my', q=search_q, category=category_filter, sort=sort_by, skill=skill_filter, page=1) }}" 
          class="btn btn-sm {% if tab_filter == 'my' %}btn-primary{% else %}btn-ghost{% endif %}">
-        &#128100; My Created Projects
+        &#128100; My Projects
       </a>
     {% endif %}
+    <a href="{{ url_for('projects.list_projects', tab='completed', q=search_q, category=category_filter, sort=sort_by, skill=skill_filter, page=1) }}" 
+       class="btn btn-sm {% if tab_filter == 'completed' %}btn-primary{% else %}btn-ghost{% endif %}">
+      &#10003; Completed Projects
+    </a>
   </div>
 
-  <!-- Search & Form Filters -->
-  <form method="GET" action="{{ url_for('projects.list_projects') }}" style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end;">
+  <!-- Row 2: Search, Category, Skill, and Sorting Controls -->
+  <form id="projectFilterForm" method="GET" action="{{ url_for('projects.list_projects') }}">
     <input type="hidden" name="tab" value="{{ tab_filter }}">
+    <!-- Always reset to page 1 upon applying new filters/search -->
+    <input type="hidden" name="page" value="1">
 
-    <div style="flex: 2; min-width: 220px;">
-      <label class="form-label" style="margin-bottom: 0.35rem; font-weight: 600;">Search Projects</label>
-      <input type="text" name="q" class="form-control" placeholder="Search by title, description or technologies..." value="{{ search_q }}">
-    </div>
+    <div style="display: grid; grid-template-columns: 2.2fr 1.2fr 1fr 1fr auto; gap: 0.85rem; align-items: flex-end;" class="filters-grid">
+      <!-- Search Input -->
+      <div>
+        <label class="form-label" style="margin-bottom: 0.35rem; font-weight: 600; font-size: 0.85rem;">
+          Search Projects
+        </label>
+        <div style="position: relative;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <input type="text" name="q" class="form-control" placeholder="Search by title, description, tech stack, skill, or creator..." value="{{ search_q }}" style="padding-left: 2.35rem;">
+        </div>
+      </div>
 
-    <div style="flex: 1; min-width: 180px;">
-      <label class="form-label" style="margin-bottom: 0.35rem; font-weight: 600;">Category</label>
-      <select name="category" class="form-control">
-        <option value="">All Categories</option>
-        {% for cat in categories %}
-          <option value="{{ cat }}" {% if category_filter == cat %}selected{% endif %}>{{ cat }}</option>
-        {% endfor %}
-      </select>
-    </div>
+      <!-- Category Filter -->
+      <div>
+        <label class="form-label" style="margin-bottom: 0.35rem; font-weight: 600; font-size: 0.85rem;">
+          Category
+        </label>
+        <select name="category" class="form-control" onchange="document.getElementById('projectFilterForm').submit()">
+          <option value="">All Categories</option>
+          {% for cat in categories %}
+            <option value="{{ cat }}" {% if category_filter == cat %}selected{% endif %}>{{ cat }}</option>
+          {% endfor %}
+        </select>
+      </div>
 
-    <div style="flex: 1; min-width: 180px;">
-      <label class="form-label" style="margin-bottom: 0.35rem; font-weight: 600;">Required Skill</label>
-      <select name="skill" class="form-control">
-        <option value="">All Skills</option>
-        {% for sk in all_skills %}
-          <option value="{{ sk.name }}" {% if skill_filter == sk.name %}selected{% endif %}>{{ sk.name }}</option>
-        {% endfor %}
-      </select>
-    </div>
+      <!-- Required Skill Filter -->
+      <div>
+        <label class="form-label" style="margin-bottom: 0.35rem; font-weight: 600; font-size: 0.85rem;">
+          Required Skill
+        </label>
+        <select name="skill" class="form-control" onchange="document.getElementById('projectFilterForm').submit()">
+          <option value="">All Skills</option>
+          {% for sk in all_skills %}
+            <option value="{{ sk.name }}" {% if skill_filter == sk.name %}selected{% endif %}>{{ sk.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
 
-    <div style="display: flex; gap: 0.5rem;">
-      <button type="submit" class="btn btn-secondary">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-        <span>Filter</span>
-      </button>
-      {% if search_q or category_filter or skill_filter or course_filter or (tab_filter and tab_filter != 'all') %}
-        <a href="{{ url_for('projects.list_projects') }}" class="btn btn-ghost" title="Reset Filters">Reset</a>
-      {% endif %}
+      <!-- Sorting Options -->
+      <div>
+        <label class="form-label" style="margin-bottom: 0.35rem; font-weight: 600; font-size: 0.85rem;">
+          Sort By
+        </label>
+        <select name="sort" class="form-control" onchange="document.getElementById('projectFilterForm').submit()">
+          <option value="recent" {% if sort_by == 'recent' %}selected{% endif %}>Recently Added</option>
+          <option value="oldest" {% if sort_by == 'oldest' %}selected{% endif %}>Oldest First</option>
+          <option value="popular" {% if sort_by == 'popular' %}selected{% endif %}>Most Popular</option>
+          <option value="members_needed" {% if sort_by == 'members_needed' %}selected{% endif %}>Most Members Needed</option>
+        </select>
+      </div>
+
+      <!-- Action Buttons -->
+      <div style="display: flex; gap: 0.5rem;">
+        <button type="submit" class="btn btn-primary" title="Apply filters">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <span>Filter</span>
+        </button>
+        {% if search_q or category_filter or skill_filter or course_filter or (tab_filter and tab_filter != 'all') or (sort_by and sort_by != 'recent') %}
+          <a href="{{ url_for('projects.list_projects') }}" class="btn btn-ghost" title="Reset all filters">Clear</a>
+        {% endif %}
+      </div>
     </div>
   </form>
 </div>
 
-<!-- Projects Grid -->
+<!-- Active Filter Pills & Results Counter Bar -->
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 0.75rem;">
+  <div style="font-size: 0.95rem; color: var(--text-muted); font-weight: 500;">
+    {% if total_count > 0 %}
+      Showing <strong style="color: var(--text);">{{ start_item }}–{{ end_item }}</strong> of <strong style="color: var(--text);">{{ total_count }}</strong> projects
+      {% if total_pages > 1 %}
+        <span style="margin-left: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">(Page {{ page }} of {{ total_pages }})</span>
+      {% endif %}
+    {% else %}
+      <span>No projects found</span>
+    {% endif %}
+  </div>
+
+  <!-- Active filter badges -->
+  {% if search_q or category_filter or skill_filter or (tab_filter and tab_filter != 'all') %}
+    <div style="display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center;">
+      <span style="font-size: 0.8rem; color: var(--text-muted);">Active:</span>
+      {% if search_q %}
+        <span class="badge" style="background: var(--surface-alt); color: var(--text); border: 1px solid var(--border);">
+          "{{ search_q }}"
+          <a href="{{ url_for('projects.list_projects', tab=tab_filter, category=category_filter, skill=skill_filter, sort=sort_by, page=1) }}" style="color: var(--text-muted); text-decoration: none; margin-left: 4px;">&times;</a>
+        </span>
+      {% endif %}
+      {% if category_filter %}
+        <span class="badge" style="background: rgba(99, 102, 241, 0.12); color: #4f46e5; border: 1px solid rgba(99, 102, 241, 0.3);">
+          {{ category_filter }}
+          <a href="{{ url_for('projects.list_projects', tab=tab_filter, q=search_q, skill=skill_filter, sort=sort_by, page=1) }}" style="color: #4f46e5; text-decoration: none; margin-left: 4px;">&times;</a>
+        </span>
+      {% endif %}
+      {% if skill_filter %}
+        <span class="badge" style="background: rgba(16, 185, 129, 0.12); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.3);">
+          Skill: {{ skill_filter }}
+          <a href="{{ url_for('projects.list_projects', tab=tab_filter, q=search_q, category=category_filter, sort=sort_by, page=1) }}" style="color: var(--success); text-decoration: none; margin-left: 4px;">&times;</a>
+        </span>
+      {% endif %}
+      <a href="{{ url_for('projects.list_projects') }}" style="font-size: 0.8rem; color: var(--primary); text-decoration: underline; margin-left: 0.5rem;">Clear All</a>
+    </div>
+  {% endif %}
+</div>
+
+<!-- Scalable Responsive Projects Grid (3 cols Desktop, 2 cols Tablet, 1 col Mobile) -->
 {% if projects %}
-  <div class="grid-2">
+  <div class="projects-responsive-grid">
     {% for p in projects %}
-      <div class="card project-feed-card" style="display: flex; flex-direction: column; justify-content: space-between; position: relative;">
+      <div class="card project-feed-card" style="display: flex; flex-direction: column; justify-content: space-between; border: 1px solid var(--border); background: var(--surface); border-radius: 12px; padding: 1.5rem; transition: transform 0.2s ease, box-shadow 0.2s ease;">
         <div>
           <!-- Top Row: Category, Status & Team Capacity -->
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
@@ -122,13 +196,13 @@
           </div>
 
           <!-- Project Title -->
-          <h3 style="font-size: 1.3rem; font-weight: 800; margin-bottom: 0.4rem; line-height: 1.3;">
-            <a href="{{ url_for('projects.project_detail', project_id=p.id) }}" style="color: var(--text); text-decoration: none;">
+          <h3 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 0.45rem; line-height: 1.35;">
+            <a href="{{ url_for('projects.project_detail', project_id=p.id) }}" style="color: var(--text); text-decoration: none;" class="project-title-link">
               {{ p.title }}
             </a>
           </h3>
 
-          <!-- Project Meta: Duration, Mode, Context -->
+          <!-- Project Metadata Tags -->
           <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">
             {% if p.duration %}
               <span style="display: inline-flex; align-items: center; gap: 0.25rem;">
@@ -149,14 +223,14 @@
             {% endif %}
           </div>
 
-          <!-- Description -->
-          <p style="font-size: 0.92rem; color: var(--text-muted); margin-bottom: 1rem; line-height: 1.5;">
-            {{ p.description[:150] }}{% if p.description and p.description|length > 150 %}...{% endif %}
+          <!-- Description (Clean Line Clamping) -->
+          <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1rem; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
+            {{ p.description or 'No project description provided yet.' }}
           </p>
 
-          <!-- Technologies Chips -->
+          <!-- Technologies Stack Tags -->
           {% if p.tech_list %}
-            <div style="margin-bottom: 1rem;">
+            <div style="margin-bottom: 0.85rem;">
               <div style="display: flex; flex-wrap: wrap; gap: 0.35rem;">
                 {% for tech in p.tech_list %}
                   <span class="badge" style="background: var(--surface-alt); color: var(--text); font-size: 0.75rem; border: 1px solid var(--border);">
@@ -169,27 +243,32 @@
 
           <!-- Required Skills with Priority & Proficiency -->
           <div style="margin-bottom: 1.25rem;">
-            <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: var(--text-muted); margin-bottom: 0.4rem; letter-spacing: 0.04em;">
-              Team Skill Requirements
+            <div style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700; color: var(--text-muted); margin-bottom: 0.4rem; letter-spacing: 0.04em;">
+              Required Skills
             </div>
-            <div class="skill-tags" style="display: flex; flex-wrap: wrap; gap: 0.4rem;">
-              {% for req in p.requirements %}
+            <div class="skill-tags" style="display: flex; flex-wrap: wrap; gap: 0.35rem;">
+              {% for req in p.requirements[:4] %}
                 <span class="badge {% if req.priority in ['must-have', 'Must Have'] %}badge-must-have{% else %}badge-preferred{% endif %}" 
-                      style="font-size: 0.75rem; padding: 0.25rem 0.55rem; text-transform: none;">
+                      style="font-size: 0.72rem; padding: 0.2rem 0.5rem; text-transform: none;">
                   <strong>{{ req.skill_name }}</strong> &bull; 
                   {% if req.priority in ['must-have', 'Must Have'] %}Must Have{% else %}Nice to Have{% endif %}
                   {% if req.proficiency_level %} &bull; {{ req.proficiency_level }}{% endif %}
                 </span>
               {% endfor %}
+              {% if p.requirements|length > 4 %}
+                <span class="badge" style="background: var(--surface-alt); color: var(--text-muted); font-size: 0.72rem;">
+                  +{{ p.requirements|length - 4 }} more
+                </span>
+              {% endif %}
               {% if not p.requirements %}
-                <span style="font-size: 0.8rem; color: var(--text-muted); font-style: italic;">No skills specified yet.</span>
+                <span style="font-size: 0.8rem; color: var(--text-muted); font-style: italic;">No specific skills declared.</span>
               {% endif %}
             </div>
           </div>
         </div>
 
-        <!-- Bottom Action Row -->
-        <div style="border-top: 1px solid var(--border); padding-top: 1rem; margin-top: 0.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+        <!-- Bottom Action Row: Creator Info & Buttons -->
+        <div style="border-top: 1px solid var(--border); padding-top: 1rem; margin-top: 0.75rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
           <!-- Creator Info -->
           <div style="display: flex; align-items: center; gap: 0.5rem;">
             <div class="user-avatar" style="width: 32px; height: 32px; font-size: 0.85rem;" title="{{ p.owner_email }}">
@@ -199,7 +278,7 @@
               <div style="font-size: 0.85rem; font-weight: 700; color: var(--text); line-height: 1.1;">
                 {{ p.owner_name }}
               </div>
-              <div style="font-size: 0.75rem; color: var(--text-muted);">
+              <div style="font-size: 0.72rem; color: var(--text-muted);">
                 {{ p.owner_branch or 'Student' }}
               </div>
             </div>
@@ -257,17 +336,74 @@
       </div>
     {% endfor %}
   </div>
+
+  <!-- Smart Pagination Controls -->
+  {% if total_pages > 1 %}
+    <div class="pagination-bar" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border);">
+      <div style="font-size: 0.88rem; color: var(--text-muted);">
+        Page <strong style="color: var(--text);">{{ page }}</strong> of <strong style="color: var(--text);">{{ total_pages }}</strong>
+        <span style="margin-left: 0.35rem;">({{ total_count }} total projects)</span>
+      </div>
+
+      <nav aria-label="Project pagination" style="display: flex; gap: 0.35rem; align-items: center; flex-wrap: wrap;">
+        <!-- Previous Button -->
+        {% if has_prev %}
+          <a href="{{ url_for('projects.list_projects', page=prev_page, q=search_q, category=category_filter, sort=sort_by, tab=tab_filter, skill=skill_filter) }}" 
+             class="btn btn-secondary btn-sm" aria-label="Previous Page">
+            &larr; Previous
+          </a>
+        {% else %}
+          <span class="btn btn-secondary btn-sm disabled" style="opacity: 0.45; cursor: not-allowed; pointer-events: none;">
+            &larr; Previous
+          </span>
+        {% endif %}
+
+        <!-- Numeric Page Buttons -->
+        {% for p_num in pagination_pages %}
+          {% if p_num == '...' %}
+            <span style="padding: 0.35rem 0.5rem; color: var(--text-muted); font-size: 0.85rem;">&hellip;</span>
+          {% elif p_num == page %}
+            <span class="btn btn-primary btn-sm active" style="min-width: 34px; font-weight: 700; pointer-events: none;">
+              {{ p_num }}
+            </span>
+          {% else %}
+            <a href="{{ url_for('projects.list_projects', page=p_num, q=search_q, category=category_filter, sort=sort_by, tab=tab_filter, skill=skill_filter) }}" 
+               class="btn btn-secondary btn-sm" style="min-width: 34px;">
+              {{ p_num }}
+            </a>
+          {% endif %}
+        {% endfor %}
+
+        <!-- Next Button -->
+        {% if has_next %}
+          <a href="{{ url_for('projects.list_projects', page=next_page, q=search_q, category=category_filter, sort=sort_by, tab=tab_filter, skill=skill_filter) }}" 
+             class="btn btn-secondary btn-sm" aria-label="Next Page">
+            Next &rarr;
+          </a>
+        {% else %}
+          <span class="btn btn-secondary btn-sm disabled" style="opacity: 0.45; cursor: not-allowed; pointer-events: none;">
+            Next &rarr;
+          </span>
+        {% endif %}
+      </nav>
+    </div>
+  {% endif %}
+
 {% else %}
-  <div class="card" style="text-align: center; padding: 3.5rem 1.5rem; max-width: 650px; margin: 0 auto;">
-    <div style="width: 56px; height: 56px; border-radius: 50%; background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
+  <!-- Empty State -->
+  <div class="card" style="text-align: center; padding: 4rem 1.5rem; max-width: 620px; margin: 2rem auto; border: 1px dashed var(--border); background: var(--surface);">
+    <div style="width: 60px; height: 60px; border-radius: 50%; background: rgba(99, 102, 241, 0.12); color: var(--primary); display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem;">
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
     </div>
-    <h3 style="font-size: 1.3rem; font-weight: 700; margin-bottom: 0.5rem;">No matching projects found</h3>
-    <p style="font-size: 0.95rem; color: var(--text-muted); margin-bottom: 1.75rem; line-height: 1.5;">
-      We couldn't find any projects matching your current filters. Try resetting your search filters or be the first to create and publish a new project!
+    <h3 style="font-size: 1.35rem; font-weight: 800; margin-bottom: 0.5rem; color: var(--text);">No projects found</h3>
+    <p style="font-size: 0.95rem; color: var(--text-muted); margin-bottom: 1.75rem; line-height: 1.55;">
+      Try changing your search or filters.
     </p>
     <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
-      <a href="{{ url_for('projects.list_projects') }}" class="btn btn-secondary">Clear Filters</a>
+      <a href="{{ url_for('projects.list_projects') }}" class="btn btn-secondary">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+        <span>Clear Filters</span>
+      </a>
       {% if current_user_id %}
         <a href="{{ url_for('projects.create_project') }}" class="btn btn-primary">+ Create New Project</a>
       {% else %}
@@ -300,6 +436,53 @@
     </form>
   </div>
 </div>
+
+<style>
+/* Responsive 3-col Desktop, 2-col Tablet, 1-col Mobile Grid */
+.projects-responsive-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+@media (max-width: 1024px) {
+  .projects-responsive-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.25rem;
+  }
+  .filters-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .projects-responsive-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  .filters-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .pagination-bar {
+    justify-content: center !important;
+    text-align: center;
+  }
+}
+
+.project-feed-card {
+  min-height: 420px;
+}
+
+.project-feed-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px -6px rgba(0, 0, 0, 0.4);
+  border-color: rgba(99, 102, 241, 0.45);
+}
+
+.project-title-link:hover {
+  color: var(--primary) !important;
+}
+</style>
 
 <script>
 function openApplyModal(projectId, projectTitle) {
