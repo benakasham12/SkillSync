@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}Edit User Profile - Administrator - SkillSync{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Edit User Profile</h1>
+    <p class="page-subtitle">Admin Management: Update account role, status, and profile details for {{ target_user.email }}.</p>
+  </div>
+  <div>
+    <a href="{{ url_for('admin.dashboard') }}" class="btn btn-secondary btn-sm">Back to Admin Dashboard</a>
+  </div>
+</div>
+
+<div class="card" style="max-width: 800px; margin: 0 auto 2rem;">
+  <form method="POST" action="{{ url_for('admin.edit_user', target_user_id=target_user.id) }}">
+    <!-- Account Settings Section -->
+    <div style="margin-bottom: 2rem;">
+      <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; margin-bottom: 1.25rem;">
+        Account Credentials & Permissions
+      </h3>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
+        <div>
+          <label class="form-label" style="font-size: 0.85rem; font-weight: 600;">Email Address</label>
+          <input type="email" class="form-control" value="{{ target_user.email }}" disabled style="opacity: 0.7; cursor: not-allowed;">
+          <small style="color: var(--text-muted); font-size: 0.75rem;">Account email identifier (fixed).</small>
+        </div>
+
+        <div>
+          <label class="form-label" for="roleSelect" style="font-size: 0.85rem; font-weight: 600;">Platform Role</label>
+          <select name="role" id="roleSelect" class="form-control" required>
+            <option value="student" {% if target_user.role == 'student' %}selected{% endif %}>Student</option>
+            <option value="coordinator" {% if target_user.role == 'coordinator' %}selected{% endif %}>Faculty Coordinator</option>
+            <option value="admin" {% if target_user.role == 'admin' %}selected{% endif %}>Administrator</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="form-label" for="statusSelect" style="font-size: 0.85rem; font-weight: 600;">Account Status</label>
+          <select name="status" id="statusSelect" class="form-control" required>
+            <option value="active" {% if target_user.status == 'active' %}selected{% endif %}>Active</option>
+            <option value="deactivated" {% if target_user.status == 'deactivated' %}selected{% endif %}>Deactivated</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Student Profile Details Section -->
+    <div style="margin-bottom: 2rem;">
+      <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; margin-bottom: 1.25rem;">
+        Student Profile Information
+      </h3>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+        <div>
+          <label class="form-label" for="displayNameInput" style="font-size: 0.85rem; font-weight: 600;">Full Name</label>
+          <input type="text" id="displayNameInput" name="display_name" class="form-control" value="{{ target_profile.display_name if target_profile else '' }}" placeholder="e.g. John Doe" required>
+        </div>
+
+        <div>
+          <label class="form-label" for="usnInput" style="font-size: 0.85rem; font-weight: 600;">USN</label>
+          <input type="text" id="usnInput" name="usn" class="form-control" value="{{ target_profile.usn if target_profile else '' }}" placeholder="e.g. 1BY23CS001">
+        </div>
+
+        <div>
+          <label class="form-label" for="branchSelect" style="font-size: 0.85rem; font-weight: 600;">Department / Branch</label>
+          <select name="branch" id="branchSelect" class="form-control">
+            {% set current_branch = target_profile.branch if target_profile else 'CSE' %}
+            <option value="CSE" {% if current_branch == 'CSE' %}selected{% endif %}>Computer Science and Engineering (CSE)</option>
+            <option value="ISE" {% if current_branch == 'ISE' %}selected{% endif %}>Information Science and Engineering (ISE)</option>
+            <option value="AIML" {% if current_branch == 'AIML' %}selected{% endif %}>Artificial Intelligence & Machine Learning (AIML)</option>
+            <option value="ECE" {% if current_branch == 'ECE' %}selected{% endif %}>Electronics and Communication (ECE)</option>
+            <option value="EEE" {% if current_branch == 'EEE' %}selected{% endif %}>Electrical & Electronics (EEE)</option>
+            <option value="MECH" {% if current_branch == 'MECH' %}selected{% endif %}>Mechanical Engineering (MECH)</option>
+            <option value="CIVIL" {% if current_branch == 'CIVIL' %}selected{% endif %}>Civil Engineering (CIVIL)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="form-label" for="yearSelect" style="font-size: 0.85rem; font-weight: 600;">Academic Year</label>
+          <select name="year" id="yearSelect" class="form-control">
+            {% set current_year = target_profile.year if target_profile else '1st Year' %}
+            <option value="1st Year" {% if current_year == '1st Year' %}selected{% endif %}>1st Year</option>
+            <option value="2nd Year" {% if current_year == '2nd Year' %}selected{% endif %}>2nd Year</option>
+            <option value="3rd Year" {% if current_year == '3rd Year' %}selected{% endif %}>3rd Year</option>
+            <option value="4th Year" {% if current_year == '4th Year' %}selected{% endif %}>4th Year</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="form-label" for="sectionInput" style="font-size: 0.85rem; font-weight: 600;">Section / Cohort</label>
+          <input type="text" id="sectionInput" name="section" class="form-control" value="{{ target_profile.section if target_profile else 'CSE-13' }}" placeholder="e.g. CSE-13">
+        </div>
+
+        <div>
+          <label class="form-label" for="institutionInput" style="font-size: 0.85rem; font-weight: 600;">Institution</label>
+          <input type="text" id="institutionInput" name="institution" class="form-control" value="{{ target_profile.institution if target_profile else 'BMS Institute of Technology and Management' }}">
+        </div>
+      </div>
+
+      <div style="margin-bottom: 1rem;">
+        <label class="form-label" for="bioTextarea" style="font-size: 0.85rem; font-weight: 600;">Bio / Collaboration Preferences</label>
+        <textarea id="bioTextarea" name="bio" rows="3" class="form-control" placeholder="Short bio or collaboration focus...">{{ target_profile.bio if target_profile else '' }}</textarea>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+        <div>
+          <label class="form-label" for="githubInput" style="font-size: 0.85rem; font-weight: 600;">GitHub URL</label>
+          <input type="url" id="githubInput" name="github_url" class="form-control" value="{{ target_profile.github_url if target_profile and target_profile.github_url else '' }}" placeholder="https://github.com/username">
+        </div>
+
+        <div>
+          <label class="form-label" for="linkedinInput" style="font-size: 0.85rem; font-weight: 600;">LinkedIn URL</label>
+          <input type="url" id="linkedinInput" name="linkedin_url" class="form-control" value="{{ target_profile.linkedin_url if target_profile and target_profile.linkedin_url else '' }}" placeholder="https://linkedin.com/in/username">
+        </div>
+
+        <div>
+          <label class="form-label" for="portfolioInput" style="font-size: 0.85rem; font-weight: 600;">Portfolio Website</label>
+          <input type="url" id="portfolioInput" name="portfolio_url" class="form-control" value="{{ target_profile.portfolio_url if target_profile and target_profile.portfolio_url else '' }}" placeholder="https://portfolio.com">
+        </div>
+      </div>
+
+      <div>
+        <label class="form-label" for="visibilitySelect" style="font-size: 0.85rem; font-weight: 600;">Profile Visibility</label>
+        <select name="visibility" id="visibilitySelect" class="form-control">
+          {% set current_vis = target_profile.visibility if target_profile else 'cohort_only' %}
+          <option value="cohort_only" {% if current_vis == 'cohort_only' %}selected{% endif %}>Cohort Only (Students in same section/branch)</option>
+          <option value="all_registered" {% if current_vis == 'all_registered' %}selected{% endif %}>All Registered Students & Faculty</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div style="display: flex; gap: 1rem; justify-content: flex-end; border-top: 1px solid var(--border); padding-top: 1.25rem;">
+      <a href="{{ url_for('admin.dashboard') }}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary">Save Profile Changes</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

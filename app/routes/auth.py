@@ -54,7 +54,15 @@ def admin_required(f):
     def decorated_function(*args, **kwargs):
         if 'user_id' not in session:
             return redirect(url_for('auth.login', next=request.path))
-        if session.get('user_role') not in ('admin', 'coordinator'):
+
+        user_role = session.get('user_role')
+        if not user_role:
+            u_rec = query_db("SELECT role FROM users WHERE id = ?", (session['user_id'],), one=True)
+            if u_rec:
+                user_role = u_rec.get('role')
+                session['user_role'] = user_role
+
+        if not user_role or str(user_role).strip().lower() not in ('admin', 'coordinator'):
             flash('Administrator privileges required.', 'danger')
             return redirect(url_for('projects.list_projects'))
         return f(*args, **kwargs)

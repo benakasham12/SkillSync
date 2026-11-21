@@ -64,19 +64,18 @@ def get_project_team_count(project_id, owner_id):
     return res['cnt'] if res else 1
 
 
-def is_project_owner(project, user_id=None, db_path=None):
+def is_project_owner(project, user_id=None, db_path=None, allow_admin=True):
     """
-    Robust project ownership verification:
-    1. Direct match: project['owner_id'] == user_id (with string and integer coercion).
-    2. Profile ID resolution:
+    Robust project ownership and admin authorization verification:
+    1. Priority Admin & Coordinator Authorization Override (when allow_admin=True):
+       Verified administrators and faculty coordinators have unconditional
+       authority to manage and edit all platform projects regardless of creator.
+    2. Direct match: project['owner_id'] == user_id (with string and integer coercion).
+    3. Profile ID resolution:
        - If project['owner_id'] is a student_profiles.id, check if user_id is the profile's user_id.
        - If user_id is a student_profiles.id, check if project['owner_id'] matches its user_id.
-    3. Team roster check: checks if team_members has role='owner' for this user and project.
-    4. Admin/coordinator privileges.
+    4. Team roster check: checks if team_members has role='owner' for this user and project.
     """
-    if not project:
-        return False
-
     if user_id is None and has_request_context():
         user_id = session.get('user_id')
 
@@ -95,6 +94,23 @@ def is_project_owner(project, user_id=None, db_path=None):
         u_int = int(u_str)
     except (ValueError, TypeError):
         u_int = None
+
+    # Step 1: Priority Admin & Coordinator Override
+    # Unconditionally grants full access to admins and faculty coordinators
+    if allow_admin:
+        user_role = session.get('user_role') if has_request_context() else None
+        if not user_role and u_int is not None:
+            try:
+                u_rec = query_db("SELECT role FROM users WHERE id = ?", (u_int,), one=True, db_path=db_path)
+                if u_rec and u_rec.get('role'):
+                    user_role = u_rec.get('role')
+            except Exception:
+                pass
+        if user_role and str(user_role).strip().lower() in ('admin', 'coordinator'):
+            return True
+
+    if not project:
+        return False
 
     if not isinstance(project, dict):
         try:
@@ -145,15 +161,6 @@ def is_project_owner(project, user_id=None, db_path=None):
         """, (p_id, u_str, u_str, u_str), one=True, db_path=db_path)
         if owner_member:
             return True
-
-    # Check admin/coordinator role
-    user_role = session.get('user_role') if has_request_context() else None
-    if not user_role and u_int:
-        u_rec = query_db("SELECT role FROM users WHERE id = ?", (u_int,), one=True, db_path=db_path)
-        if u_rec:
-            user_role = u_rec.get('role')
-    if user_role in ('admin', 'coordinator'):
-        return True
 
     return False
 
@@ -950,7 +957,10 @@ def edit_project(project_id):
     """Edit project information, team size, and skill requirements."""
     user_id = session['user_id']
     project = query_db("SELECT * FROM projects WHERE id = ?", (project_id,), one=True)
-    if not project or not is_project_owner(project, user_id):
+    if not project:
+        flash('Project not found.', 'danger')
+        return redirect(url_for('projects.list_projects'))
+    if not is_project_owner(project, user_id):
         flash('Unauthorized: You can only edit projects you created.', 'danger')
         return redirect(url_for('projects.list_projects'))
 
@@ -1047,13 +1057,34 @@ def delete_project(project_id):
     """Delete a project and its associated requirements and applications."""
     user_id = session['user_id']
     project = query_db("SELECT * FROM projects WHERE id = ?", (project_id,), one=True)
-    if not project or not is_project_owner(project, user_id):
-        flash('Unauthorized: Only the project creator can delete this project.', 'danger')
+    if not project:
+        flash('Project not found.', 'danger')
+        return redirect(url_for('projects.list_projects'))
+    if not is_project_owner(project, user_id):
+        flash('Unauthorized: Only the project creator or an administrator can delete this project.', 'danger')
         return redirect(url_for('projects.list_projects'))
 
+    # Clean up dependent records in listings.db
+    execute_db("DELETE FROM project_skill_requirements WHERE project_id = ?", (project_id,))
+    execute_db("DELETE FROM project_availability_slots WHERE project_id = ?", (project_id,))
+    execute_db("DELETE FROM project_interests WHERE project_id = ?", (project_id,))
+    execute_db("DELETE FROM team_members WHERE project_id = ?", (project_id,))
+    execute_db("DELETE FROM project_applications WHERE project_id = ?", (project_id,))
+    execute_db("DELETE FROM invitations WHERE project_id = ?", (project_id,))
     execute_db("DELETE FROM projects WHERE id = ?", (project_id,))
+
+    # If cloud sync enabled, delete from Supabase
+    try:
+        from app.supabase_client import is_cloud_enabled, delete_cloud_project
+        if is_cloud_enabled():
+            delete_cloud_project(project_id)
+    except Exception:
+        pass
+
     log_event('project_deleted', actor_id=user_id, target_type='project', target_id=project_id)
     flash('Project and all associated records deleted successfully.', 'info')
+    if session.get('user_role') in ('admin', 'coordinator'):
+        return redirect(request.referrer or url_for('admin.dashboard'))
     return redirect(url_for('projects.my_projects'))
 
 
@@ -1314,7 +1345,7 @@ def remove_team_member(project_id, member_id):
         flash('Unauthorized action.', 'danger')
         return redirect(url_for('projects.list_projects'))
 
-    if is_project_owner(project, member_id):
+    if is_project_owner(project, member_id, allow_admin=False):
         flash('The project owner cannot be removed from the team.', 'danger')
         return redirect(url_for('projects.project_detail', project_id=project_id))
 

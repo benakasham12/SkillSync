@@ -1,79 +1,244 @@
 {% extends "base.html" %}
-{% block title %}Coordinator Analytics & Success Metrics - SkillSync{% endblock %}
+{% block title %}Administrator Dashboard - Platform Management - SkillSync{% endblock %}
 
 {% block content %}
 <div class="page-header">
   <div>
-    <h1 class="page-title">Pilot Analytics & Product Metrics</h1>
-    <p class="page-subtitle">Based on PRD Section 9: Tracking team formation, skill coverage and student adoption.</p>
+    <h1 class="page-title">Administrator & Coordinator Dashboard</h1>
+    <p class="page-subtitle">Full platform oversight: user accounts, project lifecycle, product analytics, and moderation.</p>
   </div>
-  <div>
+  <div style="display: flex; gap: 0.75rem;">
     <a href="{{ url_for('admin.list_reports') }}" class="btn btn-secondary btn-sm">Moderation Queue (FR-13)</a>
+    <a href="{{ url_for('projects.create_project') }}" class="btn btn-primary btn-sm">+ Post Project</a>
   </div>
 </div>
 
-<!-- North Star Metric Card (PRD Section 9) -->
-<div class="card stat-card featured" style="margin-bottom: 2rem;">
-  <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+<!-- ========================================== -->
+<!-- 1. OVERVIEW & PLATFORM METRICS             -->
+<!-- ========================================== -->
+<div class="stats-grid" style="margin-bottom: 2rem;">
+  <!-- Total Registered Users -->
+  <div class="stat-card">
+    <div class="stat-value" style="color: var(--primary);">{{ metrics.total_registered_users }}</div>
+    <div class="stat-label">Total Registered Users</div>
+    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.35rem;">
+      {{ metrics.active_users }} active accounts across all cohorts
+    </div>
+  </div>
+
+  <!-- Total Projects Created -->
+  <div class="stat-card">
+    <div class="stat-value" style="color: var(--accent);">{{ metrics.total_projects_count }}</div>
+    <div class="stat-label">Total Projects Created</div>
+    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.35rem;">
+      {{ metrics.published_projects }} published, {{ metrics.total_projects_count - metrics.published_projects }} draft/archived
+    </div>
+  </div>
+
+  <!-- Active Users -->
+  <div class="stat-card">
+    <div class="stat-value" style="color: #10b981;">{{ metrics.active_users }}</div>
+    <div class="stat-label">Active Users</div>
+    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.35rem;">
+      Match-ready student adoption
+    </div>
+  </div>
+
+  <!-- North Star Balanced Team Rate -->
+  <div class="stat-card">
+    <div class="stat-value" style="color: #6366f1;">{{ metrics.north_star_metric }}%</div>
+    <div class="stat-label">Balanced Team Success Rate</div>
+    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.35rem;">
+      {{ metrics.successful_projects }} of {{ metrics.evaluated_projects_count }} active projects satisfied
+    </div>
+  </div>
+</div>
+
+<!-- ========================================== -->
+<!-- 2. USER MANAGEMENT SECTION                 -->
+<!-- ========================================== -->
+<div class="card" style="margin-bottom: 2.5rem;">
+  <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
     <div>
-      <span class="badge badge-published" style="margin-bottom: 0.5rem;">PRD Proposed North Star Metric</span>
-      <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--text);">
-        Balanced Team Success Rate
-      </h2>
-      <p style="font-size: 0.9rem; color: var(--text-muted); max-width: 650px; margin-top: 0.25rem;">
-        Percentage of projects that reach target team size (at least minimum size) while covering <strong>100% of declared must-have skills</strong> before deadline.
+      <h2 class="card-title" style="margin-bottom: 0.25rem;">User Management</h2>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">
+        Manage all registered student and faculty accounts, edit profile details, and enforce governance.
       </p>
     </div>
-    <div style="text-align: right;">
-      <div class="stat-value" style="font-size: 3rem;">{{ metrics.north_star_metric }}%</div>
-      <div class="stat-label">{{ metrics.successful_projects }} of {{ metrics.evaluated_projects_count }} active projects satisfied</div>
-    </div>
+    <span class="badge" style="background: rgba(99, 102, 241, 0.15); color: var(--primary);">
+      {{ users|length }} Total Users
+    </span>
+  </div>
+
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Name / Student</th>
+          <th>Email</th>
+          <th>USN</th>
+          <th>Branch & Year</th>
+          <th>Role</th>
+          <th>Status</th>
+          <th>Joined</th>
+          <th style="text-align: right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+          <tr>
+            <td>
+              <div style="font-weight: 600; color: var(--text);">{{ u.display_name }}</div>
+              <small style="color: var(--text-muted);">ID #{{ u.id }}</small>
+            </td>
+            <td>
+              <code style="font-size: 0.82rem;">{{ u.email }}</code>
+            </td>
+            <td>
+              <span style="font-size: 0.85rem; font-family: monospace;">{{ u.usn or '-' }}</span>
+            </td>
+            <td>
+              <div style="font-size: 0.85rem;">{{ u.branch or 'General' }}</div>
+              <small style="color: var(--text-muted);">{{ u.year or '-' }}</small>
+            </td>
+            <td>
+              {% if u.role == 'admin' %}
+                <span class="badge badge-published" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);">Admin</span>
+              {% elif u.role == 'coordinator' %}
+                <span class="badge badge-published" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3);">Coordinator</span>
+              {% else %}
+                <span class="badge badge-draft" style="background: rgba(148, 163, 184, 0.15); color: var(--text-muted);">Student</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if u.status == 'active' %}
+                <span class="badge badge-published">Active</span>
+              {% else %}
+                <span class="badge badge-closed">Deactivated</span>
+              {% endif %}
+            </td>
+            <td style="font-size: 0.8rem; color: var(--text-muted); white-space: nowrap;">
+              {{ u.created_at[:10] if u.created_at else '-' }}
+            </td>
+            <td style="text-align: right; white-space: nowrap;">
+              <a href="{{ url_for('admin.edit_user', target_user_id=u.id) }}" class="btn btn-secondary btn-sm" style="padding: 0.3rem 0.65rem; font-size: 0.78rem;">
+                Edit Profile
+              </a>
+              {% if u.id == current_admin_id %}
+                <span class="badge" style="background: rgba(148, 163, 184, 0.2); color: var(--text-muted); padding: 0.35rem 0.6rem; font-size: 0.75rem; margin-left: 0.25rem;">
+                  (Current Account)
+                </span>
+              {% else %}
+                <form method="POST" action="{{ url_for('admin.delete_user', target_user_id=u.id) }}" style="display: inline; margin-left: 0.25rem;" onsubmit="return confirm('CRITICAL WARNING: Are you sure you want to permanently delete user account \'{{ u.email }}\'?\n\nAll associated profile data, skills, owned projects, team memberships, and chat messages will be permanently removed. This cannot be undone.');">
+                  <button type="submit" class="btn btn-danger btn-sm" style="padding: 0.3rem 0.65rem; font-size: 0.78rem;">
+                    Delete User
+                  </button>
+                </form>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+        {% if not users %}
+          <tr>
+            <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2rem;">No registered users found.</td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
   </div>
 </div>
 
-<!-- Operational Funnel & Adoption Metrics Grid -->
-<div class="stats-grid">
-  <!-- Profile Completion Rate -->
-  <div class="stat-card">
-    <div class="stat-value">{{ metrics.profile_completion_rate }}%</div>
-    <div class="stat-label">Profile Completion Rate</div>
-    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.35rem;">
-      {{ metrics.match_ready_profiles }} of {{ metrics.total_users }} students match-ready
+<!-- ========================================== -->
+<!-- 3. PROJECT MANAGEMENT SECTION              -->
+<!-- ========================================== -->
+<div class="card" style="margin-bottom: 2.5rem;">
+  <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+    <div>
+      <h2 class="card-title" style="margin-bottom: 0.25rem;">Project Management</h2>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">
+        Full administrative oversight of all listings across the platform. Edit or delete any project regardless of owner.
+      </p>
     </div>
+    <span class="badge" style="background: rgba(99, 102, 241, 0.15); color: var(--primary);">
+      {{ projects|length }} Total Projects
+    </span>
   </div>
 
-  <!-- Project Publish Rate -->
-  <div class="stat-card">
-    <div class="stat-value">{{ metrics.project_publish_rate }}%</div>
-    <div class="stat-label">Project Publish Rate</div>
-    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.35rem;">
-      {{ metrics.published_projects }} published of {{ metrics.total_projects }} created
-    </div>
-  </div>
-
-  <!-- Must-Have Skill Coverage -->
-  <div class="stat-card">
-    <div class="stat-value">{{ metrics.overall_must_have_coverage_rate }}%</div>
-    <div class="stat-label">Must-Have Skill Coverage</div>
-    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.35rem;">
-      Across all active project requirements
-    </div>
-  </div>
-
-  <!-- Invitation Acceptance Rate -->
-  <div class="stat-card">
-    <div class="stat-value">{{ metrics.invitation_acceptance_rate }}%</div>
-    <div class="stat-label">Invitation Acceptance Rate</div>
-    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.35rem;">
-      {{ metrics.accepted_invites }} accepted / {{ metrics.declined_invites }} declined ({{ metrics.total_invitations }} sent)
-    </div>
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Project Title</th>
+          <th>Creator / Owner</th>
+          <th>Category</th>
+          <th>Team Size</th>
+          <th>Status</th>
+          <th>Created Date</th>
+          <th style="text-align: right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in projects %}
+          <tr>
+            <td>
+              <a href="{{ url_for('projects.project_detail', project_id=p.id) }}" style="font-weight: 600; color: var(--text); text-decoration: none;">
+                {{ p.title }}
+              </a>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">ID #{{ p.id }}</div>
+            </td>
+            <td>
+              <div style="font-size: 0.85rem; font-weight: 500;">{{ p.owner_name }}</div>
+              <small style="color: var(--text-muted);">{{ p.owner_email or '' }}</small>
+            </td>
+            <td>
+              <span class="badge badge-draft" style="font-size: 0.78rem;">{{ p.category }}</span>
+            </td>
+            <td style="font-size: 0.85rem;">
+              {{ p.team_size_min }}–{{ p.team_size_max }} members
+            </td>
+            <td>
+              {% if p.status == 'published' %}
+                <span class="badge badge-published">Published</span>
+              {% elif p.status == 'closed' %}
+                <span class="badge badge-closed">Closed</span>
+              {% else %}
+                <span class="badge badge-draft">Draft</span>
+              {% endif %}
+            </td>
+            <td style="font-size: 0.8rem; color: var(--text-muted); white-space: nowrap;">
+              {{ p.created_at[:10] if p.created_at else '-' }}
+            </td>
+            <td style="text-align: right; white-space: nowrap;">
+              <a href="{{ url_for('projects.project_detail', project_id=p.id) }}" class="btn btn-ghost btn-sm" style="padding: 0.3rem 0.65rem; font-size: 0.78rem;">
+                View
+              </a>
+              <a href="{{ url_for('projects.edit_project', project_id=p.id) }}" class="btn btn-secondary btn-sm" style="padding: 0.3rem 0.65rem; font-size: 0.78rem; margin-left: 0.25rem;">
+                Edit Project
+              </a>
+              <form method="POST" action="{{ url_for('admin.delete_project_admin', project_id=p.id) }}" style="display: inline; margin-left: 0.25rem;" onsubmit="return confirm('Are you sure you want to permanently delete project \'{{ p.title|escape }}\'? All team member applications, slots, and requirements will be removed.');">
+                <button type="submit" class="btn btn-danger btn-sm" style="padding: 0.3rem 0.65rem; font-size: 0.78rem;">
+                  Delete Project
+                </button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+        {% if not projects %}
+          <tr>
+            <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">No projects found on the platform.</td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
   </div>
 </div>
 
-<!-- Recent Event Stream (PRD Section 9.1 Minimum Event Tracking) -->
-<div class="card">
+<!-- ========================================== -->
+<!-- 4. PRODUCT ANALYTICS & EVENT AUDIT STREAM  -->
+<!-- ========================================== -->
+<div class="card" style="margin-bottom: 2.5rem;">
   <div class="card-header">
-    <h2 class="card-title">Live Audit & Product Event Stream (Section 9.1)</h2>
+    <h2 class="card-title">Live Audit & Product Event Stream (PRD Section 9.1)</h2>
   </div>
 
   <div class="table-responsive">

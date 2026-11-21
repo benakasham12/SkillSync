@@ -2,6 +2,8 @@
 Admin and Coordinator routes implementing PRD FR-13 and Section 9:
 - Moderation reports review and resolution
 - Real-time PRD Product Analytics and North Star Metric dashboard
+- Complete User Management (view, edit profile, safe cascading delete, self-deletion guard)
+- Complete Project Management (view, edit, delete any platform project)
 """
 
 from flask import Blueprint, request, session, render_template, redirect, url_for, flash, jsonify
@@ -12,13 +14,251 @@ from app.analytics import get_analytics_summary, log_event
 admin_bp = Blueprint('admin', __name__)
 
 
+def delete_user_account(target_user_id, admin_id=None):
+    """
+    Safely delete a user account and cascade deletion across all associated records:
+    1. Identify student profile ID
+    2. Delete all projects owned by the user (with all their requirements, slots, interests, team members, applications, invitations)
+    3. Remove user from all other projects' team_members, project_applications, and invitations
+    4. Remove skills, interests, availability_slots, student_profile
+    5. Remove messaging participants and read statuses
+    6. Remove moderation reports submitted by or filed against user profile
+    7. Nullify audit events actor_id
+    8. Delete from users table
+    9. Delete from cloud database / Supabase if enabled
+    """
+    # 1. Resolve student profile ID
+    profile = query_db("SELECT id FROM student_profiles WHERE user_id = ?", (target_user_id,), one=True)
+    prof_id = profile['id'] if profile else None
+
+    # 2. Find all projects owned by the user
+    if prof_id:
+        owned_projects = query_db(
+            "SELECT id FROM projects WHERE owner_id = ? OR owner_id = ?",
+            (target_user_id, prof_id)
+        )
+    else:
+        owned_projects = query_db(
+            "SELECT id FROM projects WHERE owner_id = ?",
+            (target_user_id,)
+        )
+
+    for p in owned_projects:
+        pid = p['id']
+        execute_db("DELETE FROM project_skill_requirements WHERE project_id = ?", (pid,))
+        execute_db("DELETE FROM project_availability_slots WHERE project_id = ?", (pid,))
+        execute_db("DELETE FROM project_interests WHERE project_id = ?", (pid,))
+        execute_db("DELETE FROM team_members WHERE project_id = ?", (pid,))
+        execute_db("DELETE FROM project_applications WHERE project_id = ?", (pid,))
+        execute_db("DELETE FROM invitations WHERE project_id = ?", (pid,))
+        execute_db("DELETE FROM projects WHERE id = ?", (pid,))
+
+        try:
+            from app.supabase_client import is_cloud_enabled, delete_cloud_project
+            if is_cloud_enabled():
+                delete_cloud_project(pid)
+        except Exception:
+            pass
+
+    # 3. Clean up user memberships in other projects
+    execute_db("DELETE FROM team_members WHERE user_id = ?", (target_user_id,))
+    execute_db("DELETE FROM project_applications WHERE applicant_id = ?", (target_user_id,))
+    execute_db("DELETE FROM invitations WHERE inviter_id = ? OR invitee_id = ?", (target_user_id, target_user_id))
+    if prof_id:
+        execute_db("DELETE FROM team_members WHERE user_id = ?", (prof_id,))
+        execute_db("DELETE FROM project_applications WHERE applicant_id = ?", (prof_id,))
+        execute_db("DELETE FROM invitations WHERE inviter_id = ? OR invitee_id = ?", (prof_id, prof_id))
+
+    # 4. Clean up user profile records
+    execute_db("DELETE FROM student_skills WHERE user_id = ?", (target_user_id,))
+    execute_db("DELETE FROM student_interests WHERE user_id = ?", (target_user_id,))
+    execute_db("DELETE FROM availability_slots WHERE user_id = ?", (target_user_id,))
+    execute_db("DELETE FROM student_profiles WHERE user_id = ?", (target_user_id,))
+
+    # 5. Clean up messaging and reports
+    execute_db("DELETE FROM conversation_participants WHERE student_id = ?", (target_user_id,))
+    execute_db("DELETE FROM message_read_status WHERE student_id = ?", (target_user_id,))
+    execute_db("DELETE FROM reports WHERE reporter_id = ? OR (target_type = 'profile' AND target_id = ?)", (target_user_id, target_user_id))
+    execute_db("UPDATE audit_events SET actor_id = NULL WHERE actor_id = ?", (target_user_id,))
+
+    # 6. Delete user record
+    execute_db("DELETE FROM users WHERE id = ?", (target_user_id,))
+
+    # 7. Cloud sync cleanup if enabled
+    try:
+        from app.supabase_client import is_cloud_enabled, supabase_request
+        if is_cloud_enabled():
+            supabase_request(f'profiles?id=eq.{target_user_id}', method='DELETE')
+    except Exception:
+        pass
+
+    log_event('user_deleted_by_admin', actor_id=admin_id, target_type='user', target_id=target_user_id)
+
+
 @admin_bp.route('/admin/dashboard')
 @login_required
 @admin_required
 def dashboard():
-    """PRD Section 9 Analytics & Success Metrics view."""
+    """PRD Section 9 Analytics & Full Platform Management view."""
     metrics = get_analytics_summary()
-    return render_template('admin/dashboard.html', metrics=metrics)
+
+    # Overview Metrics required by Admin Management
+    total_reg = query_db("SELECT COUNT(*) as cnt FROM users", one=True)
+    metrics['total_registered_users'] = total_reg['cnt'] if total_reg else 0
+
+    active_cnt = query_db("SELECT COUNT(*) as cnt FROM users WHERE status = 'active'", one=True)
+    metrics['active_users'] = active_cnt['cnt'] if active_cnt else 0
+
+    proj_cnt = query_db("SELECT COUNT(*) as cnt FROM projects", one=True)
+    metrics['total_projects_count'] = proj_cnt['cnt'] if proj_cnt else 0
+
+    # User Management: Fetch all registered users with profiles
+    users_list = query_db("""
+        SELECT u.id, u.email, u.role, u.status, u.created_at,
+               sp.id as profile_id,
+               COALESCE(sp.display_name, u.email) as display_name,
+               sp.usn, sp.branch, sp.year, sp.section, sp.institution
+        FROM users u
+        LEFT JOIN student_profiles sp ON u.id = sp.user_id
+        ORDER BY u.id DESC
+    """)
+
+    # Project Management: Fetch all platform projects with owner information
+    projects_list = query_db("""
+        SELECT p.id, p.title, p.category, p.status, p.created_at, p.owner_id,
+               p.team_size_min, p.team_size_max,
+               COALESCE(sp.display_name, u.email, 'User #' || p.owner_id) as owner_name,
+               u.email as owner_email
+        FROM projects p
+        LEFT JOIN users u ON (p.owner_id = u.id OR p.owner_id IN (SELECT id FROM student_profiles WHERE user_id = u.id))
+        LEFT JOIN student_profiles sp ON (p.owner_id = sp.id OR p.owner_id = sp.user_id OR sp.user_id = u.id)
+        GROUP BY p.id
+        ORDER BY p.id DESC
+    """)
+
+    return render_template(
+        'admin/dashboard.html',
+        metrics=metrics,
+        users=users_list,
+        projects=projects_list,
+        current_admin_id=session.get('user_id')
+    )
+
+
+@admin_bp.route('/admin/users/<int:target_user_id>/edit', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def edit_user(target_user_id):
+    """Admin route to view and update any user's profile and account settings."""
+    target_user = query_db("SELECT * FROM users WHERE id = ?", (target_user_id,), one=True)
+    if not target_user:
+        flash('User account not found.', 'danger')
+        return redirect(url_for('admin.dashboard'))
+
+    target_profile = query_db("SELECT * FROM student_profiles WHERE user_id = ?", (target_user_id,), one=True)
+
+    if request.method == 'POST':
+        # Account settings
+        new_role = request.form.get('role', target_user['role']).strip().lower()
+        new_status = request.form.get('status', target_user['status']).strip().lower()
+
+        if new_role not in ('student', 'coordinator', 'admin'):
+            new_role = target_user['role']
+        if new_status not in ('active', 'deactivated'):
+            new_status = target_user['status']
+
+        execute_db("UPDATE users SET role = ?, status = ? WHERE id = ?", (new_role, new_status, target_user_id))
+
+        # Profile settings
+        display_name = request.form.get('display_name', '').strip()
+        usn = request.form.get('usn', '').strip().upper()
+        branch = request.form.get('branch', 'CSE').strip()
+        year = request.form.get('year', '1st Year').strip()
+        section = request.form.get('section', 'CSE-13').strip()
+        institution = request.form.get('institution', 'BMS Institute of Technology and Management').strip()
+        bio = request.form.get('bio', '').strip()
+        github_url = request.form.get('github_url', '').strip() or None
+        linkedin_url = request.form.get('linkedin_url', '').strip() or None
+        portfolio_url = request.form.get('portfolio_url', '').strip() or None
+        visibility = request.form.get('visibility', 'cohort_only')
+
+        if target_profile:
+            execute_db("""
+                UPDATE student_profiles
+                SET display_name = ?, usn = ?, branch = ?, year = ?, section = ?,
+                    institution = ?, bio = ?, github_url = ?, linkedin_url = ?,
+                    portfolio_url = ?, visibility = ?, updated_at = CURRENT_TIMESTAMP
+                WHERE user_id = ?
+            """, (display_name, usn, branch, year, section, institution, bio, github_url, linkedin_url, portfolio_url, visibility, target_user_id))
+        else:
+            execute_db("""
+                INSERT INTO student_profiles (user_id, display_name, usn, branch, year, section, institution, bio, github_url, linkedin_url, portfolio_url, visibility)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (target_user_id, display_name, usn, branch, year, section, institution, bio, github_url, linkedin_url, portfolio_url, visibility))
+
+        log_event('user_profile_updated_by_admin', actor_id=session['user_id'], target_type='user', target_id=target_user_id)
+        flash(f"Profile for {display_name or target_user['email']} updated successfully.", 'success')
+        return redirect(url_for('admin.dashboard'))
+
+    return render_template(
+        'admin/user_edit.html',
+        target_user=target_user,
+        target_profile=target_profile
+    )
+
+
+@admin_bp.route('/admin/users/<int:target_user_id>/delete', methods=['POST'])
+@login_required
+@admin_required
+def delete_user(target_user_id):
+    """Admin route to permanently delete a user and cascade deletion to all related records."""
+    current_admin_id = session.get('user_id')
+
+    # Safety Guard: An administrator cannot delete their own account
+    if target_user_id == current_admin_id:
+        flash('Security Error: Administrators cannot delete their own account.', 'danger')
+        return redirect(url_for('admin.dashboard'))
+
+    target_user = query_db("SELECT email FROM users WHERE id = ?", (target_user_id,), one=True)
+    if not target_user:
+        flash('User account not found.', 'danger')
+        return redirect(url_for('admin.dashboard'))
+
+    user_email = target_user['email']
+    delete_user_account(target_user_id, admin_id=current_admin_id)
+
+    flash(f"User account '{user_email}' and all associated profile, project, and team records were deleted permanently.", 'info')
+    return redirect(url_for('admin.dashboard'))
+
+
+@admin_bp.route('/admin/projects/<int:project_id>/delete', methods=['POST'])
+@login_required
+@admin_required
+def delete_project_admin(project_id):
+    """Admin route to delete any project on the platform."""
+    project = query_db("SELECT id, title FROM projects WHERE id = ?", (project_id,), one=True)
+    if not project:
+        flash('Project not found.', 'danger')
+        return redirect(url_for('admin.dashboard'))
+
+    execute_db("DELETE FROM project_skill_requirements WHERE project_id = ?", (project_id,))
+    execute_db("DELETE FROM project_availability_slots WHERE project_id = ?", (project_id,))
+    execute_db("DELETE FROM project_interests WHERE project_id = ?", (project_id,))
+    execute_db("DELETE FROM team_members WHERE project_id = ?", (project_id,))
+    execute_db("DELETE FROM project_applications WHERE project_id = ?", (project_id,))
+    execute_db("DELETE FROM invitations WHERE project_id = ?", (project_id,))
+    execute_db("DELETE FROM projects WHERE id = ?", (project_id,))
+
+    try:
+        from app.supabase_client import is_cloud_enabled, delete_cloud_project
+        if is_cloud_enabled():
+            delete_cloud_project(project_id)
+    except Exception:
+        pass
+
+    log_event('project_deleted_by_admin', actor_id=session['user_id'], target_type='project', target_id=project_id)
+    flash(f"Project '{project['title']}' and all associated requirements and applications were deleted successfully.", 'info')
+    return redirect(url_for('admin.dashboard'))
 
 
 @admin_bp.route('/admin/reports')
@@ -44,7 +284,7 @@ def list_reports():
 def submit_report():
     """Submit a report for an inappropriate profile or project (FR-13)."""
     reporter_id = session['user_id']
-    target_type = request.form.get('target_type') # 'profile' or 'project'
+    target_type = request.form.get('target_type')  # 'profile' or 'project'
     target_id = int(request.form.get('target_id', 0))
     reason = request.form.get('reason', '').strip()
 
@@ -68,9 +308,9 @@ def submit_report():
 def resolve_report(report_id):
     """Admin resolves or dismisses a report."""
     admin_id = session['user_id']
-    action = request.form.get('action') # 'resolve' or 'dismiss'
+    action = request.form.get('action')  # 'resolve' or 'dismiss'
     admin_notes = request.form.get('admin_notes', '').strip()
-    take_action = request.form.get('take_action') # 'deactivate_user', 'close_project', 'none'
+    take_action = request.form.get('take_action')  # 'deactivate_user', 'close_project', 'none'
 
     report = query_db("SELECT * FROM reports WHERE id = ?", (report_id,), one=True)
     if not report:
