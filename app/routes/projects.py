@@ -71,7 +71,12 @@ def parse_submitted_skills(form_data=None, json_data=None):
     json_data = json_data or {}
 
     # 1. Check if sent as json string in form or dict
-    raw_skills = form_data.get('skills_json') or json_data.get('skills_json')
+    raw_skills = (
+        form_data.get('skills_json')
+        or json_data.get('skills_json')
+        or form_data.get('skills')
+        or json_data.get('skills')
+    )
     if raw_skills:
         if isinstance(raw_skills, str):
             try:
@@ -79,7 +84,7 @@ def parse_submitted_skills(form_data=None, json_data=None):
                 if isinstance(parsed, list):
                     raw_skills = parsed
             except Exception:
-                raw_skills = []
+                pass
         if isinstance(raw_skills, list):
             for item in raw_skills:
                 if isinstance(item, dict) and item.get('name'):
@@ -518,14 +523,24 @@ def create_project():
                 """, (proj_id, skill_id, priority, proficiency, weight))
 
             # Schedule availability slots
-            selected_slots = form_data.getlist('slots') if hasattr(form_data, 'getlist') else json_data.get('slots', [])
+            selected_slots = []
+            if json_data and 'slots' in json_data and isinstance(json_data['slots'], list):
+                selected_slots = json_data['slots']
+            elif hasattr(form_data, 'getlist'):
+                selected_slots = form_data.getlist('slots')
+
             for slot_str in selected_slots:
                 if '|' in slot_str:
                     day, block = slot_str.split('|', 1)
                     cur.execute("INSERT OR IGNORE INTO project_availability_slots (project_id, day_of_week, time_block) VALUES (?, ?, ?)", (proj_id, day, block))
 
             # Project interests
-            selected_interests = form_data.getlist('interest_ids') if hasattr(form_data, 'getlist') else json_data.get('interest_ids', [])
+            selected_interests = []
+            if json_data and 'interest_ids' in json_data and isinstance(json_data['interest_ids'], list):
+                selected_interests = json_data['interest_ids']
+            elif hasattr(form_data, 'getlist'):
+                selected_interests = form_data.getlist('interest_ids')
+
             for iid in selected_interests:
                 try:
                     cur.execute("INSERT OR IGNORE INTO project_interests (project_id, interest_id) VALUES (?, ?)", (proj_id, int(iid)))
