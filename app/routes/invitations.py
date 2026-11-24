@@ -16,6 +16,32 @@ from app.analytics import log_event
 invitations_bp = Blueprint('invitations', __name__)
 
 
+def is_same_user_or_profile(user_id, target_id, db_path=None):
+    """
+    Check if target_id matches user_id directly or through student_profiles.
+    Supports both integer IDs, UUIDs, and profile IDs.
+    """
+    if user_id is None or target_id is None:
+        return False
+    u_str = str(user_id).strip()
+    t_str = str(target_id).strip()
+    if u_str == t_str:
+        return True
+    try:
+        if int(u_str) == int(t_str):
+            return True
+    except (ValueError, TypeError):
+        pass
+
+    prof = query_db(
+        "SELECT id, user_id FROM student_profiles WHERE (user_id = ? AND id = ?) OR (id = ? AND user_id = ?)",
+        (u_str, t_str, u_str, t_str),
+        one=True,
+        db_path=db_path
+    )
+    return bool(prof)
+
+
 @invitations_bp.route('/invitations')
 @login_required
 def list_invitations():
@@ -197,23 +223,31 @@ def respond_invitation(invitation_id):
     action = request.form.get('action') # 'accept' or 'decline'
 
     invitation = query_db("SELECT * FROM invitations WHERE id = ?", (invitation_id,), one=True)
-    if not invitation or invitation['invitee_id'] != user_id:
-        flash('Unauthorized action.', 'danger')
-        return redirect(url_for('invitations.list_invitations'))
+    if not invitation:
+        flash('Invitation not found.', 'danger')
+        return redirect(request.referrer or url_for('invitations.list_invitations'))
+
+    if not is_same_user_or_profile(user_id, invitation['invitee_id']):
+        flash('Unauthorized action: This invitation was not addressed to your account.', 'danger')
+        return redirect(request.referrer or url_for('invitations.list_invitations'))
 
     if invitation['status'] != 'pending':
         flash(f"This invitation was already marked as {invitation['status']}.", 'info')
-        return redirect(url_for('invitations.list_invitations'))
+        return redirect(request.referrer or url_for('invitations.list_invitations'))
 
     if action == 'accept':
         project_id = invitation['project_id']
-        project = query_db("SELECT * FROM projects WHERE id = ?", (project_id,), one=True)
+        from app.models import get_project_or_restore
+        project = get_project_or_restore(project_id)
+        if not project:
+            flash('Project not found.', 'danger')
+            return redirect(request.referrer or url_for('invitations.list_invitations'))
 
         # Check capacity
         cov = compute_team_skill_coverage(project_id)
         if cov and cov['is_team_full']:
             flash('This project team is already full.', 'danger')
-            return redirect(url_for('invitations.list_invitations'))
+            return redirect(request.referrer or url_for('invitations.list_invitations'))
 
         # Add to team_members
         execute_db("""
@@ -222,8 +256,11 @@ def respond_invitation(invitation_id):
         """, (project_id, user_id))
 
         # Add to project group chat
-        from app.routes.messages import add_student_to_project_group
-        add_student_to_project_group(project_id, user_id)
+        try:
+            from app.routes.messages import add_student_to_project_group
+            add_student_to_project_group(project_id, user_id)
+        except Exception:
+            pass
 
         # Update invitation status
         execute_db("""
@@ -255,7 +292,7 @@ def respond_invitation(invitation_id):
 
         flash('Invitation declined.', 'info')
 
-    return redirect(url_for('invitations.list_invitations'))
+    return redirect(request.referrer or url_for('invitations.list_invitations'))
 
 
 @invitations_bp.route('/invitations/applications/<int:app_id>/review', methods=['POST'])

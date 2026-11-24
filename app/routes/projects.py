@@ -1497,9 +1497,14 @@ def withdraw_application(app_id):
     """Withdraw an application sent by the current student."""
     user_id = session['user_id']
     app_record = query_db("SELECT * FROM project_applications WHERE id = ?", (app_id,), one=True)
-    if not app_record or app_record['applicant_id'] != user_id:
-        flash('Unauthorized action.', 'danger')
-        return redirect(url_for('projects.my_projects'))
+    if not app_record:
+        flash('Application not found.', 'danger')
+        return redirect(request.referrer or url_for('projects.my_projects'))
+
+    from app.routes.invitations import is_same_user_or_profile
+    if not is_same_user_or_profile(user_id, app_record['applicant_id']):
+        flash('Unauthorized action: You can only withdraw your own applications.', 'danger')
+        return redirect(request.referrer or url_for('projects.my_projects'))
 
     execute_db("UPDATE project_applications SET application_status = 'withdrawn', updated_at = CURRENT_TIMESTAMP WHERE id = ?", (app_id,))
     flash('Application withdrawn successfully.', 'info')

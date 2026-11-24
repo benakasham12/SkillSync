@@ -202,3 +202,47 @@ def test_accept_join_request_by_project_owner(client, app):
     assert member['role'] == 'member'
 
 
+
+
+def test_respond_invitation_with_profile_id(client, app):
+    """
+    Regression test:
+    Verify that an invitation sent with invitee_id as student_profiles.id (or users.id)
+    can be responded to (accepted/declined) by the invitee without 'Unauthorized action.'.
+    """
+    db_path = app.config['DATABASE']
+    pw = generate_password_hash('pass123')
+
+    inviter_id = execute_db("INSERT INTO users (email, password_hash) VALUES ('creator@bmsit.in', ?)", (pw,), db_path=db_path)
+    execute_db("INSERT INTO student_profiles (id, user_id, display_name, is_match_ready) VALUES (201, ?, 'Creator', 1)", (inviter_id,), db_path=db_path)
+
+    invitee_user_id = execute_db("INSERT INTO users (email, password_hash) VALUES ('candidate@bmsit.in', ?)", (pw,), db_path=db_path)
+    execute_db("INSERT INTO student_profiles (id, user_id, display_name, is_match_ready) VALUES (202, ?, 'Candidate', 1)", (invitee_user_id,), db_path=db_path)
+
+    proj_id = execute_db("""
+        INSERT INTO projects (owner_id, title, status, team_size_min, team_size_max)
+        VALUES (?, 'Autonomous Drone Tracking', 'published', 2, 4)
+    """, (inviter_id,), db_path=db_path)
+
+    # Invitation sent with profile ID (202) instead of user ID
+    inv_id = execute_db("""
+        INSERT INTO invitations (project_id, inviter_id, invitee_id, status, message)
+        VALUES (?, ?, 202, 'pending', 'Please join us!')
+    """, (proj_id, inviter_id), db_path=db_path)
+
+    # Log in as Candidate (session['user_id'] is user_id, not profile_id)
+    with client.session_transaction() as sess:
+        sess['user_id'] = invitee_user_id
+        sess['user_email'] = 'candidate@bmsit.in'
+        sess['user_name'] = 'Candidate'
+        sess['user_role'] = 'student'
+
+    # Candidate accepts
+    res = client.post(f'/invitations/{inv_id}/respond', data={'action': 'accept'}, follow_redirects=True)
+    assert res.status_code == 200
+    assert b"Unauthorized action" not in res.data
+    assert b"You have joined" in res.data
+
+    # Verify membership
+    m = query_db("SELECT * FROM team_members WHERE project_id = ? AND user_id = ?", (proj_id, invitee_user_id), one=True, db_path=db_path)
+    assert m is not None
