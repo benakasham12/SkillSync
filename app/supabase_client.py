@@ -307,10 +307,19 @@ def sync_local_listings_to_cloud(db_path=None):
         conn.close()
 
     success = len(report['errors']) == 0
+    needs_schema = any('404' in str(err) or 'Could not find the table' in str(err) for err in report['errors'])
+    if needs_schema:
+        msg = "Supabase tables not initialized. Please run 'supabase_schema.sql' in the Supabase Dashboard SQL Editor (https://supabase.com/dashboard/project/ujjwwgjybmbysqkptfam/sql) to create the schema."
+    elif success:
+        msg = 'Sync completed successfully!'
+    else:
+        msg = f"Sync completed with {len(report['errors'])} error(s)."
+
     return {
         'success': success,
         'report': report,
-        'message': 'Sync completed successfully!' if success else f"Sync completed with {len(report['errors'])} error(s)."
+        'needs_schema': needs_schema,
+        'message': msg
     }
 
 

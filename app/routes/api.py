@@ -35,11 +35,13 @@ def cloud_status():
     from app.supabase_client import get_supabase_config, ping_supabase, is_cloud_enabled
     cfg = get_supabase_config()
     is_online, msg = ping_supabase()
+    tables_ready = is_online and 'Tables need to be created' not in msg
     return jsonify({
         'enabled': is_cloud_enabled(),
         'configured': bool(cfg['url'] and cfg['key']),
         'cloud_url': cfg['url'],
         'connected': is_online,
+        'tables_initialized': tables_ready,
         'message': msg
     })
 
@@ -51,5 +53,6 @@ def cloud_sync():
     """Triggers synchronization of local public listings to Supabase cloud (requires admin privileges)."""
     from app.supabase_client import sync_local_listings_to_cloud
     result = sync_local_listings_to_cloud()
-    return jsonify(result), (200 if result.get('success') else 500)
+    status_code = 200 if result.get('success') else (503 if result.get('needs_schema') else 500)
+    return jsonify(result), status_code
 

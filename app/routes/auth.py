@@ -34,11 +34,14 @@ def verify_auth_token(token, max_age=86400 * 7):
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
+        has_auth_header = bool(request.headers.get('Authorization'))
         is_api = (
             request.is_json
             or request.path.startswith('/api/')
             or request.headers.get('X-Requested-With') == 'XMLHttpRequest'
             or 'application/json' in request.headers.get('Accept', '')
+            or 'application/json' in request.headers.get('Content-Type', '')
+            or has_auth_header
         )
         uid = session.get('user_id')
 
@@ -51,6 +54,8 @@ def login_required(f):
                     verified_uid = verify_auth_token(raw_token)
                     if verified_uid:
                         uid = verified_uid
+                    elif is_api:
+                        return jsonify({'error': 'Invalid or expired authorization token.', 'success': False}), 401
 
         if not uid:
             if is_api:
@@ -78,11 +83,14 @@ def login_required(f):
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
+        has_auth_header = bool(request.headers.get('Authorization'))
         is_api = (
             request.is_json
             or request.path.startswith('/api/')
             or request.headers.get('X-Requested-With') == 'XMLHttpRequest'
             or 'application/json' in request.headers.get('Accept', '')
+            or 'application/json' in request.headers.get('Content-Type', '')
+            or has_auth_header
         )
         uid = session.get('user_id')
 
@@ -93,6 +101,8 @@ def admin_required(f):
                 raw_token = auth_header[7:].strip()
                 if raw_token:
                     uid = verify_auth_token(raw_token)
+                    if not uid and is_api:
+                        return jsonify({'error': 'Invalid or expired authorization token.', 'success': False}), 401
 
         if not uid:
             if is_api:

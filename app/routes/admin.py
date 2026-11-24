@@ -223,6 +223,23 @@ def edit_user(target_user_id):
             """, (target_user_id, display_name, usn, branch, year, section, institution, bio, github_url, linkedin_url, portfolio_url, visibility))
 
         log_event('user_profile_updated_by_admin', actor_id=session['user_id'], target_type='user', target_id=target_user_id)
+
+        is_ajax = (
+            request.is_json
+            or request.path.startswith('/api/')
+            or request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+            or 'application/json' in request.headers.get('Accept', '')
+            or 'application/json' in request.headers.get('Content-Type', '')
+        )
+        if is_ajax:
+            return jsonify({
+                'success': True,
+                'message': f"Profile for {display_name or target_user['email']} updated successfully.",
+                'user_id': target_user_id,
+                'role': new_role,
+                'status': new_status
+            }), 200
+
         flash(f"Profile for {display_name or target_user['email']} updated successfully.", 'success')
         return redirect(url_for('admin.dashboard'))
 
@@ -239,19 +256,37 @@ def edit_user(target_user_id):
 def delete_user(target_user_id):
     """Admin route to permanently delete a user and cascade deletion to all related records."""
     current_admin_id = session.get('user_id')
+    is_ajax = (
+        request.is_json
+        or request.path.startswith('/api/')
+        or request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+        or 'application/json' in request.headers.get('Accept', '')
+        or 'application/json' in request.headers.get('Content-Type', '')
+    )
 
     # Safety Guard: An administrator cannot delete their own account
     if target_user_id == current_admin_id:
+        if is_ajax:
+            return jsonify({'success': False, 'error': 'Security Error: Administrators cannot delete their own account.'}), 400
         flash('Security Error: Administrators cannot delete their own account.', 'danger')
         return redirect(url_for('admin.dashboard'))
 
     target_user = query_db("SELECT email FROM users WHERE id = ?", (target_user_id,), one=True)
     if not target_user:
+        if is_ajax:
+            return jsonify({'success': False, 'error': 'User account not found.'}), 404
         flash('User account not found.', 'danger')
         return redirect(url_for('admin.dashboard'))
 
     user_email = target_user['email']
     delete_user_account(target_user_id, admin_id=current_admin_id)
+
+    if is_ajax:
+        return jsonify({
+            'success': True,
+            'message': f"User account '{user_email}' and all associated profile, project, and team records were deleted permanently.",
+            'user_id': target_user_id
+        }), 200
 
     flash(f"User account '{user_email}' and all associated profile, project, and team records were deleted permanently.", 'info')
     return redirect(url_for('admin.dashboard'))
@@ -268,6 +303,7 @@ def delete_project_admin(project_id):
         or request.path.startswith('/api/')
         or request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         or 'application/json' in request.headers.get('Accept', '')
+        or 'application/json' in request.headers.get('Content-Type', '')
     )
 
     project = query_db("SELECT id, title FROM projects WHERE id = ?", (project_id,), one=True)
@@ -285,6 +321,20 @@ def delete_project_admin(project_id):
     execute_db("DELETE FROM invitations WHERE project_id = ?", (project_id,))
     execute_db("DELETE FROM reports WHERE target_type = 'project' AND target_id = ?", (project_id,))
     execute_db("DELETE FROM projects WHERE id = ?", (project_id,))
+
+    # Evict project from session cache (serverless consistency)
+    try:
+        recent = session.get('recent_projects') or {}
+        if str(project_id) in recent:
+            del recent[str(project_id)]
+            session['recent_projects'] = recent
+        cached_tm = session.get('team_members_cache') or {}
+        if str(project_id) in cached_tm:
+            del cached_tm[str(project_id)]
+            session['team_members_cache'] = cached_tm
+        session.modified = True
+    except Exception:
+        pass
 
     # Clean legacy backup files if present
     for leg_name in ['skillsync.db', 'skillsync.db.migrated']:
