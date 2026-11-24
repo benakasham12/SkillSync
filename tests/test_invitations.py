@@ -143,3 +143,62 @@ def test_list_invitations_no_cartesian_duplication(client, app):
     # Other students who did NOT apply must NOT appear as applicants
     assert "Student Two" not in html
 
+
+def test_accept_join_request_by_project_owner(client, app):
+    """
+    Test that a project creator can accept an incoming join request from another student
+    without authorization errors, adding the applicant to team_members and updating status.
+    """
+    db_path = app.config['DATABASE']
+    pw = generate_password_hash("pass123")
+
+    akansha_id = execute_db("INSERT INTO users (email, password_hash) VALUES ('akansha@bmsit.in', ?)", (pw,), db_path=db_path)
+    execute_db("INSERT INTO student_profiles (id, user_id, display_name, is_match_ready) VALUES (45, ?, 'Akansha', 1)", (akansha_id,), db_path=db_path)
+
+    rahul_id = execute_db("INSERT INTO users (email, password_hash) VALUES ('rahul@bmsit.in', ?)", (pw,), db_path=db_path)
+    execute_db("INSERT INTO student_profiles (id, user_id, display_name, is_match_ready) VALUES (49, ?, 'Rahul Verma', 1)", (rahul_id,), db_path=db_path)
+
+    other_id = execute_db("INSERT INTO users (email, password_hash) VALUES ('other@bmsit.in', ?)", (pw,), db_path=db_path)
+
+    # Akansha's project
+    proj_id = execute_db("""
+        INSERT INTO projects (owner_id, title, status, team_size_min, team_size_max)
+        VALUES (?, 'IDT Innovation Challenge', 'published', 2, 4)
+    """, (akansha_id,), db_path=db_path)
+
+    # Rahul submits application
+    app_id = execute_db("""
+        INSERT INTO project_applications (project_id, applicant_id, introduction, application_status)
+        VALUES (?, ?, 'Interested in contributing to IDT project!', 'pending')
+    """, (proj_id, rahul_id), db_path=db_path)
+
+    # 1. Non-owner attempting to accept -> must be rejected
+    with client.session_transaction() as sess:
+        sess['user_id'] = other_id
+        sess['user_email'] = 'other@bmsit.in'
+        sess['user_name'] = 'Other Student'
+        sess['user_role'] = 'student'
+
+    res_unauth = client.post(f'/projects/{proj_id}/applications/{app_id}/review', data={'decision': 'accept'}, follow_redirects=True)
+    assert b"Unauthorized: Only project creators can review applications." in res_unauth.data
+
+    # 2. Akansha (project owner) accepts -> must succeed
+    with client.session_transaction() as sess:
+        sess['user_id'] = akansha_id
+        sess['user_email'] = 'akansha@bmsit.in'
+        sess['user_name'] = 'Akansha'
+        sess['user_role'] = 'student'
+
+    res_accept = client.post(f'/projects/{proj_id}/applications/{app_id}/review', data={'decision': 'accept'}, follow_redirects=True)
+    assert res_accept.status_code == 200
+    assert b"Application accepted! Student has been added to the team roster." in res_accept.data
+
+    # Verify database state
+    app_updated = query_db("SELECT * FROM project_applications WHERE id = ?", (app_id,), one=True, db_path=db_path)
+    assert app_updated['application_status'] == 'accepted'
+
+    member = query_db("SELECT * FROM team_members WHERE project_id = ? AND user_id = ?", (proj_id, rahul_id), one=True, db_path=db_path)
+    assert member is not None
+    assert member['role'] == 'member'
+
+

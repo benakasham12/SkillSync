@@ -256,3 +256,16 @@ def respond_invitation(invitation_id):
         flash('Invitation declined.', 'info')
 
     return redirect(url_for('invitations.list_invitations'))
+
+
+@invitations_bp.route('/invitations/applications/<int:app_id>/review', methods=['POST'])
+@login_required
+def review_application_alias(app_id):
+    """Direct alias for reviewing join requests from invitations page."""
+    app_record = query_db("SELECT * FROM project_applications WHERE id = ?", (app_id,), one=True)
+    if not app_record:
+        flash('Application not found.', 'danger')
+        return redirect(url_for('invitations.list_invitations'))
+    from app.routes.projects import review_application
+    return review_application(app_record['project_id'], app_id)
+

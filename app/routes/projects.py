@@ -141,13 +141,15 @@ def is_project_owner(project, user_id=None, db_path=None, allow_admin=True):
         if user_by_prof and (str(user_by_prof['user_id']) == o_str or (o_int is not None and user_by_prof['user_id'] == o_int)):
             return True
 
-        # Check if project's owner_id was stored as student_profiles.id matching caller's user_id
-        # (Only applicable when owner_id does not already belong to an existing user)
-        owner_as_user = query_db("SELECT id FROM users WHERE id = ?", (o_param,), one=True, db_path=db_path)
-        if not owner_as_user:
-            owner_by_prof = query_db("SELECT user_id FROM student_profiles WHERE id = ?", (o_param,), one=True, db_path=db_path)
-            if owner_by_prof and (str(owner_by_prof['user_id']) == u_str or (u_int is not None and owner_by_prof['user_id'] == u_int)):
-                return True
+        # Check if caller's profile ID matches project's owner_id (e.g. caller is user 32, profile is 45, owner_id is 45)
+        prof_by_user = query_db("SELECT id FROM student_profiles WHERE user_id = ?", (u_param,), one=True, db_path=db_path)
+        if prof_by_user and (str(prof_by_user['id']) == o_str or (o_int is not None and prof_by_user['id'] == o_int)):
+            return True
+
+        # Check if project's owner_id resolves to caller's user_id via student_profiles
+        owner_by_prof = query_db("SELECT user_id FROM student_profiles WHERE id = ?", (o_param,), one=True, db_path=db_path)
+        if owner_by_prof and (str(owner_by_prof['user_id']) == u_str or (o_int is not None and owner_by_prof['user_id'] == u_int)):
+            return True
 
     # Check team_members table for role='owner'
     project_id = project.get('id')
@@ -1436,7 +1438,8 @@ def project_detail(project_id):
 def apply_project(project_id):
     """Submit an application to join a published project."""
     user_id = session['user_id']
-    project = query_db("SELECT * FROM projects WHERE id = ?", (project_id,), one=True)
+    from app.models import get_project_or_restore
+    project = get_project_or_restore(project_id)
     if not project:
         flash('Project not found.', 'danger')
         return redirect(url_for('projects.list_projects'))
@@ -1508,23 +1511,32 @@ def withdraw_application(app_id):
 def review_application(project_id, app_id):
     """Accept or reject an application submitted by a student."""
     user_id = session['user_id']
-    project = query_db("SELECT * FROM projects WHERE id = ?", (project_id,), one=True)
-    if not project or not is_project_owner(project, user_id):
+    from app.models import get_project_or_restore
+    project = get_project_or_restore(project_id)
+    if not project:
+        flash('Project not found.', 'danger')
+        return redirect(request.referrer or url_for('invitations.list_invitations'))
+
+    if not is_project_owner(project, user_id):
         flash('Unauthorized: Only project creators can review applications.', 'danger')
-        return redirect(url_for('projects.list_projects'))
+        return redirect(request.referrer or url_for('invitations.list_invitations'))
 
     app_record = query_db("SELECT * FROM project_applications WHERE id = ? AND project_id = ?", (app_id, project_id), one=True)
     if not app_record:
+        app_record = query_db("SELECT * FROM project_applications WHERE id = ?", (app_id,), one=True)
+
+    if not app_record:
         flash('Application not found.', 'danger')
-        return redirect(url_for('projects.project_detail', project_id=project_id))
+        return redirect(request.referrer or url_for('invitations.list_invitations'))
 
     decision = request.form.get('decision', '').strip().lower()
 
     if decision == 'accept':
-        current_team_count = get_project_team_count(project_id, user_id)
+        owner_id = project.get('owner_id', user_id)
+        current_team_count = get_project_team_count(project_id, owner_id)
         if current_team_count >= project['team_size_max']:
             flash('Cannot accept application: The project team is already full.', 'danger')
-            return redirect(url_for('projects.project_detail', project_id=project_id))
+            return redirect(request.referrer or url_for('invitations.list_invitations'))
 
         execute_db("""
             INSERT OR IGNORE INTO team_members (project_id, user_id, role, joined_at)
@@ -1537,13 +1549,16 @@ def review_application(project_id, app_id):
         """, (app_id,))
 
         # Add to project group chat
-        from app.routes.messages import add_student_to_project_group
-        add_student_to_project_group(project_id, app_record['applicant_id'])
+        try:
+            from app.routes.messages import add_student_to_project_group
+            add_student_to_project_group(project_id, app_record['applicant_id'])
+        except Exception:
+            pass
 
         log_event('application_accepted', actor_id=user_id, target_type='application', target_id=app_id)
         flash('Application accepted! Student has been added to the team roster.', 'success')
 
-    elif decision == 'reject':
+    elif decision in ('reject', 'decline'):
         execute_db("""
             UPDATE project_applications SET application_status = 'rejected', updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
@@ -1551,15 +1566,14 @@ def review_application(project_id, app_id):
         log_event('application_rejected', actor_id=user_id, target_type='application', target_id=app_id)
         flash('Application declined.', 'info')
 
-    return redirect(url_for('projects.project_detail', project_id=project_id))
-
-
+    return redirect(request.referrer or url_for('invitations.list_invitations'))
 @projects_bp.route('/projects/<int:project_id>/members/<int:member_id>/remove', methods=['POST'])
 @login_required
 def remove_team_member(project_id, member_id):
     """Remove an accepted team member from the project."""
     user_id = session['user_id']
-    project = query_db("SELECT * FROM projects WHERE id = ?", (project_id,), one=True)
+    from app.models import get_project_or_restore
+    project = get_project_or_restore(project_id)
     if not project or not is_project_owner(project, user_id):
         flash('Unauthorized action.', 'danger')
         return redirect(url_for('projects.list_projects'))
