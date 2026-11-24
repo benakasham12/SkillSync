@@ -171,6 +171,19 @@ def seed_database(db_path=None):
                     VALUES (?, ?, 'owner', CURRENT_TIMESTAMP)
                 """, (proj_id, owner_id))
 
+                # Register additional team members and accepted applications if defined
+                for tm_email in p.get('team_members', []):
+                    if tm_email in student_map:
+                        tm_uid = student_map[tm_email]['user_id']
+                        cur.execute("""
+                            INSERT OR IGNORE INTO team_members (project_id, user_id, role, joined_at)
+                            VALUES (?, ?, 'member', CURRENT_TIMESTAMP)
+                        """, (proj_id, tm_uid))
+                        cur.execute("""
+                            INSERT OR IGNORE INTO project_applications (project_id, applicant_id, introduction, application_status)
+                            VALUES (?, ?, 'Excited to join the team and build something impactful!', 'accepted')
+                        """, (proj_id, tm_uid))
+
                 # Insert project skill requirements
                 for req in p.get('requirements', []):
                     sk_name = req['skill_name']

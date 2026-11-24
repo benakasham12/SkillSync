@@ -48,6 +48,18 @@ def list_invitations():
     """Display student's incoming/sent project invitations and incoming/outgoing join requests (applications)."""
     user_id = session['user_id']
 
+    # Hydrate any applications cached in the browser session (serverless cross-container consistency)
+    cached_apps = session.get('pending_applications_cache') or []
+    if cached_apps:
+        for a in cached_apps:
+            try:
+                execute_db("""
+                    INSERT OR IGNORE INTO project_applications (id, project_id, applicant_id, introduction, application_status)
+                    VALUES (?, ?, ?, ?, ?)
+                """, (a.get('id'), a.get('project_id'), a.get('applicant_id'), a.get('introduction', ''), a.get('application_status', 'pending')))
+            except Exception:
+                pass
+
     # 1. Incoming direct invitations to this student
     incoming = query_db("""
         SELECT inv.*, p.title as project_title, p.course_context, p.description as project_description,
@@ -159,6 +171,16 @@ def send_invitation(project_id):
         flash('Project not found.', 'danger')
         return redirect(url_for('projects.list_projects'))
 
+    # Cache project in session for serverless multi-container consistency
+    try:
+        recent = session.get('recent_projects') or {}
+        if str(project_id) not in recent:
+            recent[str(project_id)] = dict(project)
+            session['recent_projects'] = recent
+            session.modified = True
+    except Exception:
+        pass
+
     if not is_project_owner(project, user_id):
         flash('Unauthorized: Only the project owner can send invitations.', 'danger')
         return redirect(url_for('projects.project_detail', project_id=project_id))
@@ -254,6 +276,18 @@ def respond_invitation(invitation_id):
             INSERT OR IGNORE INTO team_members (project_id, user_id, role, joined_at)
             VALUES (?, ?, 'member', CURRENT_TIMESTAMP)
         """, (project_id, user_id))
+
+        # Synchronize into session caches for serverless multi-container consistency
+        try:
+            cached_tm = session.get('team_members_cache') or {}
+            proj_m = cached_tm.get(str(project_id)) or []
+            if user_id not in proj_m and not any(isinstance(x, dict) and x.get('user_id') == user_id for x in proj_m):
+                proj_m.append(user_id)
+            cached_tm[str(project_id)] = proj_m
+            session['team_members_cache'] = cached_tm
+            session.modified = True
+        except Exception:
+            pass
 
         # Add to project group chat
         try:

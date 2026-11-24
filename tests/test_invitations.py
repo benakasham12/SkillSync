@@ -246,3 +246,74 @@ def test_respond_invitation_with_profile_id(client, app):
     # Verify membership
     m = query_db("SELECT * FROM team_members WHERE project_id = ? AND user_id = ?", (proj_id, invitee_user_id), one=True, db_path=db_path)
     assert m is not None
+
+
+def test_multiple_students_accepted_both_appear_in_team_roster(client, app):
+    """
+    Regression test:
+    Verify that when multiple students (e.g. Rohan and Ananya) apply and are accepted into a project,
+    ALL accepted members appear in the team roster simultaneously on the project detail page
+    with accurate capacity count (e.g. Team Roster 3 / 5).
+    """
+    db_path = app.config['DATABASE']
+    pw = generate_password_hash('pass123')
+
+    # Creator (Benaka Sham)
+    creator_id = execute_db("INSERT INTO users (email, password_hash) VALUES ('benaka_test@bmsit.in', ?)", (pw,), db_path=db_path)
+    execute_db("INSERT INTO student_profiles (user_id, display_name, branch, year, is_match_ready) VALUES (?, 'Benaka Sham', 'CSE', '1st Year', 1)", (creator_id,), db_path=db_path)
+
+    # Student 1 (Rohan Kulkarni)
+    rohan_id = execute_db("INSERT INTO users (email, password_hash) VALUES ('rohan_test@bmsit.in', ?)", (pw,), db_path=db_path)
+    execute_db("INSERT INTO student_profiles (user_id, display_name, branch, year, is_match_ready) VALUES (?, 'Rohan Kulkarni', 'CSE', '1st Year', 1)", (rohan_id,), db_path=db_path)
+
+    # Student 2 (Ananya Rao)
+    ananya_id = execute_db("INSERT INTO users (email, password_hash) VALUES ('ananya_test@bmsit.in', ?)", (pw,), db_path=db_path)
+    execute_db("INSERT INTO student_profiles (user_id, display_name, branch, year, is_match_ready) VALUES (?, 'Ananya Rao', 'CSE', '1st Year', 1)", (ananya_id,), db_path=db_path)
+
+    # Project created by Creator (capacity: 5)
+    proj_id = execute_db("""
+        INSERT INTO projects (owner_id, title, description, status, team_size_min, team_size_max)
+        VALUES (?, 'AI Healthcare Diagnostic Assistant', 'Deep learning model', 'published', 2, 5)
+    """, (creator_id,), db_path=db_path)
+    execute_db("INSERT INTO team_members (project_id, user_id, role) VALUES (?, ?, 'owner')", (proj_id, creator_id), db_path=db_path)
+
+    # 1. Rohan applies
+    app_rohan = execute_db("""
+        INSERT INTO project_applications (project_id, applicant_id, introduction, application_status)
+        VALUES (?, ?, 'Interested in joining!', 'pending')
+    """, (proj_id, rohan_id), db_path=db_path)
+
+    # 2. Ananya applies
+    app_ananya = execute_db("""
+        INSERT INTO project_applications (project_id, applicant_id, introduction, application_status)
+        VALUES (?, ?, 'Interested in joining too!', 'pending')
+    """, (proj_id, ananya_id), db_path=db_path)
+
+    # Creator logs in
+    with client.session_transaction() as sess:
+        sess['user_id'] = creator_id
+        sess['user_email'] = 'benaka_test@bmsit.in'
+        sess['user_name'] = 'Benaka Sham'
+        sess['user_role'] = 'student'
+
+    # Creator accepts Rohan
+    res1 = client.post(f'/projects/{proj_id}/applications/{app_rohan}/review', data={'decision': 'accept'}, follow_redirects=True)
+    assert res1.status_code == 200
+
+    # Creator accepts Ananya
+    res2 = client.post(f'/projects/{proj_id}/applications/{app_ananya}/review', data={'decision': 'accept'}, follow_redirects=True)
+    assert res2.status_code == 200
+
+    # Creator views project detail page
+    res_detail = client.get(f'/projects/{proj_id}')
+    assert res_detail.status_code == 200
+    html = res_detail.data.decode('utf-8')
+
+    # Both Rohan and Ananya must be present in the team roster!
+    assert 'Rohan Kulkarni' in html
+    assert 'Ananya Rao' in html
+    assert 'Benaka Sham' in html
+
+    # Team count must be 3 / 5 (3 spots filled, 2 spots open)
+    assert '3 / 5' in html
+

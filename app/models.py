@@ -123,10 +123,73 @@ def restore_project_from_session(project_id, db_path=None):
             INSERT OR IGNORE INTO team_members (project_id, user_id, role, joined_at)
             VALUES (?, ?, 'owner', CURRENT_TIMESTAMP)
         """, (p_data.get('id'), p_data.get('owner_id')))
+
+        # Restore any cached team members from session
+        cached_tm = session.get('team_members_cache', {}).get(str(project_id), [])
+        for tm in cached_tm:
+            uid = tm.get('user_id') if isinstance(tm, dict) else tm
+            role = tm.get('role', 'member') if isinstance(tm, dict) else 'member'
+            cur.execute("""
+                INSERT OR IGNORE INTO team_members (project_id, user_id, role, joined_at)
+                VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+            """, (p_data.get('id'), uid, role))
+
+        # Restore any cached applications from session
+        cached_apps = session.get('pending_applications_cache') or []
+        for a in cached_apps:
+            if str(a.get('project_id')) == str(project_id):
+                cur.execute("""
+                    INSERT OR IGNORE INTO project_applications (id, project_id, applicant_id, introduction, application_status)
+                    VALUES (?, ?, ?, ?, ?)
+                """, (a.get('id'), a.get('project_id'), a.get('applicant_id'), a.get('introduction', ''), a.get('application_status', 'pending')))
+
         conn.commit()
         return query_db("SELECT * FROM projects WHERE id = ?", (project_id,), one=True, db_path=db_path)
     except Exception:
         return None
+
+
+def sync_team_members_from_session(project_id, db_path=None):
+    """
+    Synchronize team members and applications cached in the browser session
+    into the local SQLite database. Crucial for serverless environments (Vercel)
+    where ephemeral containers would otherwise not share runtime member additions.
+    """
+    from flask import has_request_context
+    if not has_app_context() or not has_request_context():
+        return
+    from flask import session
+    cached_members = session.get('team_members_cache') or {}
+    members = cached_members.get(str(project_id)) or []
+    if members:
+        try:
+            conn = get_db(db_path)
+            cur = conn.cursor()
+            for m in members:
+                uid = m.get('user_id') if isinstance(m, dict) else m
+                role = m.get('role', 'member') if isinstance(m, dict) else 'member'
+                cur.execute("""
+                    INSERT OR IGNORE INTO team_members (project_id, user_id, role, joined_at)
+                    VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+                """, (project_id, uid, role))
+            conn.commit()
+        except Exception:
+            pass
+
+    cached_apps = session.get('pending_applications_cache') or []
+    if cached_apps:
+        try:
+            conn = get_db(db_path)
+            cur = conn.cursor()
+            for a in cached_apps:
+                if str(a.get('project_id')) == str(project_id):
+                    cur.execute("""
+                        INSERT OR IGNORE INTO project_applications (id, project_id, applicant_id, introduction, application_status)
+                        VALUES (?, ?, ?, ?, ?)
+                    """, (a.get('id'), a.get('project_id'), a.get('applicant_id'), a.get('introduction', ''), a.get('application_status', 'pending')))
+            conn.commit()
+        except Exception:
+            pass
 
 
 def get_project_or_restore(project_id, db_path=None):
@@ -141,6 +204,8 @@ def get_project_or_restore(project_id, db_path=None):
     project = query_db("SELECT * FROM projects WHERE id = ?", (pid,), one=True, db_path=db_path)
     if not project:
         project = restore_project_from_session(pid, db_path=db_path)
+    if project:
+        sync_team_members_from_session(pid, db_path=db_path)
     return project
 
 

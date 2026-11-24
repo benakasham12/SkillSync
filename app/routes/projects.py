@@ -151,6 +151,16 @@ def is_project_owner(project, user_id=None, db_path=None, allow_admin=True):
         if owner_by_prof and (str(owner_by_prof['user_id']) == u_str or (o_int is not None and owner_by_prof['user_id'] == u_int)):
             return True
 
+    # Check session cache for project ownership
+    if has_request_context():
+        try:
+            recent = session.get('recent_projects') or {}
+            p_cached = recent.get(str(project.get('id'))) if isinstance(project, dict) else None
+            if p_cached and (str(p_cached.get('owner_id')) == u_str or (u_int is not None and p_cached.get('owner_id') == u_int)):
+                return True
+        except Exception:
+            pass
+
     # Check team_members table for role='owner'
     project_id = project.get('id')
     if project_id:
@@ -1334,17 +1344,60 @@ def project_detail(project_id):
 
     is_owner = is_project_owner(project, user_id)
 
+    # Cache project in session for serverless multi-container consistency
+    try:
+        recent = session.get('recent_projects') or {}
+        if str(project_id) not in recent:
+            recent[str(project_id)] = dict(project)
+            session['recent_projects'] = recent
+            session.modified = True
+    except Exception:
+        pass
+
+    # Ensure any team members cached in session are synced into local SQLite
+    from app.models import sync_team_members_from_session
+    sync_team_members_from_session(project_id)
+
     # Team count and members
     current_team_count = get_project_team_count(project_id, project['owner_id'])
     available_positions = max(0, project['team_size_max'] - current_team_count)
 
-    # Accepted team members
+    # Accepted team members - resilient query supporting both user_id and profile_id
     team_members_list = query_db("""
-        SELECT tm.*, sp.display_name, sp.branch, sp.year, sp.section, sp.bio, u.email
+        SELECT tm.*,
+               COALESCE(
+                   (SELECT sp.display_name FROM student_profiles sp WHERE sp.user_id = tm.user_id LIMIT 1),
+                   (SELECT sp.display_name FROM student_profiles sp WHERE sp.id = tm.user_id LIMIT 1),
+                   (SELECT u.email FROM users u WHERE u.id = tm.user_id LIMIT 1),
+                   'Team Member'
+               ) as display_name,
+               COALESCE(
+                   (SELECT sp.branch FROM student_profiles sp WHERE sp.user_id = tm.user_id LIMIT 1),
+                   (SELECT sp.branch FROM student_profiles sp WHERE sp.id = tm.user_id LIMIT 1),
+                   'CSE'
+               ) as branch,
+               COALESCE(
+                   (SELECT sp.year FROM student_profiles sp WHERE sp.user_id = tm.user_id LIMIT 1),
+                   (SELECT sp.year FROM student_profiles sp WHERE sp.id = tm.user_id LIMIT 1),
+                   '1st Year'
+               ) as year,
+               COALESCE(
+                   (SELECT sp.section FROM student_profiles sp WHERE sp.user_id = tm.user_id LIMIT 1),
+                   (SELECT sp.section FROM student_profiles sp WHERE sp.id = tm.user_id LIMIT 1),
+                   'CSE-13'
+               ) as section,
+               COALESCE(
+                   (SELECT sp.bio FROM student_profiles sp WHERE sp.user_id = tm.user_id LIMIT 1),
+                   (SELECT sp.bio FROM student_profiles sp WHERE sp.id = tm.user_id LIMIT 1),
+                   ''
+               ) as bio,
+               COALESCE(
+                   (SELECT u.email FROM users u WHERE u.id = tm.user_id LIMIT 1),
+                   (SELECT u2.email FROM users u2 JOIN student_profiles sp2 ON u2.id = sp2.user_id WHERE sp2.id = tm.user_id LIMIT 1),
+                   ''
+               ) as email
         FROM team_members tm
-        JOIN users u ON tm.user_id = u.id
-        LEFT JOIN student_profiles sp ON u.id = sp.user_id
-        WHERE tm.project_id = ? AND tm.role != 'owner'
+        WHERE tm.project_id = ? AND LOWER(tm.role) != 'owner'
         ORDER BY tm.joined_at ASC
     """, (project_id,))
 
@@ -1481,10 +1534,25 @@ def apply_project(project_id):
             flash('Your application has been resubmitted successfully!', 'success')
             return redirect(url_for('projects.project_detail', project_id=project_id))
 
-    execute_db("""
+    app_id = execute_db("""
         INSERT INTO project_applications (project_id, applicant_id, introduction, application_status)
         VALUES (?, ?, ?, 'pending')
     """, (project_id, user_id, introduction))
+
+    # Cache application in session for serverless multi-container consistency
+    try:
+        cached_apps = session.get('pending_applications_cache') or []
+        cached_apps.append({
+            'id': app_id,
+            'project_id': project_id,
+            'applicant_id': user_id,
+            'introduction': introduction,
+            'application_status': 'pending'
+        })
+        session['pending_applications_cache'] = cached_apps
+        session.modified = True
+    except Exception:
+        pass
 
     log_event('project_application_sent', actor_id=user_id, target_type='project', target_id=project_id)
     flash('Application sent successfully! The project creator will review your profile.', 'success')
@@ -1553,6 +1621,25 @@ def review_application(project_id, app_id):
             WHERE id = ?
         """, (app_id,))
 
+        # Synchronize into session caches for serverless multi-container consistency
+        try:
+            cached_tm = session.get('team_members_cache') or {}
+            proj_m = cached_tm.get(str(project_id)) or []
+            app_uid = app_record['applicant_id']
+            if app_uid not in proj_m and not any(isinstance(x, dict) and x.get('user_id') == app_uid for x in proj_m):
+                proj_m.append(app_uid)
+            cached_tm[str(project_id)] = proj_m
+            session['team_members_cache'] = cached_tm
+
+            cached_apps = session.get('pending_applications_cache') or []
+            for a in cached_apps:
+                if str(a.get('id')) == str(app_id) or (str(a.get('project_id')) == str(project_id) and str(a.get('applicant_id')) == str(app_uid)):
+                    a['application_status'] = 'accepted'
+            session['pending_applications_cache'] = cached_apps
+            session.modified = True
+        except Exception:
+            pass
+
         # Add to project group chat
         try:
             from app.routes.messages import add_student_to_project_group
@@ -1568,6 +1655,17 @@ def review_application(project_id, app_id):
             UPDATE project_applications SET application_status = 'rejected', updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
         """, (app_id,))
+
+        try:
+            cached_apps = session.get('pending_applications_cache') or []
+            for a in cached_apps:
+                if str(a.get('id')) == str(app_id):
+                    a['application_status'] = 'rejected'
+            session['pending_applications_cache'] = cached_apps
+            session.modified = True
+        except Exception:
+            pass
+
         log_event('application_rejected', actor_id=user_id, target_type='application', target_id=app_id)
         flash('Application declined.', 'info')
 
@@ -1589,6 +1687,16 @@ def remove_team_member(project_id, member_id):
 
     execute_db("DELETE FROM team_members WHERE project_id = ? AND user_id = ?", (project_id, member_id))
     execute_db("UPDATE project_applications SET application_status = 'withdrawn' WHERE project_id = ? AND applicant_id = ?", (project_id, member_id))
+
+    # Synchronize session caches
+    try:
+        cached_tm = session.get('team_members_cache') or {}
+        if str(project_id) in cached_tm:
+            cached_tm[str(project_id)] = [x for x in cached_tm[str(project_id)] if (x.get('user_id') if isinstance(x, dict) else x) != member_id]
+            session['team_members_cache'] = cached_tm
+            session.modified = True
+    except Exception:
+        pass
 
     # Revoke group chat access
     from app.routes.messages import remove_student_from_project_group
