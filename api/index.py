@@ -23,17 +23,17 @@ import tempfile
 if os.environ.get('VERCEL'):
     _tmp_dir = '/tmp' if os.path.isdir('/tmp') else tempfile.gettempdir()
     db_path = os.path.join(_tmp_dir, 'skillsync_listings.db')
+    users_path = os.path.join(_tmp_dir, 'skillsync_users.db')
 else:
     db_path = os.path.join(root_dir, 'listings.db')
+    users_path = os.path.join(root_dir, 'users.db')
 
 
 def initialize_environment():
     """Initializes and seeds database safely if needed, syncing from Supabase when cloud is enabled."""
     try:
-        from app.supabase_client import is_cloud_enabled, sync_cloud_to_local_listings
-        cloud_active = is_cloud_enabled()
-
-        from app.models import query_db
+        from app.models import ensure_db_files_exist, query_db
+        ensure_db_files_exist(db_path, users_path)
 
         needs_init = not os.path.exists(db_path) or os.path.getsize(db_path) == 0
         if needs_init:
@@ -43,22 +43,21 @@ def initialize_environment():
         p_cnt = p_cnt_row['count'] if p_cnt_row else 0
 
         if p_cnt == 0:
-            if cloud_active:
-                # Hydrate projects from persistent Supabase
-                sync_cloud_to_local_listings(db_path)
-                p_cnt_after = query_db("SELECT COUNT(*) as count FROM projects", one=True, db_path=db_path)
-                # If Supabase has no projects or is not yet configured, seed baseline cohort
-                if not p_cnt_after or p_cnt_after['count'] == 0:
-                    seed_database(db_path)
-            else:
+            from app.supabase_client import is_cloud_enabled, sync_cloud_to_local_listings
+            if is_cloud_enabled():
+                try:
+                    sync_cloud_to_local_listings(db_path)
+                except Exception:
+                    pass
+            p_cnt_after = query_db("SELECT COUNT(*) as count FROM projects", one=True, db_path=db_path)
+            # If Supabase has no projects or is not yet configured, seed baseline cohort
+            if not p_cnt_after or p_cnt_after['count'] == 0:
                 seed_database(db_path)
-        elif cloud_active:
-            # Sync any new or updated cloud projects on warm start
-            sync_cloud_to_local_listings(db_path)
     except Exception as e:
         print(f"Database initialization warning: {e}")
         try:
             init_db(db_path)
+            seed_database(db_path)
         except Exception:
             pass
 

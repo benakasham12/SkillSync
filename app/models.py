@@ -63,6 +63,29 @@ def _cleanup_temp_dbs():
 atexit.register(_cleanup_temp_dbs)
 
 
+def ensure_db_files_exist(listings_path=None, users_path=None):
+    """
+    On Vercel or ephemeral serverless environments, if local database files
+    do not exist in /tmp, copy pre-populated bundled SQLite databases if available.
+    """
+    import shutil
+    l_path = listings_path or LISTINGS_DB_PATH
+    u_path = users_path or USERS_DB_PATH
+    if os.environ.get('VERCEL'):
+        bundled_l = os.path.join(ROOT_DIR, 'listings.db')
+        bundled_u = os.path.join(ROOT_DIR, 'users.db')
+        if (not os.path.exists(l_path) or os.path.getsize(l_path) == 0) and os.path.exists(bundled_l) and os.path.getsize(bundled_l) > 0:
+            try:
+                shutil.copy2(bundled_l, l_path)
+            except Exception:
+                pass
+        if (not os.path.exists(u_path) or os.path.getsize(u_path) == 0) and os.path.exists(bundled_u) and os.path.getsize(bundled_u) > 0:
+            try:
+                shutil.copy2(bundled_u, u_path)
+            except Exception:
+                pass
+
+
 def resolve_db_paths(db_path=None):
     """
     Resolve listings and users database file paths from an optional db_path or app config.
@@ -540,9 +563,14 @@ def get_db(db_path=None):
     Uses Flask's application context `g` for connection pooling across the request lifecycle.
     """
     if has_app_context() and hasattr(g, 'db') and g.db is not None:
-        return g.db
+        try:
+            g.db.total_changes
+            return g.db
+        except (sqlite3.ProgrammingError, sqlite3.OperationalError):
+            g.db = None
 
     listings_path, users_path = resolve_db_paths(db_path)
+    ensure_db_files_exist(listings_path, users_path)
 
     # Ensure files and tables exist
     if not os.path.exists(listings_path) or not os.path.exists(users_path):

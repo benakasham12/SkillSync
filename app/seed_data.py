@@ -196,5 +196,7 @@ def seed_database(db_path=None):
                         """, (proj_id, interest_map[int_name]))
 
     conn.commit()
-    conn.close()
+    from flask import has_app_context
+    if not has_app_context():
+        conn.close()
     print("Database successfully initialized and seeded from app/seed_data.json.")

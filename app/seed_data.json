@@ -1,42 +1,147 @@
 {
   "skills_catalog": [
-    {"name": "HTML/CSS/JavaScript", "category": "Frontend"},
-    {"name": "React", "category": "Frontend"},
-    {"name": "Tailwind CSS", "category": "Frontend"},
-    {"name": "Vue.js", "category": "Frontend"},
-    {"name": "Python", "category": "Backend"},
-    {"name": "Flask", "category": "Backend"},
-    {"name": "Node.js/Express", "category": "Backend"},
-    {"name": "Java/Spring Boot", "category": "Backend"},
-    {"name": "REST API Design", "category": "Backend"},
-    {"name": "Database Modeling", "category": "Database"},
-    {"name": "SQLite/PostgreSQL", "category": "Database"},
-    {"name": "MongoDB", "category": "Database"},
-    {"name": "UI/UX", "category": "Design"},
-    {"name": "Figma", "category": "Design"},
-    {"name": "Wireframing & Prototyping", "category": "Design"},
-    {"name": "Machine Learning", "category": "Data/AI"},
-    {"name": "Data Analysis/Pandas", "category": "Data/AI"},
-    {"name": "Prompt Engineering", "category": "Data/AI"},
-    {"name": "Git/GitHub", "category": "Tools"},
-    {"name": "Docker", "category": "Tools"},
-    {"name": "Testing/QA", "category": "Tools"},
-    {"name": "Presentation", "category": "Soft Skills"},
-    {"name": "Project Management", "category": "Soft Skills"},
-    {"name": "Technical Writing", "category": "Soft Skills"},
-    {"name": "IoT & Hardware", "category": "Tools"}
+    {
+      "name": "HTML/CSS/JavaScript",
+      "category": "Frontend"
+    },
+    {
+      "name": "React",
+      "category": "Frontend"
+    },
+    {
+      "name": "Tailwind CSS",
+      "category": "Frontend"
+    },
+    {
+      "name": "Vue.js",
+      "category": "Frontend"
+    },
+    {
+      "name": "Python",
+      "category": "Backend"
+    },
+    {
+      "name": "Flask",
+      "category": "Backend"
+    },
+    {
+      "name": "Node.js/Express",
+      "category": "Backend"
+    },
+    {
+      "name": "Java/Spring Boot",
+      "category": "Backend"
+    },
+    {
+      "name": "REST API Design",
+      "category": "Backend"
+    },
+    {
+      "name": "Database Modeling",
+      "category": "Database"
+    },
+    {
+      "name": "SQLite/PostgreSQL",
+      "category": "Database"
+    },
+    {
+      "name": "MongoDB",
+      "category": "Database"
+    },
+    {
+      "name": "UI/UX",
+      "category": "Design"
+    },
+    {
+      "name": "Figma",
+      "category": "Design"
+    },
+    {
+      "name": "Wireframing & Prototyping",
+      "category": "Design"
+    },
+    {
+      "name": "Machine Learning",
+      "category": "Data/AI"
+    },
+    {
+      "name": "Data Analysis/Pandas",
+      "category": "Data/AI"
+    },
+    {
+      "name": "Prompt Engineering",
+      "category": "Data/AI"
+    },
+    {
+      "name": "Git/GitHub",
+      "category": "Tools"
+    },
+    {
+      "name": "Docker",
+      "category": "Tools"
+    },
+    {
+      "name": "Testing/QA",
+      "category": "Tools"
+    },
+    {
+      "name": "Presentation",
+      "category": "Soft Skills"
+    },
+    {
+      "name": "Project Management",
+      "category": "Soft Skills"
+    },
+    {
+      "name": "Technical Writing",
+      "category": "Soft Skills"
+    },
+    {
+      "name": "IoT & Hardware",
+      "category": "Tools"
+    }
   ],
   "interests_catalog": [
-    {"name": "Web Development", "category": "Technology"},
-    {"name": "Artificial Intelligence", "category": "Technology"},
-    {"name": "Design & Creative", "category": "Design"},
-    {"name": "Mobile Applications", "category": "Technology"},
-    {"name": "IoT & Hardware", "category": "Hardware"},
-    {"name": "Open Source Software", "category": "Community"},
-    {"name": "Social Impact", "category": "Mission"},
-    {"name": "FinTech", "category": "Domain"},
-    {"name": "EdTech & Learning", "category": "Domain"},
-    {"name": "Healthcare Tech", "category": "Domain"}
+    {
+      "name": "Web Development",
+      "category": "Technology"
+    },
+    {
+      "name": "Artificial Intelligence",
+      "category": "Technology"
+    },
+    {
+      "name": "Design & Creative",
+      "category": "Design"
+    },
+    {
+      "name": "Mobile Applications",
+      "category": "Technology"
+    },
+    {
+      "name": "IoT & Hardware",
+      "category": "Hardware"
+    },
+    {
+      "name": "Open Source Software",
+      "category": "Community"
+    },
+    {
+      "name": "Social Impact",
+      "category": "Mission"
+    },
+    {
+      "name": "FinTech",
+      "category": "Domain"
+    },
+    {
+      "name": "EdTech & Learning",
+      "category": "Domain"
+    },
+    {
+      "name": "Healthcare Tech",
+      "category": "Domain"
+    }
   ],
   "time_blocks": [
     "Morning (9AM-12PM)",
@@ -73,19 +178,53 @@
       "portfolio_url": "https://benakasham.dev",
       "visibility": "public",
       "skills": [
-        {"name": "Python", "proficiency": "advanced"},
-        {"name": "Flask", "proficiency": "advanced"},
-        {"name": "Database Modeling", "proficiency": "intermediate"},
-        {"name": "REST API Design", "proficiency": "advanced"},
-        {"name": "Git/GitHub", "proficiency": "advanced"}
+        {
+          "name": "Python",
+          "proficiency": "advanced"
+        },
+        {
+          "name": "Flask",
+          "proficiency": "advanced"
+        },
+        {
+          "name": "Database Modeling",
+          "proficiency": "intermediate"
+        },
+        {
+          "name": "REST API Design",
+          "proficiency": "advanced"
+        },
+        {
+          "name": "Git/GitHub",
+          "proficiency": "advanced"
+        }
       ],
-      "interests": ["Web Development", "Artificial Intelligence", "EdTech & Learning"],
+      "interests": [
+        "Web Development",
+        "Artificial Intelligence",
+        "EdTech & Learning"
+      ],
       "availability": [
-        {"day": "Monday", "block": "Evening (5PM-8PM)"},
-        {"day": "Wednesday", "block": "Evening (5PM-8PM)"},
-        {"day": "Friday", "block": "Evening (5PM-8PM)"},
-        {"day": "Saturday", "block": "Morning (9AM-12PM)"},
-        {"day": "Saturday", "block": "Afternoon (1PM-4PM)"}
+        {
+          "day": "Monday",
+          "block": "Evening (5PM-8PM)"
+        },
+        {
+          "day": "Wednesday",
+          "block": "Evening (5PM-8PM)"
+        },
+        {
+          "day": "Friday",
+          "block": "Evening (5PM-8PM)"
+        },
+        {
+          "day": "Saturday",
+          "block": "Morning (9AM-12PM)"
+        },
+        {
+          "day": "Saturday",
+          "block": "Afternoon (1PM-4PM)"
+        }
       ]
     },
     {
@@ -101,18 +240,49 @@
       "portfolio_url": null,
       "visibility": "cohort_only",
       "skills": [
-        {"name": "Python", "proficiency": "advanced"},
-        {"name": "Machine Learning", "proficiency": "intermediate"},
-        {"name": "Data Analysis/Pandas", "proficiency": "intermediate"},
-        {"name": "SQLite/PostgreSQL", "proficiency": "intermediate"},
-        {"name": "Git/GitHub", "proficiency": "intermediate"}
+        {
+          "name": "Python",
+          "proficiency": "advanced"
+        },
+        {
+          "name": "Machine Learning",
+          "proficiency": "intermediate"
+        },
+        {
+          "name": "Data Analysis/Pandas",
+          "proficiency": "intermediate"
+        },
+        {
+          "name": "SQLite/PostgreSQL",
+          "proficiency": "intermediate"
+        },
+        {
+          "name": "Git/GitHub",
+          "proficiency": "intermediate"
+        }
       ],
-      "interests": ["Artificial Intelligence", "Web Development", "Social Impact"],
+      "interests": [
+        "Artificial Intelligence",
+        "Web Development",
+        "Social Impact"
+      ],
       "availability": [
-        {"day": "Tuesday", "block": "Evening (5PM-8PM)"},
-        {"day": "Thursday", "block": "Evening (5PM-8PM)"},
-        {"day": "Saturday", "block": "Afternoon (1PM-4PM)"},
-        {"day": "Sunday", "block": "Morning (9AM-12PM)"}
+        {
+          "day": "Tuesday",
+          "block": "Evening (5PM-8PM)"
+        },
+        {
+          "day": "Thursday",
+          "block": "Evening (5PM-8PM)"
+        },
+        {
+          "day": "Saturday",
+          "block": "Afternoon (1PM-4PM)"
+        },
+        {
+          "day": "Sunday",
+          "block": "Morning (9AM-12PM)"
+        }
       ]
     },
     {
@@ -128,18 +298,49 @@
       "portfolio_url": "https://goral.design",
       "visibility": "public",
       "skills": [
-        {"name": "UI/UX", "proficiency": "advanced"},
-        {"name": "Figma", "proficiency": "advanced"},
-        {"name": "Wireframing & Prototyping", "proficiency": "advanced"},
-        {"name": "HTML/CSS/JavaScript", "proficiency": "intermediate"},
-        {"name": "Tailwind CSS", "proficiency": "intermediate"}
+        {
+          "name": "UI/UX",
+          "proficiency": "advanced"
+        },
+        {
+          "name": "Figma",
+          "proficiency": "advanced"
+        },
+        {
+          "name": "Wireframing & Prototyping",
+          "proficiency": "advanced"
+        },
+        {
+          "name": "HTML/CSS/JavaScript",
+          "proficiency": "intermediate"
+        },
+        {
+          "name": "Tailwind CSS",
+          "proficiency": "intermediate"
+        }
       ],
-      "interests": ["Design & Creative", "Web Development", "EdTech & Learning"],
+      "interests": [
+        "Design & Creative",
+        "Web Development",
+        "EdTech & Learning"
+      ],
       "availability": [
-        {"day": "Monday", "block": "Evening (5PM-8PM)"},
-        {"day": "Wednesday", "block": "Evening (5PM-8PM)"},
-        {"day": "Saturday", "block": "Morning (9AM-12PM)"},
-        {"day": "Saturday", "block": "Afternoon (1PM-4PM)"}
+        {
+          "day": "Monday",
+          "block": "Evening (5PM-8PM)"
+        },
+        {
+          "day": "Wednesday",
+          "block": "Evening (5PM-8PM)"
+        },
+        {
+          "day": "Saturday",
+          "block": "Morning (9AM-12PM)"
+        },
+        {
+          "day": "Saturday",
+          "block": "Afternoon (1PM-4PM)"
+        }
       ]
     },
     {
@@ -155,18 +356,49 @@
       "portfolio_url": null,
       "visibility": "public",
       "skills": [
-        {"name": "Testing/QA", "proficiency": "advanced"},
-        {"name": "SQLite/PostgreSQL", "proficiency": "advanced"},
-        {"name": "Technical Writing", "proficiency": "advanced"},
-        {"name": "Presentation", "proficiency": "intermediate"},
-        {"name": "Git/GitHub", "proficiency": "intermediate"}
+        {
+          "name": "Testing/QA",
+          "proficiency": "advanced"
+        },
+        {
+          "name": "SQLite/PostgreSQL",
+          "proficiency": "advanced"
+        },
+        {
+          "name": "Technical Writing",
+          "proficiency": "advanced"
+        },
+        {
+          "name": "Presentation",
+          "proficiency": "intermediate"
+        },
+        {
+          "name": "Git/GitHub",
+          "proficiency": "intermediate"
+        }
       ],
-      "interests": ["EdTech & Learning", "Open Source Software", "Social Impact"],
+      "interests": [
+        "EdTech & Learning",
+        "Open Source Software",
+        "Social Impact"
+      ],
       "availability": [
-        {"day": "Monday", "block": "Evening (5PM-8PM)"},
-        {"day": "Friday", "block": "Evening (5PM-8PM)"},
-        {"day": "Saturday", "block": "Morning (9AM-12PM)"},
-        {"day": "Sunday", "block": "Afternoon (1PM-4PM)"}
+        {
+          "day": "Monday",
+          "block": "Evening (5PM-8PM)"
+        },
+        {
+          "day": "Friday",
+          "block": "Evening (5PM-8PM)"
+        },
+        {
+          "day": "Saturday",
+          "block": "Morning (9AM-12PM)"
+        },
+        {
+          "day": "Sunday",
+          "block": "Afternoon (1PM-4PM)"
+        }
       ]
     },
     {
@@ -182,17 +414,45 @@
       "portfolio_url": null,
       "visibility": "public",
       "skills": [
-        {"name": "Presentation", "proficiency": "advanced"},
-        {"name": "Project Management", "proficiency": "advanced"},
-        {"name": "UI/UX", "proficiency": "intermediate"},
-        {"name": "Wireframing & Prototyping", "proficiency": "intermediate"}
+        {
+          "name": "Presentation",
+          "proficiency": "advanced"
+        },
+        {
+          "name": "Project Management",
+          "proficiency": "advanced"
+        },
+        {
+          "name": "UI/UX",
+          "proficiency": "intermediate"
+        },
+        {
+          "name": "Wireframing & Prototyping",
+          "proficiency": "intermediate"
+        }
       ],
-      "interests": ["Design & Creative", "EdTech & Learning", "Social Impact"],
+      "interests": [
+        "Design & Creative",
+        "EdTech & Learning",
+        "Social Impact"
+      ],
       "availability": [
-        {"day": "Wednesday", "block": "Evening (5PM-8PM)"},
-        {"day": "Thursday", "block": "Evening (5PM-8PM)"},
-        {"day": "Saturday", "block": "Afternoon (1PM-4PM)"},
-        {"day": "Sunday", "block": "Morning (9AM-12PM)"}
+        {
+          "day": "Wednesday",
+          "block": "Evening (5PM-8PM)"
+        },
+        {
+          "day": "Thursday",
+          "block": "Evening (5PM-8PM)"
+        },
+        {
+          "day": "Saturday",
+          "block": "Afternoon (1PM-4PM)"
+        },
+        {
+          "day": "Sunday",
+          "block": "Morning (9AM-12PM)"
+        }
       ]
     },
     {
@@ -208,16 +468,41 @@
       "portfolio_url": null,
       "visibility": "cohort_only",
       "skills": [
-        {"name": "IoT & Hardware", "proficiency": "advanced"},
-        {"name": "Python", "proficiency": "intermediate"},
-        {"name": "REST API Design", "proficiency": "intermediate"},
-        {"name": "Git/GitHub", "proficiency": "intermediate"}
+        {
+          "name": "IoT & Hardware",
+          "proficiency": "advanced"
+        },
+        {
+          "name": "Python",
+          "proficiency": "intermediate"
+        },
+        {
+          "name": "REST API Design",
+          "proficiency": "intermediate"
+        },
+        {
+          "name": "Git/GitHub",
+          "proficiency": "intermediate"
+        }
       ],
-      "interests": ["IoT & Hardware", "Healthcare Tech", "Open Source Software"],
+      "interests": [
+        "IoT & Hardware",
+        "Healthcare Tech",
+        "Open Source Software"
+      ],
       "availability": [
-        {"day": "Monday", "block": "Evening (5PM-8PM)"},
-        {"day": "Tuesday", "block": "Evening (5PM-8PM)"},
-        {"day": "Saturday", "block": "Morning (9AM-12PM)"}
+        {
+          "day": "Monday",
+          "block": "Evening (5PM-8PM)"
+        },
+        {
+          "day": "Tuesday",
+          "block": "Evening (5PM-8PM)"
+        },
+        {
+          "day": "Saturday",
+          "block": "Morning (9AM-12PM)"
+        }
       ]
     },
     {
@@ -233,17 +518,45 @@
       "portfolio_url": null,
       "visibility": "public",
       "skills": [
-        {"name": "Data Analysis/Pandas", "proficiency": "advanced"},
-        {"name": "SQLite/PostgreSQL", "proficiency": "intermediate"},
-        {"name": "Python", "proficiency": "intermediate"},
-        {"name": "Presentation", "proficiency": "intermediate"}
+        {
+          "name": "Data Analysis/Pandas",
+          "proficiency": "advanced"
+        },
+        {
+          "name": "SQLite/PostgreSQL",
+          "proficiency": "intermediate"
+        },
+        {
+          "name": "Python",
+          "proficiency": "intermediate"
+        },
+        {
+          "name": "Presentation",
+          "proficiency": "intermediate"
+        }
       ],
-      "interests": ["Artificial Intelligence", "Healthcare Tech", "Social Impact"],
+      "interests": [
+        "Artificial Intelligence",
+        "Healthcare Tech",
+        "Social Impact"
+      ],
       "availability": [
-        {"day": "Wednesday", "block": "Evening (5PM-8PM)"},
-        {"day": "Friday", "block": "Evening (5PM-8PM)"},
-        {"day": "Saturday", "block": "Morning (9AM-12PM)"},
-        {"day": "Sunday", "block": "Morning (9AM-12PM)"}
+        {
+          "day": "Wednesday",
+          "block": "Evening (5PM-8PM)"
+        },
+        {
+          "day": "Friday",
+          "block": "Evening (5PM-8PM)"
+        },
+        {
+          "day": "Saturday",
+          "block": "Morning (9AM-12PM)"
+        },
+        {
+          "day": "Sunday",
+          "block": "Morning (9AM-12PM)"
+        }
       ]
     },
     {
@@ -259,18 +572,62 @@
       "portfolio_url": null,
       "visibility": "public",
       "skills": [
-        {"name": "React", "proficiency": "advanced"},
-        {"name": "Tailwind CSS", "proficiency": "advanced"},
-        {"name": "HTML/CSS/JavaScript", "proficiency": "advanced"},
-        {"name": "Git/GitHub", "proficiency": "intermediate"}
+        {
+          "name": "React",
+          "proficiency": "advanced"
+        },
+        {
+          "name": "Tailwind CSS",
+          "proficiency": "advanced"
+        },
+        {
+          "name": "HTML/CSS/JavaScript",
+          "proficiency": "advanced"
+        },
+        {
+          "name": "Git/GitHub",
+          "proficiency": "intermediate"
+        }
       ],
-      "interests": ["Web Development", "Open Source Software", "Design & Creative"],
+      "interests": [
+        "Web Development",
+        "Open Source Software",
+        "Design & Creative"
+      ],
       "availability": [
-        {"day": "Monday", "block": "Evening (5PM-8PM)"},
-        {"day": "Thursday", "block": "Evening (5PM-8PM)"},
-        {"day": "Saturday", "block": "Morning (9AM-12PM)"},
-        {"day": "Saturday", "block": "Afternoon (1PM-4PM)"}
+        {
+          "day": "Monday",
+          "block": "Evening (5PM-8PM)"
+        },
+        {
+          "day": "Thursday",
+          "block": "Evening (5PM-8PM)"
+        },
+        {
+          "day": "Saturday",
+          "block": "Morning (9AM-12PM)"
+        },
+        {
+          "day": "Saturday",
+          "block": "Afternoon (1PM-4PM)"
+        }
       ]
+    },
+    {
+      "display_name": "Ben Student",
+      "email": "test_ben@bmsit.in",
+      "usn": null,
+      "branch": "CSE",
+      "year": "1st Year",
+      "section": "CSE-13",
+      "bio": null,
+      "github_url": null,
+      "linkedin_url": null,
+      "portfolio_url": null,
+      "visibility": "cohort_only",
+      "skills": [],
+      "interests": [],
+      "availability": []
     }
   ],
   "projects": [
@@ -278,42 +635,424 @@
       "owner_email": "benaka@bmsit.in",
       "title": "Student Skill & Project Team Finder (SkillSync)",
       "description": "An Innovation & Design Thinking platform that matches classmates through complementary skills, availability and shared interests before committing to teams.",
+      "category": "Web Development",
+      "technologies": "Python, Flask, SQLite, HTML5, CSS3",
+      "duration": "2\u20133 Months",
+      "collaboration_mode": "Hybrid",
+      "availability": "Flexible",
       "course_context": "Innovation & Design Thinking (IDT)",
       "team_size_min": 3,
       "team_size_max": 4,
       "schedule_notes": "Looking to collaborate on weekday evenings and Saturday mornings.",
       "status": "published",
       "requirements": [
-        {"skill_name": "Python", "priority": "must-have", "weight": 3.0},
-        {"skill_name": "UI/UX", "priority": "must-have", "weight": 2.0},
-        {"skill_name": "Presentation", "priority": "preferred", "weight": 1.0},
-        {"skill_name": "Testing/QA", "priority": "preferred", "weight": 2.0}
+        {
+          "skill_name": "Python",
+          "priority": "must-have",
+          "weight": 3.0
+        },
+        {
+          "skill_name": "UI/UX",
+          "priority": "must-have",
+          "weight": 2.0
+        },
+        {
+          "skill_name": "Presentation",
+          "priority": "preferred",
+          "weight": 1.0
+        },
+        {
+          "skill_name": "Testing/QA",
+          "priority": "preferred",
+          "weight": 2.0
+        }
       ],
       "availability_slots": [
-        {"day": "Monday", "block": "Evening (5PM-8PM)"},
-        {"day": "Wednesday", "block": "Evening (5PM-8PM)"},
-        {"day": "Saturday", "block": "Morning (9AM-12PM)"}
+        {
+          "day": "Monday",
+          "block": "Evening (5PM-8PM)"
+        },
+        {
+          "day": "Saturday",
+          "block": "Morning (9AM-12PM)"
+        },
+        {
+          "day": "Wednesday",
+          "block": "Evening (5PM-8PM)"
+        }
       ],
-      "interests": ["Web Development", "EdTech & Learning"]
+      "interests": [
+        "Web Development",
+        "EdTech & Learning"
+      ]
     },
     {
       "owner_email": "rohan@bmsit.in",
       "title": "Smart Campus Sensor Network & Navigation",
       "description": "Deploying IoT sensors across BMSIT&M campus for real-time room occupancy and ambient monitoring with web dashboard.",
+      "category": "IoT & Hardware",
+      "technologies": "ESP32, C++, MQTT, Sensors",
+      "duration": "2\u20133 Months",
+      "collaboration_mode": "Hybrid",
+      "availability": "Flexible",
       "course_context": "Innovation & Design Thinking (IDT)",
       "team_size_min": 2,
       "team_size_max": 3,
       "schedule_notes": "Weekend work preferred.",
       "status": "published",
       "requirements": [
-        {"skill_name": "IoT & Hardware", "priority": "must-have", "weight": 3.0},
-        {"skill_name": "React", "priority": "must-have", "weight": 3.0},
-        {"skill_name": "REST API Design", "priority": "preferred", "weight": 2.0}
+        {
+          "skill_name": "IoT & Hardware",
+          "priority": "must-have",
+          "weight": 3.0
+        },
+        {
+          "skill_name": "React",
+          "priority": "must-have",
+          "weight": 3.0
+        },
+        {
+          "skill_name": "REST API Design",
+          "priority": "preferred",
+          "weight": 2.0
+        }
       ],
       "availability_slots": [
-        {"day": "Saturday", "block": "Morning (9AM-12PM)"}
+        {
+          "day": "Saturday",
+          "block": "Morning (9AM-12PM)"
+        }
       ],
-      "interests": ["IoT & Hardware"]
+      "interests": [
+        "IoT & Hardware"
+      ]
+    },
+    {
+      "owner_email": "benaka@bmsit.in",
+      "title": "cliper_verification",
+      "description": "hi verification project",
+      "category": "Web Development",
+      "technologies": "",
+      "duration": "2\u20133 Months",
+      "collaboration_mode": "Hybrid",
+      "availability": "Flexible",
+      "course_context": "Innovation & Design Thinking (IDT)",
+      "team_size_min": 2,
+      "team_size_max": 4,
+      "schedule_notes": "Flexible",
+      "status": "published",
+      "requirements": [
+        {
+          "skill_name": "Prompt Engineering",
+          "priority": "must-have",
+          "weight": 3.0
+        }
+      ],
+      "availability_slots": [],
+      "interests": [
+        "Web Development"
+      ]
+    },
+    {
+      "owner_email": "benaka@bmsit.in",
+      "title": "ben",
+      "description": "hii",
+      "category": "Web Development",
+      "technologies": "",
+      "duration": "2\u20133 Months",
+      "collaboration_mode": "Hybrid",
+      "availability": "Flexible",
+      "course_context": "Innovation & Design Thinking (IDT)",
+      "team_size_min": 2,
+      "team_size_max": 4,
+      "schedule_notes": "Flexible",
+      "status": "published",
+      "requirements": [
+        {
+          "skill_name": "Python",
+          "priority": "preferred",
+          "weight": 1.0
+        }
+      ],
+      "availability_slots": [],
+      "interests": [
+        "Web Development"
+      ]
+    },
+    {
+      "owner_email": "benaka@bmsit.in",
+      "title": "ben_alias_test",
+      "description": "hii",
+      "category": "Web Development",
+      "technologies": "",
+      "duration": "2\u20133 Months",
+      "collaboration_mode": "Hybrid",
+      "availability": "Flexible",
+      "course_context": "Innovation & Design Thinking (IDT)",
+      "team_size_min": 2,
+      "team_size_max": 4,
+      "schedule_notes": "Flexible",
+      "status": "published",
+      "requirements": [
+        {
+          "skill_name": "Python",
+          "priority": "preferred",
+          "weight": 1.0
+        }
+      ],
+      "availability_slots": [],
+      "interests": [
+        "Web Development"
+      ]
+    },
+    {
+      "owner_email": "benaka@bmsit.in",
+      "title": "ben_alias_test",
+      "description": "hii",
+      "category": "Web Development",
+      "technologies": "",
+      "duration": "2\u20133 Months",
+      "collaboration_mode": "Hybrid",
+      "availability": "Flexible",
+      "course_context": "Innovation & Design Thinking (IDT)",
+      "team_size_min": 2,
+      "team_size_max": 4,
+      "schedule_notes": "Flexible",
+      "status": "published",
+      "requirements": [
+        {
+          "skill_name": "Python",
+          "priority": "preferred",
+          "weight": 1.0
+        }
+      ],
+      "availability_slots": [],
+      "interests": [
+        "Web Development"
+      ]
+    },
+    {
+      "owner_email": "benaka@bmsit.in",
+      "title": "benaka",
+      "description": "qq",
+      "category": "App Development",
+      "technologies": "python",
+      "duration": "2\u20133 Months",
+      "collaboration_mode": "Hybrid",
+      "availability": "Flexible",
+      "course_context": "Innovation & Design Thinking (IDT)",
+      "team_size_min": 2,
+      "team_size_max": 4,
+      "schedule_notes": "Flexible",
+      "status": "published",
+      "requirements": [
+        {
+          "skill_name": "Prompt Engineering",
+          "priority": "must-have",
+          "weight": 3.0
+        }
+      ],
+      "availability_slots": [],
+      "interests": [
+        "App Development"
+      ]
+    },
+    {
+      "owner_email": "akansha@bmsit.in",
+      "title": "ben",
+      "description": "hii",
+      "category": "Web Development",
+      "technologies": "",
+      "duration": "2\u20133 Months",
+      "collaboration_mode": "Hybrid",
+      "availability": "Flexible",
+      "course_context": "Innovation & Design Thinking (IDT)",
+      "team_size_min": 2,
+      "team_size_max": 4,
+      "schedule_notes": "Flexible",
+      "status": "published",
+      "requirements": [
+        {
+          "skill_name": "Python",
+          "priority": "preferred",
+          "weight": 1.0
+        }
+      ],
+      "availability_slots": [],
+      "interests": [
+        "Web Development"
+      ]
+    },
+    {
+      "owner_email": "test_ben@bmsit.in",
+      "title": "ben",
+      "description": "hii",
+      "category": "Web Development",
+      "technologies": "",
+      "duration": "2\u20133 Months",
+      "collaboration_mode": "Hybrid",
+      "availability": "Flexible",
+      "course_context": "Innovation & Design Thinking (IDT)",
+      "team_size_min": 2,
+      "team_size_max": 4,
+      "schedule_notes": "Flexible",
+      "status": "published",
+      "requirements": [
+        {
+          "skill_name": "Python",
+          "priority": "preferred",
+          "weight": 1.0
+        }
+      ],
+      "availability_slots": [],
+      "interests": [
+        "Web Development"
+      ]
+    },
+    {
+      "owner_email": "test_ben@bmsit.in",
+      "title": "ben_via_undefined",
+      "description": "hii via undefined url",
+      "category": "Web Development",
+      "technologies": "",
+      "duration": "2\u20133 Months",
+      "collaboration_mode": "Hybrid",
+      "availability": "Flexible",
+      "course_context": "Innovation & Design Thinking (IDT)",
+      "team_size_min": 2,
+      "team_size_max": 4,
+      "schedule_notes": "Flexible",
+      "status": "published",
+      "requirements": [
+        {
+          "skill_name": "Python",
+          "priority": "preferred",
+          "weight": 1.0
+        }
+      ],
+      "availability_slots": [],
+      "interests": [
+        "Web Development"
+      ]
+    },
+    {
+      "owner_email": "test_ben@bmsit.in",
+      "title": "ben_via_undefined",
+      "description": "hii via undefined url",
+      "category": "Web Development",
+      "technologies": "",
+      "duration": "2\u20133 Months",
+      "collaboration_mode": "Hybrid",
+      "availability": "Flexible",
+      "course_context": "Innovation & Design Thinking (IDT)",
+      "team_size_min": 2,
+      "team_size_max": 4,
+      "schedule_notes": "Flexible",
+      "status": "published",
+      "requirements": [
+        {
+          "skill_name": "Python",
+          "priority": "preferred",
+          "weight": 1.0
+        }
+      ],
+      "availability_slots": [],
+      "interests": [
+        "Web Development"
+      ]
+    },
+    {
+      "owner_email": "benaka@bmsit.in",
+      "title": "Autonomous Rover Navigation",
+      "description": "Building a ROS2 autonomous rover with lidar navigation and SLAM.",
+      "category": "IoT & Hardware",
+      "technologies": "",
+      "duration": "2\u20133 Months",
+      "collaboration_mode": "In-Person",
+      "availability": "Flexible",
+      "course_context": "Innovation & Design Thinking (IDT)",
+      "team_size_min": 2,
+      "team_size_max": 4,
+      "schedule_notes": "Flexible",
+      "status": "published",
+      "requirements": [
+        {
+          "skill_name": "Python",
+          "priority": "must-have",
+          "weight": 3.0
+        },
+        {
+          "skill_name": "ROS",
+          "priority": "preferred",
+          "weight": 1.0
+        }
+      ],
+      "availability_slots": [],
+      "interests": [
+        "IoT & Hardware"
+      ]
+    },
+    {
+      "owner_email": "benaka@bmsit.in",
+      "title": "AI Healthcare Diagnostic Assistant",
+      "description": "Deep learning model for early disease detection using chest X-rays.",
+      "category": "AI / Machine Learning",
+      "technologies": "",
+      "duration": "3\u20136 Months",
+      "collaboration_mode": "Remote",
+      "availability": "Flexible",
+      "course_context": "Innovation & Design Thinking (IDT)",
+      "team_size_min": 2,
+      "team_size_max": 5,
+      "schedule_notes": "Flexible",
+      "status": "published",
+      "requirements": [
+        {
+          "skill_name": "Python",
+          "priority": "must-have",
+          "weight": 3.0
+        },
+        {
+          "skill_name": "PyTorch",
+          "priority": "must-have",
+          "weight": 3.0
+        }
+      ],
+      "availability_slots": [],
+      "interests": [
+        "AI / Machine Learning"
+      ]
+    },
+    {
+      "owner_email": "benaka@bmsit.in",
+      "title": "Quantum Computing Simulator in Rust",
+      "description": "Simulating basic quantum gate circuits and entanglement using Rust and WebAssembly.",
+      "category": "Cloud Computing",
+      "technologies": "",
+      "duration": "2\u20133 Months",
+      "collaboration_mode": "Remote",
+      "availability": "Flexible",
+      "course_context": "Innovation & Design Thinking (IDT)",
+      "team_size_min": 2,
+      "team_size_max": 4,
+      "schedule_notes": "Flexible",
+      "status": "published",
+      "requirements": [
+        {
+          "skill_name": "Rust",
+          "priority": "must-have",
+          "weight": 3.0
+        },
+        {
+          "skill_name": "WebAssembly",
+          "priority": "preferred",
+          "weight": 1.0
+        }
+      ],
+      "availability_slots": [],
+      "interests": [
+        "Cloud Computing"
+      ]
     },
     {
       "owner_email": "harsh@bmsit.in",
@@ -325,7 +1064,11 @@
       "schedule_notes": "Bi-weekly sync.",
       "status": "draft",
       "requirements": [
-        {"skill_name": "Machine Learning", "priority": "must-have", "weight": 3.0}
+        {
+          "skill_name": "Machine Learning",
+          "priority": "must-have",
+          "weight": 3.0
+        }
       ],
       "availability_slots": [],
       "interests": []
