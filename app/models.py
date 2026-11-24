@@ -22,11 +22,13 @@ from datetime import datetime
 from flask import current_app, has_app_context, g
 from werkzeug.security import generate_password_hash, check_password_hash
 
+import tempfile
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 if os.environ.get('VERCEL'):
-    LISTINGS_DB_PATH = '/tmp/skillsync_listings.db'
-    USERS_DB_PATH = '/tmp/skillsync_users.db'
+    _tmp_dir = '/tmp' if os.path.isdir('/tmp') else tempfile.gettempdir()
+    LISTINGS_DB_PATH = os.path.join(_tmp_dir, 'skillsync_listings.db')
+    USERS_DB_PATH = os.path.join(_tmp_dir, 'skillsync_users.db')
 else:
     LISTINGS_DB_PATH = os.path.join(ROOT_DIR, 'listings.db')
     USERS_DB_PATH = os.path.join(ROOT_DIR, 'users.db')

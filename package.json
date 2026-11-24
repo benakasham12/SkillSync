@@ -3,8 +3,9 @@
   "version": "1.0.0",
   "description": "SkillSync - Student Team Finding & Project Collaboration Platform",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
+    "dev": "python run.py",
+    "build": "echo 'SkillSync Flask build ready'",
+    "start": "python run.py",
     "lint": "eslint ."
   },
   "dependencies": {

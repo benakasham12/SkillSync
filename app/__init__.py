@@ -14,14 +14,19 @@ def create_app(db_path=None, test_config=None):
         test_config = db_path
         db_path = test_config.get('DATABASE')
 
-    app = Flask(__name__)
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    template_dir = os.path.join(base_dir, 'templates')
+    static_dir = os.path.join(base_dir, 'static')
+    app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'skillsync-bmsit-cse13-secret-key-2026')
     app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=14)
     app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
     app.config['SESSION_COOKIE_HTTPONLY'] = True
 
+    import tempfile
     if os.environ.get('VERCEL'):
-        default_db = '/tmp/skillsync_listings.db'
+        _tmp_dir = '/tmp' if os.path.isdir('/tmp') else tempfile.gettempdir()
+        default_db = os.path.join(_tmp_dir, 'skillsync_listings.db')
     else:
         default_db = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'listings.db')
 

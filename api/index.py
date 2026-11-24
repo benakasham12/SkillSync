@@ -17,9 +17,12 @@ from app import create_app
 from app.models import init_db
 from app.seed_data import seed_database
 
+import tempfile
+
 # On Vercel, the filesystem is read-only except for /tmp
 if os.environ.get('VERCEL'):
-    db_path = '/tmp/skillsync_listings.db'
+    _tmp_dir = '/tmp' if os.path.isdir('/tmp') else tempfile.gettempdir()
+    db_path = os.path.join(_tmp_dir, 'skillsync_listings.db')
 else:
     db_path = os.path.join(root_dir, 'listings.db')
 
