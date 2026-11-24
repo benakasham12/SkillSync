@@ -133,16 +133,43 @@ def seed_database(db_path=None):
         for p in data.get('projects', []):
             owner_id = user_id_map.get(p['owner_email'])
             if owner_id:
+                # Infer appropriate category from interests or title
+                category = p.get('category')
+                if not category:
+                    for int_name in p.get('interests', []):
+                        if int_name in ['Web Development', 'App Development', 'AI / Machine Learning', 'Data Science', 'Cybersecurity', 'UI/UX Design', 'IoT & Hardware', 'Cloud Computing']:
+                            category = int_name
+                            break
+                if not category:
+                    category = 'Web Development' if 'Web' in p['title'] or 'SkillSync' in p['title'] else ('IoT & Hardware' if 'Sensor' in p['title'] else 'AI / Machine Learning')
+
+                technologies = p.get('technologies', ', '.join([r['skill_name'] for r in p.get('requirements', [])[:4]]))
+                duration = p.get('duration', '2–3 Months')
+                collaboration_mode = p.get('collaboration_mode', 'Hybrid')
+                availability = p.get('availability', 'Flexible')
+
                 cur.execute("""
-                    INSERT INTO projects (owner_id, title, description, course_context, team_size_min, team_size_max, schedule_notes, status)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    INSERT INTO projects (
+                        owner_id, title, description, category, technologies, duration,
+                        collaboration_mode, availability, course_context, team_size_min,
+                        team_size_max, schedule_notes, status
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, (
                     owner_id, p['title'], p.get('description', ''),
+                    category, technologies, duration,
+                    collaboration_mode, availability,
                     p.get('course_context', 'Innovation & Design Thinking (IDT)'),
                     p.get('team_size_min', 2), p.get('team_size_max', 4),
                     p.get('schedule_notes', ''), p.get('status', 'published')
                 ))
                 proj_id = cur.lastrowid
+
+                # Automatically register owner in team_members
+                cur.execute("""
+                    INSERT OR IGNORE INTO team_members (project_id, user_id, role, joined_at)
+                    VALUES (?, ?, 'owner', CURRENT_TIMESTAMP)
+                """, (proj_id, owner_id))
 
                 # Insert project skill requirements
                 for req in p.get('requirements', []):

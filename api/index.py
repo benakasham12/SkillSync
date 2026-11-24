@@ -30,23 +30,23 @@ def initialize_environment():
         from app.supabase_client import is_cloud_enabled, sync_cloud_to_local_listings
         cloud_active = is_cloud_enabled()
 
-        if not os.path.exists(db_path) or os.path.getsize(db_path) == 0:
+        from app.models import query_db
+
+        needs_init = not os.path.exists(db_path) or os.path.getsize(db_path) == 0
+        if needs_init:
+            init_db(db_path)
+
+        p_cnt_row = query_db("SELECT COUNT(*) as count FROM projects", one=True, db_path=db_path)
+        p_cnt = p_cnt_row['count'] if p_cnt_row else 0
+
+        if p_cnt == 0:
             if cloud_active:
-                # Initialize SQLite schema and standard catalogs without wiping with demo cohort
-                init_db(db_path)
-                from app.seed_data import load_seed_json
-                from app.models import get_listings_db
-                data = load_seed_json()
-                conn = get_listings_db(db_path)
-                cur = conn.cursor()
-                skills_to_insert = [(s['name'], s['category']) for s in data.get('skills_catalog', [])]
-                cur.executemany("INSERT OR IGNORE INTO skills (name, category) VALUES (?, ?)", skills_to_insert)
-                interests_to_insert = [(i['name'], i['category']) for i in data.get('interests_catalog', [])]
-                cur.executemany("INSERT OR IGNORE INTO interests (name, category) VALUES (?, ?)", interests_to_insert)
-                conn.commit()
-                conn.close()
                 # Hydrate projects from persistent Supabase
                 sync_cloud_to_local_listings(db_path)
+                p_cnt_after = query_db("SELECT COUNT(*) as count FROM projects", one=True, db_path=db_path)
+                # If Supabase has no projects or is not yet configured, seed baseline cohort
+                if not p_cnt_after or p_cnt_after['count'] == 0:
+                    seed_database(db_path)
             else:
                 seed_database(db_path)
         elif cloud_active:
@@ -75,12 +75,20 @@ def health_check():
     }
 
 
-# Ensure /tmp DB exists before processing requests in ephemeral serverless instances
+# Ensure /tmp DB exists and is populated before processing requests in ephemeral serverless instances
 @app.before_request
 def ensure_db_exists():
     if os.environ.get('VERCEL'):
         if not os.path.exists(db_path) or os.path.getsize(db_path) == 0:
             initialize_environment()
+        else:
+            try:
+                from app.models import query_db
+                cnt = query_db("SELECT COUNT(*) as c FROM projects", one=True, db_path=db_path)
+                if not cnt or cnt['c'] == 0:
+                    initialize_environment()
+            except Exception:
+                initialize_environment()
 
 
 if __name__ == '__main__':

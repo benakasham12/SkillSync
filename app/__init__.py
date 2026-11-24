@@ -6,7 +6,7 @@ import os
 from datetime import timedelta
 import app.env_loader  # Automatically loads .env configuration securely
 from flask import Flask, session, request, jsonify, render_template
-from app.models import init_db, query_db
+from app.models import init_db, query_db, close_db
 
 
 def create_app(db_path=None, test_config=None):
@@ -15,7 +15,7 @@ def create_app(db_path=None, test_config=None):
         db_path = test_config.get('DATABASE')
 
     app = Flask(__name__)
-    app.config['SECRET_KEY'] = 'skillsync-bmsit-cse13-secret-key-2026'
+    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'skillsync-bmsit-cse13-secret-key-2026')
     app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=14)
     app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
     app.config['SESSION_COOKIE_HTTPONLY'] = True
@@ -100,6 +100,17 @@ def create_app(db_path=None, test_config=None):
             'unread_invites_count': unread_invites_count,
             'unread_messages_count': unread_messages_count
         }
+
+    # Teardown database connection per request
+    app.teardown_appcontext(close_db)
+
+    @app.after_request
+    def add_cors_headers(response):
+        if request.path.startswith('/api/'):
+            response.headers['Access-Control-Allow-Origin'] = '*'
+            response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, PATCH, DELETE, OPTIONS'
+            response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With, Accept'
+        return response
 
     @app.errorhandler(500)
     def handle_500_error(e):

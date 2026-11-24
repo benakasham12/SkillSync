@@ -418,6 +418,17 @@ def compute_pagination(current_page, total_pages, delta=2):
     return pages
 
 
+@projects_bp.route('/api/projects', methods=['GET', 'OPTIONS'])
+@projects_bp.route('/api/projects/', methods=['GET', 'OPTIONS'])
+def api_projects_list():
+    """Dedicated JSON API endpoint for listing projects."""
+    if request.method == 'OPTIONS':
+        return ('', 204)
+    return list_projects()
+
+
+@projects_bp.route('/find-project')
+@projects_bp.route('/find-projects')
 @projects_bp.route('/projects')
 def list_projects():
     """List open and published projects with smart pagination, search, category filters, and sorting."""
@@ -679,7 +690,9 @@ def list_projects():
     if is_json_req:
         return jsonify({
             'success': True,
+            'data': projects,
             'projects': projects,
+            'total': total_count,
             'pagination': {
                 'page': page,
                 'per_page': per_page,
@@ -692,7 +705,8 @@ def list_projects():
                 'prev_page': prev_page,
                 'next_page': next_page,
                 'pages': pagination_pages
-            }
+            },
+            'error': None
         })
 
     return render_template(
@@ -716,7 +730,8 @@ def list_projects():
         has_next=has_next,
         prev_page=prev_page,
         next_page=next_page,
-        pagination_pages=pagination_pages
+        pagination_pages=pagination_pages,
+        db_error=None
     )
 
 

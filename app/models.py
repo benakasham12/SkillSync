@@ -19,7 +19,7 @@ import re
 import json
 import atexit
 from datetime import datetime
-from flask import current_app, has_app_context
+from flask import current_app, has_app_context, g
 from werkzeug.security import generate_password_hash, check_password_hash
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -535,14 +535,18 @@ def get_db(db_path=None):
     Connects to listings.db as main and attaches users.db as users_db.
     Provides TEMP VIEWs for transparent reading of user tables, and uses DualConnection
     to seamlessly rewrite writes so queries targeting user tables write directly to users.db.
+    Uses Flask's application context `g` for connection pooling across the request lifecycle.
     """
+    if has_app_context() and hasattr(g, 'db') and g.db is not None:
+        return g.db
+
     listings_path, users_path = resolve_db_paths(db_path)
 
     # Ensure files and tables exist
     if not os.path.exists(listings_path) or not os.path.exists(users_path):
         init_db(listings_path)
 
-    conn = sqlite3.connect(listings_path, factory=DualConnection)
+    conn = sqlite3.connect(listings_path, factory=DualConnection, timeout=20)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON;")
 
@@ -552,7 +556,22 @@ def get_db(db_path=None):
     for tbl in USER_TABLES:
         conn.execute(f"CREATE TEMP VIEW IF NOT EXISTS {tbl} AS SELECT * FROM users_db.{tbl};")
 
+    if has_app_context():
+        g.db = conn
+
     return conn
+
+
+def close_db(e=None):
+    """Closes the current request's database connection if one exists."""
+    if has_app_context() and hasattr(g, 'db'):
+        db = g.db
+        if db is not None:
+            try:
+                db.close()
+            except Exception:
+                pass
+            g.db = None
 
 
 def query_db(query, args=(), one=False, db_path=None):
@@ -561,7 +580,8 @@ def query_db(query, args=(), one=False, db_path=None):
     cur = conn.cursor()
     cur.execute(query, args)
     rows = cur.fetchall()
-    conn.close()
+    if not has_app_context():
+        conn.close()
     if rows:
         results = [dict(row) for row in rows]
         return results[0] if one else results
@@ -577,5 +597,6 @@ def execute_db(query, args=(), commit=True, db_path=None):
         conn.commit()
     last_id = cur.lastrowid
     rowcount = cur.rowcount
-    conn.close()
+    if not has_app_context():
+        conn.close()
     return last_id if last_id else rowcount
