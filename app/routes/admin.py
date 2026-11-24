@@ -147,12 +147,18 @@ def dashboard():
     projects_list = query_db("""
         SELECT p.id, p.title, p.category, p.status, p.created_at, p.owner_id,
                p.team_size_min, p.team_size_max,
-               COALESCE(sp.display_name, u.email, 'User #' || p.owner_id) as owner_name,
-               u.email as owner_email
+               COALESCE(
+                   (SELECT sp.display_name FROM student_profiles sp WHERE sp.user_id = p.owner_id LIMIT 1),
+                   (SELECT sp.display_name FROM student_profiles sp WHERE sp.id = p.owner_id LIMIT 1),
+                   (SELECT u.email FROM users u WHERE u.id = p.owner_id LIMIT 1),
+                   'User #' || p.owner_id
+               ) as owner_name,
+               COALESCE(
+                   (SELECT u.email FROM users u WHERE u.id = p.owner_id LIMIT 1),
+                   (SELECT u2.email FROM users u2 JOIN student_profiles sp2 ON u2.id = sp2.user_id WHERE sp2.id = p.owner_id LIMIT 1),
+                   ''
+               ) as owner_email
         FROM projects p
-        LEFT JOIN users u ON (p.owner_id = u.id OR p.owner_id IN (SELECT id FROM student_profiles WHERE user_id = u.id))
-        LEFT JOIN student_profiles sp ON (p.owner_id = sp.id OR p.owner_id = sp.user_id OR sp.user_id = u.id)
-        GROUP BY p.id
         ORDER BY p.id DESC
     """)
 

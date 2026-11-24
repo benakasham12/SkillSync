@@ -309,13 +309,24 @@ def landing():
     try:
         featured_projects = query_db("""
             SELECT p.*,
-                   COALESCE(sp.display_name, u.email, 'Student') as owner_name,
-                   COALESCE(sp.branch, 'CSE') as owner_branch,
-                   COALESCE(sp.year, '1st Year') as owner_year,
+                   COALESCE(
+                       (SELECT sp.display_name FROM student_profiles sp WHERE sp.user_id = p.owner_id LIMIT 1),
+                       (SELECT sp.display_name FROM student_profiles sp WHERE sp.id = p.owner_id LIMIT 1),
+                       (SELECT u.email FROM users u WHERE u.id = p.owner_id LIMIT 1),
+                       'Student'
+                   ) as owner_name,
+                   COALESCE(
+                       (SELECT sp.branch FROM student_profiles sp WHERE sp.user_id = p.owner_id LIMIT 1),
+                       (SELECT sp.branch FROM student_profiles sp WHERE sp.id = p.owner_id LIMIT 1),
+                       'CSE'
+                   ) as owner_branch,
+                   COALESCE(
+                       (SELECT sp.year FROM student_profiles sp WHERE sp.user_id = p.owner_id LIMIT 1),
+                       (SELECT sp.year FROM student_profiles sp WHERE sp.id = p.owner_id LIMIT 1),
+                       '1st Year'
+                   ) as owner_year,
                    (SELECT COUNT(*) FROM team_members WHERE project_id = p.id) + 1 as current_team_count
             FROM projects p
-            LEFT JOIN users u ON (p.owner_id = u.id OR p.owner_id = (SELECT sp2.id FROM student_profiles sp2 WHERE sp2.user_id = u.id))
-            LEFT JOIN student_profiles sp ON (sp.user_id = u.id OR sp.id = p.owner_id)
             WHERE p.status = 'published'
             ORDER BY p.created_at DESC
             LIMIT 3
@@ -1613,15 +1624,22 @@ def my_projects():
 
     my_applications = query_db("""
         SELECT pa.*, p.title as project_title, p.category, p.status as project_status, p.team_size_max,
-               COALESCE(sp.display_name, u.email, 'Student') as owner_name,
-               COALESCE(sp.branch, 'CSE') as owner_branch
+               COALESCE(
+                   (SELECT sp.display_name FROM student_profiles sp WHERE sp.user_id = p.owner_id LIMIT 1),
+                   (SELECT sp.display_name FROM student_profiles sp WHERE sp.id = p.owner_id LIMIT 1),
+                   (SELECT u.email FROM users u WHERE u.id = p.owner_id LIMIT 1),
+                   'Student'
+               ) as owner_name,
+               COALESCE(
+                   (SELECT sp.branch FROM student_profiles sp WHERE sp.user_id = p.owner_id LIMIT 1),
+                   (SELECT sp.branch FROM student_profiles sp WHERE sp.id = p.owner_id LIMIT 1),
+                   'CSE'
+               ) as owner_branch
         FROM project_applications pa
         JOIN projects p ON pa.project_id = p.id
-        LEFT JOIN users u ON (p.owner_id = u.id OR p.owner_id = (SELECT sp2.id FROM student_profiles sp2 WHERE sp2.user_id = u.id))
-        LEFT JOIN student_profiles sp ON (sp.user_id = u.id OR sp.id = p.owner_id)
-        WHERE pa.applicant_id = ?
+        WHERE (pa.applicant_id = ? OR pa.applicant_id IN (SELECT id FROM student_profiles WHERE user_id = ?))
         ORDER BY pa.created_at DESC
-    """, (user_id,))
+    """, (user_id, user_id))
 
     return render_template(
         'projects/my_projects.html',

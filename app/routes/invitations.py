@@ -25,12 +25,19 @@ def list_invitations():
     # 1. Incoming direct invitations to this student
     incoming = query_db("""
         SELECT inv.*, p.title as project_title, p.course_context, p.description as project_description,
-               COALESCE(sp.display_name, u.email, 'Project Creator') as inviter_name,
-               COALESCE(u.email, '') as inviter_email
+               COALESCE(
+                   (SELECT sp.display_name FROM student_profiles sp WHERE sp.user_id = inv.inviter_id LIMIT 1),
+                   (SELECT sp.display_name FROM student_profiles sp WHERE sp.id = inv.inviter_id LIMIT 1),
+                   (SELECT u.email FROM users u WHERE u.id = inv.inviter_id LIMIT 1),
+                   'Project Creator'
+               ) as inviter_name,
+               COALESCE(
+                   (SELECT u.email FROM users u WHERE u.id = inv.inviter_id LIMIT 1),
+                   (SELECT u2.email FROM users u2 JOIN student_profiles sp2 ON u2.id = sp2.user_id WHERE sp2.id = inv.inviter_id LIMIT 1),
+                   ''
+               ) as inviter_email
         FROM invitations inv
         JOIN projects p ON inv.project_id = p.id
-        LEFT JOIN users u ON (inv.inviter_id = u.id OR inv.inviter_id = (SELECT sp2.id FROM student_profiles sp2 WHERE sp2.user_id = u.id))
-        LEFT JOIN student_profiles sp ON (sp.user_id = u.id OR sp.id = inv.inviter_id)
         WHERE (inv.invitee_id = ? OR inv.invitee_id IN (SELECT id FROM student_profiles WHERE user_id = ?))
         ORDER BY (inv.status = 'pending') DESC, inv.created_at DESC
     """, (user_id, user_id))
@@ -38,12 +45,19 @@ def list_invitations():
     # 2. Outgoing direct invitations sent by this student (for their projects)
     outgoing = query_db("""
         SELECT inv.*, p.title as project_title,
-               COALESCE(sp.display_name, u.email, 'Candidate') as invitee_name,
-               COALESCE(u.email, '') as invitee_email
+               COALESCE(
+                   (SELECT sp.display_name FROM student_profiles sp WHERE sp.user_id = inv.invitee_id LIMIT 1),
+                   (SELECT sp.display_name FROM student_profiles sp WHERE sp.id = inv.invitee_id LIMIT 1),
+                   (SELECT u.email FROM users u WHERE u.id = inv.invitee_id LIMIT 1),
+                   'Candidate'
+               ) as invitee_name,
+               COALESCE(
+                   (SELECT u.email FROM users u WHERE u.id = inv.invitee_id LIMIT 1),
+                   (SELECT u2.email FROM users u2 JOIN student_profiles sp2 ON u2.id = sp2.user_id WHERE sp2.id = inv.invitee_id LIMIT 1),
+                   ''
+               ) as invitee_email
         FROM invitations inv
         JOIN projects p ON inv.project_id = p.id
-        LEFT JOIN users u ON (inv.invitee_id = u.id OR inv.invitee_id = (SELECT sp2.id FROM student_profiles sp2 WHERE sp2.user_id = u.id))
-        LEFT JOIN student_profiles sp ON (sp.user_id = u.id OR sp.id = inv.invitee_id)
         WHERE (inv.inviter_id = ? OR inv.inviter_id IN (SELECT id FROM student_profiles WHERE user_id = ?))
         ORDER BY inv.created_at DESC
     """, (user_id, user_id))
@@ -51,14 +65,29 @@ def list_invitations():
     # 3. Incoming Join Requests (applications submitted by other students to projects owned by this user)
     incoming_applications = query_db("""
         SELECT pa.*, p.title as project_title, p.course_context,
-               COALESCE(sp.display_name, u.email, 'Student Applicant') as applicant_name,
-               COALESCE(sp.branch, 'CSE') as applicant_branch,
-               COALESCE(sp.year, '1st Year') as applicant_year,
-               COALESCE(u.email, '') as applicant_email
+               COALESCE(
+                   (SELECT sp.display_name FROM student_profiles sp WHERE sp.user_id = pa.applicant_id LIMIT 1),
+                   (SELECT sp.display_name FROM student_profiles sp WHERE sp.id = pa.applicant_id LIMIT 1),
+                   (SELECT u.email FROM users u WHERE u.id = pa.applicant_id LIMIT 1),
+                   'Student Applicant'
+               ) as applicant_name,
+               COALESCE(
+                   (SELECT sp.branch FROM student_profiles sp WHERE sp.user_id = pa.applicant_id LIMIT 1),
+                   (SELECT sp.branch FROM student_profiles sp WHERE sp.id = pa.applicant_id LIMIT 1),
+                   'CSE'
+               ) as applicant_branch,
+               COALESCE(
+                   (SELECT sp.year FROM student_profiles sp WHERE sp.user_id = pa.applicant_id LIMIT 1),
+                   (SELECT sp.year FROM student_profiles sp WHERE sp.id = pa.applicant_id LIMIT 1),
+                   '1st Year'
+               ) as applicant_year,
+               COALESCE(
+                   (SELECT u.email FROM users u WHERE u.id = pa.applicant_id LIMIT 1),
+                   (SELECT u2.email FROM users u2 JOIN student_profiles sp2 ON u2.id = sp2.user_id WHERE sp2.id = pa.applicant_id LIMIT 1),
+                   ''
+               ) as applicant_email
         FROM project_applications pa
         JOIN projects p ON pa.project_id = p.id
-        LEFT JOIN users u ON (pa.applicant_id = u.id OR pa.applicant_id = (SELECT sp2.id FROM student_profiles sp2 WHERE sp2.user_id = u.id))
-        LEFT JOIN student_profiles sp ON (sp.user_id = u.id OR sp.id = pa.applicant_id)
         WHERE (p.owner_id = ? OR p.owner_id IN (SELECT id FROM student_profiles WHERE user_id = ?))
         ORDER BY (pa.application_status = 'pending') DESC, pa.created_at DESC
     """, (user_id, user_id))
@@ -66,12 +95,19 @@ def list_invitations():
     # 4. Outgoing Join Requests (applications sent by this student to other projects)
     outgoing_applications = query_db("""
         SELECT pa.*, p.title as project_title, p.course_context,
-               COALESCE(sp.display_name, u.email, 'Project Creator') as owner_name,
-               COALESCE(u.email, '') as owner_email
+               COALESCE(
+                   (SELECT sp.display_name FROM student_profiles sp WHERE sp.user_id = p.owner_id LIMIT 1),
+                   (SELECT sp.display_name FROM student_profiles sp WHERE sp.id = p.owner_id LIMIT 1),
+                   (SELECT u.email FROM users u WHERE u.id = p.owner_id LIMIT 1),
+                   'Project Creator'
+               ) as owner_name,
+               COALESCE(
+                   (SELECT u.email FROM users u WHERE u.id = p.owner_id LIMIT 1),
+                   (SELECT u2.email FROM users u2 JOIN student_profiles sp2 ON u2.id = sp2.user_id WHERE sp2.id = p.owner_id LIMIT 1),
+                   ''
+               ) as owner_email
         FROM project_applications pa
         JOIN projects p ON pa.project_id = p.id
-        LEFT JOIN users u ON (p.owner_id = u.id OR p.owner_id = (SELECT sp2.id FROM student_profiles sp2 WHERE sp2.user_id = u.id))
-        LEFT JOIN student_profiles sp ON (sp.user_id = u.id OR sp.id = p.owner_id)
         WHERE (pa.applicant_id = ? OR pa.applicant_id IN (SELECT id FROM student_profiles WHERE user_id = ?))
         ORDER BY (pa.application_status = 'pending') DESC, pa.created_at DESC
     """, (user_id, user_id))

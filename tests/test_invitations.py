@@ -93,3 +93,53 @@ def test_invitation_flow_and_duplicate_prevention(client, app):
     membership = query_db("SELECT * FROM team_members WHERE project_id = ? AND user_id = ?", (proj_id, invitee_id), one=True, db_path=db_path)
     assert membership is not None
     assert membership['role'] == 'member'
+
+
+def test_list_invitations_no_cartesian_duplication(client, app):
+    """
+    Regression test:
+    Verify that an application submitted to a project appears EXACTLY ONCE on the owner's /invitations page
+    and is not duplicated by Cartesian product joins between users and student_profiles.
+    """
+    db_path = app.config['DATABASE']
+    pw = generate_password_hash("pass123")
+
+    # Insert 3 students with overlapping IDs to trigger potential cross-join
+    u1 = execute_db("INSERT INTO users (email, password_hash) VALUES ('student1@bmsit.in', ?)", (pw,), db_path=db_path)
+    execute_db("INSERT INTO student_profiles (id, user_id, display_name, is_match_ready) VALUES (101, ?, 'Student One', 1)", (u1,), db_path=db_path)
+
+    u2 = execute_db("INSERT INTO users (email, password_hash) VALUES ('student2@bmsit.in', ?)", (pw,), db_path=db_path)
+    execute_db("INSERT INTO student_profiles (id, user_id, display_name, is_match_ready) VALUES (102, ?, 'Student Two', 1)", (u2,), db_path=db_path)
+
+    owner_u = execute_db("INSERT INTO users (email, password_hash) VALUES ('project_owner@bmsit.in', ?)", (pw,), db_path=db_path)
+    execute_db("INSERT INTO student_profiles (id, user_id, display_name, is_match_ready) VALUES (103, ?, 'Project Owner', 1)", (owner_u,), db_path=db_path)
+
+    # Owner's project
+    proj_id = execute_db("INSERT INTO projects (owner_id, title, status, team_size_min, team_size_max) VALUES (?, 'Distributed Systems Lab', 'published', 2, 4)", (owner_u,), db_path=db_path)
+
+    # Student One submits 1 application
+    execute_db("""
+        INSERT INTO project_applications (project_id, applicant_id, introduction, application_status)
+        VALUES (?, ?, 'I would love to join your project!', 'pending')
+    """, (proj_id, u1), db_path=db_path)
+
+    # Log in as Project Owner
+    with client.session_transaction() as sess:
+        sess['user_id'] = owner_u
+        sess['user_email'] = 'project_owner@bmsit.in'
+        sess['user_name'] = 'Project Owner'
+        sess['user_role'] = 'student'
+
+    res = client.get('/invitations')
+    assert res.status_code == 200
+    html = res.data.decode('utf-8')
+
+    # The applicant's name and message should appear
+    assert "Student One" in html
+    assert "I would love to join your project!" in html
+
+    # Exactly ONE card for this application must appear, NOT multiple
+    assert html.count("I would love to join your project!") == 1
+    # Other students who did NOT apply must NOT appear as applicants
+    assert "Student Two" not in html
+
