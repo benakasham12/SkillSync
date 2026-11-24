@@ -4,6 +4,7 @@ Taxonomy and utility API endpoints.
 
 from flask import Blueprint, jsonify
 from app.models import query_db
+from app.routes.auth import login_required, admin_required
 
 api_bp = Blueprint('api', __name__)
 
@@ -44,8 +45,10 @@ def cloud_status():
 
 
 @api_bp.route('/api/cloud/sync', methods=['POST'])
+@login_required
+@admin_required
 def cloud_sync():
-    """Triggers synchronization of local public listings to Supabase cloud."""
+    """Triggers synchronization of local public listings to Supabase cloud (requires admin privileges)."""
     from app.supabase_client import sync_local_listings_to_cloud
     result = sync_local_listings_to_cloud()
     return jsonify(result), (200 if result.get('success') else 500)

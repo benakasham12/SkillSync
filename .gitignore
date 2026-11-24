@@ -6,6 +6,8 @@ __pycache__/
 *.db
 *.db-journal
 *.db.migrated
+*.bak*
+*.db.bak*
 instance/
 .env
 app/static/uploads/attachments/*

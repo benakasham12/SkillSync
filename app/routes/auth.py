@@ -13,26 +13,47 @@ from app.analytics import log_event
 auth_bp = Blueprint('auth', __name__)
 
 
+def generate_auth_token(user_id, expiration=86400 * 7):
+    """Generate a cryptographically signed authentication token for API clients."""
+    s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
+    return s.dumps({'user_id': user_id}, salt='skillsync-auth-token')
+
+
+def verify_auth_token(token, max_age=86400 * 7):
+    """Verify a cryptographically signed authentication token."""
+    try:
+        s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
+        data = s.loads(token, salt='skillsync-auth-token', max_age=max_age)
+        if isinstance(data, dict) and 'user_id' in data:
+            return data['user_id']
+    except (SignatureExpired, BadSignature, Exception):
+        pass
+    return None
+
+
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
+        is_api = (
+            request.is_json
+            or request.path.startswith('/api/')
+            or request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+            or 'application/json' in request.headers.get('Accept', '')
+        )
         uid = session.get('user_id')
 
-        # Fallback: check for authentication headers or token if session is not yet loaded
+        # Secure token verification: accept ONLY cryptographically signed Bearer tokens (no numeric fallbacks)
         if not uid:
-            auth_header = request.headers.get('Authorization') or request.headers.get('X-User-Id')
-            if auth_header:
-                token = auth_header[7:].strip() if auth_header.startswith('Bearer ') else auth_header.strip()
-                if token.isdigit():
-                    u_cand = query_db("SELECT id, email, role, status FROM users WHERE id = ?", (int(token),), one=True)
-                    if u_cand and u_cand.get('status') != 'deactivated':
-                        session['user_id'] = u_cand['id']
-                        session['user_email'] = u_cand['email']
-                        session['user_role'] = u_cand['role']
-                        uid = u_cand['id']
+            auth_header = request.headers.get('Authorization')
+            if auth_header and auth_header.startswith('Bearer '):
+                raw_token = auth_header[7:].strip()
+                if raw_token:
+                    verified_uid = verify_auth_token(raw_token)
+                    if verified_uid:
+                        uid = verified_uid
 
         if not uid:
-            if request.is_json or request.path.startswith('/api/') or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            if is_api:
                 return jsonify({'error': 'Authentication required', 'success': False}), 401
             flash('Please log in to continue.', 'warning')
             return redirect(url_for('auth.login', next=request.path))
@@ -40,10 +61,15 @@ def login_required(f):
         user = query_db("SELECT id, email, role, status FROM users WHERE id = ?", (uid,), one=True)
         if not user or user.get('status') == 'deactivated':
             session.clear()
-            if request.is_json or request.path.startswith('/api/') or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return jsonify({'error': 'Session expired or invalid user account. Please log in again.', 'success': False}), 401
-            flash('Your session has expired. Please log in again.', 'warning')
+            if is_api:
+                return jsonify({'error': 'Session expired or account deactivated. Please log in again.', 'success': False}), 401
+            flash('Your session has expired or your account is deactivated. Please log in again.', 'warning')
             return redirect(url_for('auth.login', next=request.path))
+
+        # Always keep session synchronized with live database values
+        session['user_id'] = user['id']
+        session['user_email'] = user['email']
+        session['user_role'] = user['role']
 
         return f(*args, **kwargs)
     return decorated_function
@@ -52,19 +78,48 @@ def login_required(f):
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if 'user_id' not in session:
+        is_api = (
+            request.is_json
+            or request.path.startswith('/api/')
+            or request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+            or 'application/json' in request.headers.get('Accept', '')
+        )
+        uid = session.get('user_id')
+
+        if not uid:
+            # Check for cryptographically signed Bearer token if session is absent
+            auth_header = request.headers.get('Authorization')
+            if auth_header and auth_header.startswith('Bearer '):
+                raw_token = auth_header[7:].strip()
+                if raw_token:
+                    uid = verify_auth_token(raw_token)
+
+        if not uid:
+            if is_api:
+                return jsonify({'error': 'Authentication required', 'success': False}), 401
             return redirect(url_for('auth.login', next=request.path))
 
-        user_role = session.get('user_role')
-        if not user_role:
-            u_rec = query_db("SELECT role FROM users WHERE id = ?", (session['user_id'],), one=True)
-            if u_rec:
-                user_role = u_rec.get('role')
-                session['user_role'] = user_role
+        # Always verify admin role and active status directly against the database
+        u_rec = query_db("SELECT id, email, role, status FROM users WHERE id = ?", (uid,), one=True)
+        if not u_rec or u_rec.get('status') == 'deactivated':
+            session.clear()
+            if is_api:
+                return jsonify({'error': 'Session expired or account deactivated. Please log in again.', 'success': False}), 401
+            flash('Your session has expired or your account is deactivated.', 'danger')
+            return redirect(url_for('auth.login', next=request.path))
 
-        if not user_role or str(user_role).strip().lower() not in ('admin', 'coordinator'):
+        db_role = u_rec.get('role', '')
+        if not db_role or str(db_role).strip().lower() not in ('admin', 'coordinator'):
+            if is_api:
+                return jsonify({'error': 'Administrator privileges required.', 'success': False}), 403
             flash('Administrator privileges required.', 'danger')
             return redirect(url_for('projects.list_projects'))
+
+        # Keep session synchronized with verified database role
+        session['user_id'] = u_rec['id']
+        session['user_email'] = u_rec['email']
+        session['user_role'] = db_role
+
         return f(*args, **kwargs)
     return decorated_function
 

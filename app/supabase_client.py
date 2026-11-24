@@ -23,7 +23,10 @@ load_dotenv()
 def get_supabase_config():
     """Retrieve Supabase credentials and enablement status from environment."""
     url = os.environ.get('SUPABASE_URL', '').rstrip('/')
-    key = os.environ.get('SUPABASE_KEY', '')
+    service_key = os.environ.get('SUPABASE_SERVICE_ROLE_KEY', '').strip()
+    anon_key = os.environ.get('SUPABASE_KEY', '').strip()
+    # Server-side operations prefer the service_role key to satisfy RLS policies
+    key = service_key or anon_key
     rest_url = os.environ.get('SUPABASE_REST_URL', '').rstrip('/')
     if url and not rest_url:
         rest_url = f"{url}/rest/v1"
@@ -33,6 +36,8 @@ def get_supabase_config():
     return {
         'url': url,
         'key': key,
+        'anon_key': anon_key,
+        'service_role_key': service_key,
         'rest_url': rest_url,
         'enabled': use_cloud and bool(url) and bool(key)
     }
@@ -201,7 +206,11 @@ def sync_local_listings_to_cloud(db_path=None):
         return {'success': False, 'message': 'Cloud database integration is disabled in .env (USE_SUPABASE=false).'}
 
     conn = get_listings_db(db_path)
-    report = {'skills': 0, 'interests': 0, 'projects': 0, 'requirements': 0, 'errors': []}
+    report = {
+        'skills': 0, 'interests': 0, 'projects': 0, 'requirements': 0,
+        'availability_slots': 0, 'project_interests': 0, 'team_members': 0,
+        'applications': 0, 'invitations': 0, 'errors': []
+    }
 
     try:
         # 1. Sync Skills Catalog
@@ -244,6 +253,56 @@ def sync_local_listings_to_cloud(db_path=None):
             else:
                 report['errors'].append(f"Project skill requirements sync error ({code}): {res}")
 
+        # 5. Sync Project Availability Slots
+        slots = [dict(r) for r in conn.execute("SELECT * FROM project_availability_slots").fetchall()]
+        if slots:
+            code, res = supabase_request('project_availability_slots', method='POST', data=slots,
+                                         extra_headers={'Prefer': 'resolution=merge-duplicates'})
+            if code in (200, 201):
+                report['availability_slots'] = len(slots)
+            else:
+                report['errors'].append(f"Availability slots sync error ({code}): {res}")
+
+        # 6. Sync Project Interests
+        p_interests = [dict(r) for r in conn.execute("SELECT * FROM project_interests").fetchall()]
+        if p_interests:
+            code, res = supabase_request('project_interests', method='POST', data=p_interests,
+                                         extra_headers={'Prefer': 'resolution=merge-duplicates'})
+            if code in (200, 201):
+                report['project_interests'] = len(p_interests)
+            else:
+                report['errors'].append(f"Project interests sync error ({code}): {res}")
+
+        # 7. Sync Team Members
+        members = [dict(r) for r in conn.execute("SELECT * FROM team_members").fetchall()]
+        if members:
+            code, res = supabase_request('team_members', method='POST', data=members,
+                                         extra_headers={'Prefer': 'resolution=merge-duplicates'})
+            if code in (200, 201):
+                report['team_members'] = len(members)
+            else:
+                report['errors'].append(f"Team members sync error ({code}): {res}")
+
+        # 8. Sync Project Applications
+        apps = [dict(r) for r in conn.execute("SELECT * FROM project_applications").fetchall()]
+        if apps:
+            code, res = supabase_request('project_applications', method='POST', data=apps,
+                                         extra_headers={'Prefer': 'resolution=merge-duplicates'})
+            if code in (200, 201):
+                report['applications'] = len(apps)
+            else:
+                report['errors'].append(f"Project applications sync error ({code}): {res}")
+
+        # 9. Sync Invitations
+        invs = [dict(r) for r in conn.execute("SELECT * FROM invitations").fetchall()]
+        if invs:
+            code, res = supabase_request('invitations', method='POST', data=invs,
+                                         extra_headers={'Prefer': 'resolution=merge-duplicates'})
+            if code in (200, 201):
+                report['invitations'] = len(invs)
+            else:
+                report['errors'].append(f"Invitations sync error ({code}): {res}")
+
     finally:
         conn.close()
 
@@ -253,3 +312,63 @@ def sync_local_listings_to_cloud(db_path=None):
         'report': report,
         'message': 'Sync completed successfully!' if success else f"Sync completed with {len(report['errors'])} error(s)."
     }
+
+
+def sync_cloud_to_local_listings(db_path=None):
+    """
+    Safely hydrate the local SQLite database from persistent Supabase tables.
+    Used on serverless platforms (e.g. Vercel /tmp) or on startup when cloud is enabled.
+    """
+    from app.models import get_listings_db
+
+    if not is_cloud_enabled():
+        return False, "Cloud sync is disabled."
+
+    try:
+        # 1. Fetch projects
+        code, cloud_projects = supabase_request('projects', method='GET', query_params={'select': '*'}, timeout=5)
+        if code != 200 or not isinstance(cloud_projects, list):
+            return False, f"Could not fetch cloud projects (status {code})"
+
+        conn = get_listings_db(db_path)
+        cur = conn.cursor()
+
+        for p in cloud_projects:
+            cur.execute("""
+                INSERT OR REPLACE INTO projects (
+                    id, owner_id, title, description, category, objectives, technologies,
+                    duration, collaboration_mode, availability, additional_requirements,
+                    course_context, team_size_min, team_size_max, schedule_notes, status,
+                    created_at, updated_at
+                ) VALUES (
+                    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                )
+            """, (
+                p.get('id'), p.get('owner_id'), p.get('title'), p.get('description'),
+                p.get('category'), p.get('objectives'), p.get('technologies'),
+                p.get('duration'), p.get('collaboration_mode'), p.get('availability'),
+                p.get('additional_requirements'), p.get('course_context'),
+                p.get('team_size_min', 2), p.get('team_size_max', 4),
+                p.get('schedule_notes'), p.get('status', 'published'),
+                p.get('created_at'), p.get('updated_at')
+            ))
+
+        # 2. Fetch skill requirements
+        req_code, cloud_reqs = supabase_request('project_skill_requirements', method='GET', query_params={'select': '*'}, timeout=5)
+        if req_code == 200 and isinstance(cloud_reqs, list):
+            for r in cloud_reqs:
+                cur.execute("""
+                    INSERT OR REPLACE INTO project_skill_requirements (
+                        id, project_id, skill_id, priority, proficiency_level, weight
+                    ) VALUES (?, ?, ?, ?, ?, ?)
+                """, (
+                    r.get('id'), r.get('project_id'), r.get('skill_id'),
+                    r.get('priority', 'must-have'), r.get('proficiency_level', 'Intermediate'),
+                    r.get('weight', 3.0)
+                ))
+
+        conn.commit()
+        conn.close()
+        return True, f"Synchronized {len(cloud_projects)} projects from Supabase."
+    except Exception as e:
+        return False, f"Cloud hydration warning: {str(e)}"

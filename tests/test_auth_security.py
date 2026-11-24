@@ -1,0 +1,389 @@
+"""
+Security tests for SkillSync:
+- Rejection of unverified headers, numeric user IDs, and spoofed Authorization tokens.
+- Cryptographically signed token verification and rejection of forged/expired tokens.
+- Deactivated user rejection for all protected endpoints and admin functions.
+- Database-verified admin and coordinator authorization (prevents session tampering).
+- Project ownership authorization guards (owners can edit/delete; non-owners denied).
+- Team member permissions (regular members cannot edit or delete projects).
+- Normal students can create and publish projects; admins retain full management access.
+- Cloud sync endpoint admin authorization guard.
+- Project ownership resolution through student_profiles.
+"""
+
+import pytest
+import tempfile
+import os
+import time
+from flask import session
+from app import create_app
+from app.models import init_db, execute_db, query_db
+from app.routes.auth import generate_auth_token, verify_auth_token
+from werkzeug.security import generate_password_hash
+
+
+@pytest.fixture
+def app():
+    fd, db_path = tempfile.mkstemp(suffix='.db')
+    os.close(fd)
+    init_db(db_path)
+
+    app = create_app(db_path=db_path, test_config={
+        'TESTING': True,
+        'DATABASE': db_path,
+        'SECRET_KEY': 'secure-test-secret-key-12345'
+    })
+    yield app
+
+    try:
+        os.remove(db_path)
+    except OSError:
+        pass
+
+
+@pytest.fixture
+def client(app):
+    return app.test_client()
+
+
+def setup_users_and_projects(app):
+    db_path = app.config['DATABASE']
+    pw = generate_password_hash("SecretPassword123")
+
+    admin_id = execute_db("INSERT INTO users (email, password_hash, role, status) VALUES ('admin@bmsit.in', ?, 'admin', 'active')", (pw,), db_path=db_path)
+    coord_id = execute_db("INSERT INTO users (email, password_hash, role, status) VALUES ('coord@bmsit.in', ?, 'coordinator', 'active')", (pw,), db_path=db_path)
+    s1_id = execute_db("INSERT INTO users (email, password_hash, role, status) VALUES ('student1@bmsit.in', ?, 'student', 'active')", (pw,), db_path=db_path)
+    s2_id = execute_db("INSERT INTO users (email, password_hash, role, status) VALUES ('student2@bmsit.in', ?, 'student', 'active')", (pw,), db_path=db_path)
+    deactivated_id = execute_db("INSERT INTO users (email, password_hash, role, status) VALUES ('deactivated@bmsit.in', ?, 'student', 'deactivated')", (pw,), db_path=db_path)
+    deactivated_admin_id = execute_db("INSERT INTO users (email, password_hash, role, status) VALUES ('deact_admin@bmsit.in', ?, 'admin', 'deactivated')", (pw,), db_path=db_path)
+
+    prof1_id = execute_db("INSERT INTO student_profiles (user_id, display_name, branch, year) VALUES (?, 'Student One', 'CSE', '3rd Year')", (s1_id,), db_path=db_path)
+    prof2_id = execute_db("INSERT INTO student_profiles (user_id, display_name, branch, year) VALUES (?, 'Student Two', 'ISE', '3rd Year')", (s2_id,), db_path=db_path)
+    execute_db("INSERT INTO student_profiles (user_id, display_name, branch, year) VALUES (?, 'Faculty Coordinator', 'CSE', 'Faculty')", (coord_id,), db_path=db_path)
+
+    # Project owned by student 1
+    p1_id = execute_db("INSERT INTO projects (owner_id, title, description, category, status) VALUES (?, 'Project S1', 'Description', 'Web Development', 'published')", (s1_id,), db_path=db_path)
+
+    # Skill requirement for p1
+    sk_id = execute_db("INSERT INTO skills (name, category, active) VALUES ('Python', 'Backend', 1)", db_path=db_path)
+    execute_db("INSERT INTO project_skill_requirements (project_id, skill_id, priority, proficiency_level, weight) VALUES (?, ?, 'must-have', 'Intermediate', 3.0)", (p1_id, sk_id), db_path=db_path)
+
+    return {
+        'admin_id': admin_id,
+        'coord_id': coord_id,
+        's1_id': s1_id,
+        's2_id': s2_id,
+        'prof1_id': prof1_id,
+        'prof2_id': prof2_id,
+        'deactivated_id': deactivated_id,
+        'deactivated_admin_id': deactivated_admin_id,
+        'p1_id': p1_id,
+        'skill_id': sk_id
+    }
+
+
+def test_numeric_user_id_in_authorization_header_is_rejected(app, client):
+    """Numeric string in Authorization header or X-User-Id must NOT authenticate."""
+    ids = setup_users_and_projects(app)
+    admin_id = ids['admin_id']
+
+    # 1. Bearer <numeric_id> must be rejected with 401
+    res = client.get('/my-projects', headers={'Authorization': f'Bearer {admin_id}', 'Accept': 'application/json'})
+    assert res.status_code == 401
+
+    # 2. X-User-Id header must be ignored and rejected with 401
+    res2 = client.get('/my-projects', headers={'X-User-Id': str(admin_id), 'Accept': 'application/json'})
+    assert res2.status_code == 401
+
+    # 3. Arbitrary forged strings must be rejected with 401
+    res3 = client.get('/my-projects', headers={'Authorization': 'Bearer forged-random-string', 'Accept': 'application/json'})
+    assert res3.status_code == 401
+
+
+def test_cryptographically_signed_token_is_accepted(app, client):
+    """Cryptographically signed timed tokens generated by the application succeed."""
+    ids = setup_users_and_projects(app)
+    s1_id = ids['s1_id']
+
+    with app.app_context():
+        valid_token = generate_auth_token(s1_id)
+
+    res = client.get('/my-projects', headers={'Authorization': f'Bearer {valid_token}'})
+    assert res.status_code == 200
+    assert b"My Projects" in res.data or b"Project S1" in res.data
+
+
+def test_invalid_and_expired_tokens_are_rejected(app, client):
+    """Forged tokens or expired tokens must be rejected with 401."""
+    ids = setup_users_and_projects(app)
+    s1_id = ids['s1_id']
+
+    with app.app_context():
+        token = generate_auth_token(s1_id)
+        # Verify that an expired token (max_age < 0) is rejected
+        assert verify_auth_token(token, max_age=-1) is None
+
+    # Tampered token
+    tampered_token = token + "corrupted"
+    res = client.get('/my-projects', headers={'Authorization': f'Bearer {tampered_token}', 'Accept': 'application/json'})
+    assert res.status_code == 401
+
+
+def test_deactivated_user_cannot_access_protected_endpoints(app, client):
+    """Deactivated accounts cannot authenticate or access endpoints even with active session."""
+    ids = setup_users_and_projects(app)
+    deactivated_id = ids['deactivated_id']
+
+    with client.session_transaction() as sess:
+        sess['user_id'] = deactivated_id
+        sess['user_email'] = 'deactivated@bmsit.in'
+        sess['user_role'] = 'student'
+
+    res = client.get('/my-projects', headers={'Accept': 'application/json'})
+    assert res.status_code == 401
+    assert b"deactivated" in res.data or b"expired" in res.data
+
+
+def test_deactivated_admin_cannot_access_admin_endpoints(app, client):
+    """Deactivated administrators are rejected with 401."""
+    ids = setup_users_and_projects(app)
+    deact_admin = ids['deactivated_admin_id']
+
+    with client.session_transaction() as sess:
+        sess['user_id'] = deact_admin
+        sess['user_email'] = 'deact_admin@bmsit.in'
+        sess['user_role'] = 'admin'
+
+    res = client.get('/admin/dashboard', headers={'Accept': 'application/json'})
+    assert res.status_code == 401
+
+
+def test_admin_role_verified_against_database_not_session(app, client):
+    """If session claims role='admin' but database says 'student', admin access is denied."""
+    ids = setup_users_and_projects(app)
+    s1_id = ids['s1_id']  # role in DB is 'student'
+
+    # Spoofed session claiming admin role
+    with client.session_transaction() as sess:
+        sess['user_id'] = s1_id
+        sess['user_email'] = 'student1@bmsit.in'
+        sess['user_role'] = 'admin'  # forged in session
+
+    res = client.get('/admin/dashboard', headers={'Accept': 'application/json'})
+    assert res.status_code == 403
+    assert res.get_json().get('error') == 'Administrator privileges required.'
+
+
+def test_coordinator_authorization_granted(app, client):
+    """Faculty coordinators have administrative access and can view admin dashboard."""
+    ids = setup_users_and_projects(app)
+    coord_id = ids['coord_id']
+
+    with client.session_transaction() as sess:
+        sess['user_id'] = coord_id
+        sess['user_email'] = 'coord@bmsit.in'
+        sess['user_role'] = 'coordinator'
+
+    res = client.get('/admin/dashboard')
+    assert res.status_code == 200
+    assert b"User Management" in res.data or b"Project Management" in res.data
+
+
+def test_normal_student_can_create_and_publish_project(app, client):
+    """Normal students can create a draft project and publish it."""
+    ids = setup_users_and_projects(app)
+    s2_id = ids['s2_id']
+
+    with client.session_transaction() as sess:
+        sess['user_id'] = s2_id
+        sess['user_email'] = 'student2@bmsit.in'
+        sess['user_role'] = 'student'
+
+    # Create and publish project
+    res = client.post('/projects/create', json={
+        'title': 'Student 2 Web App',
+        'description': 'A web application built by student 2',
+        'category': 'Web Development',
+        'action': 'publish',
+        'skills': [{'name': 'Flask', 'priority': 'must-have', 'proficiency': 'Intermediate'}]
+    }, headers={'Content-Type': 'application/json', 'Accept': 'application/json'})
+
+    assert res.status_code in (200, 201)
+    data = res.get_json()
+    assert data.get('success') is True
+
+
+def test_project_owner_can_edit_and_delete_own_project(app, client):
+    """Project owner can edit and delete their own project."""
+    ids = setup_users_and_projects(app)
+    s1_id = ids['s1_id']
+    p1_id = ids['p1_id']
+
+    with client.session_transaction() as sess:
+        sess['user_id'] = s1_id
+        sess['user_email'] = 'student1@bmsit.in'
+        sess['user_role'] = 'student'
+
+    # Edit own project
+    res_edit = client.post(f'/projects/{p1_id}/edit', data={
+        'title': 'Project S1 Updated Title',
+        'description': 'Updated Description',
+        'category': 'Web Development',
+        'action': 'save'
+    }, follow_redirects=True)
+    assert res_edit.status_code == 200
+    assert b"updated successfully" in res_edit.data
+
+    # Delete own project
+    res_del = client.post(f'/projects/{p1_id}/delete', follow_redirects=True)
+    assert res_del.status_code == 200
+    assert b"deleted successfully" in res_del.data
+
+
+def test_user_cannot_modify_or_delete_other_user_project(app, client):
+    """A user cannot edit or delete projects belonging to other users."""
+    ids = setup_users_and_projects(app)
+    s2_id = ids['s2_id']  # stranger to p1
+    p1_id = ids['p1_id']
+
+    with client.session_transaction() as sess:
+        sess['user_id'] = s2_id
+        sess['user_email'] = 'student2@bmsit.in'
+        sess['user_role'] = 'student'
+
+    # Attempt to edit p1
+    res_edit = client.post(f'/projects/{p1_id}/edit', data={
+        'title': 'Malicious Edit Title',
+        'description': 'Hacked',
+        'category': 'Web Development',
+        'action': 'save'
+    }, follow_redirects=True)
+    assert b"Unauthorized: You can only edit projects you created" in res_edit.data
+
+    # Attempt to delete p1
+    res_del = client.post(f'/projects/{p1_id}/delete', follow_redirects=True)
+    assert b"Unauthorized" in res_del.data
+
+    # Verify project still exists in database
+    with app.app_context():
+        p = query_db("SELECT * FROM projects WHERE id = ?", (p1_id,), one=True, db_path=app.config['DATABASE'])
+        assert p is not None
+        assert p['title'] != 'Malicious Edit Title'
+
+
+def test_regular_team_member_cannot_edit_or_delete_project(app, client):
+    """A team member with role='member' cannot edit or delete the project."""
+    ids = setup_users_and_projects(app)
+    s2_id = ids['s2_id']
+    p1_id = ids['p1_id']
+    db_path = app.config['DATABASE']
+
+    # Add s2 as regular team member (role='member')
+    execute_db("INSERT INTO team_members (project_id, user_id, role) VALUES (?, ?, 'member')", (p1_id, s2_id), db_path=db_path)
+
+    with client.session_transaction() as sess:
+        sess['user_id'] = s2_id
+        sess['user_email'] = 'student2@bmsit.in'
+        sess['user_role'] = 'student'
+
+    # Attempt to edit project
+    res_edit = client.post(f'/projects/{p1_id}/edit', data={
+        'title': 'Member Tamper Title',
+        'description': 'Description',
+        'category': 'Web Development',
+        'action': 'save'
+    }, follow_redirects=True)
+    assert b"Unauthorized: You can only edit projects you created" in res_edit.data
+
+    # Attempt to delete project
+    res_del = client.post(f'/projects/{p1_id}/delete', follow_redirects=True)
+    assert b"Unauthorized" in res_del.data
+
+
+def test_admin_can_edit_another_student_project(app, client):
+    """Admins can edit any student's project directly via /projects/<id>/edit."""
+    ids = setup_users_and_projects(app)
+    admin_id = ids['admin_id']
+    p1_id = ids['p1_id']
+
+    with client.session_transaction() as sess:
+        sess['user_id'] = admin_id
+        sess['user_email'] = 'admin@bmsit.in'
+        sess['user_role'] = 'admin'
+
+    res = client.post(f'/projects/{p1_id}/edit', data={
+        'title': 'Admin Corrected Title',
+        'description': 'Admin updated description',
+        'category': 'Web Development',
+        'action': 'save'
+    }, follow_redirects=True)
+    assert res.status_code == 200
+    assert b"Project updated successfully" in res.data
+
+    with app.app_context():
+        p = query_db("SELECT title FROM projects WHERE id = ?", (p1_id,), one=True, db_path=app.config['DATABASE'])
+        assert p['title'] == 'Admin Corrected Title'
+
+
+def test_admin_can_delete_another_student_project(app, client):
+    """Admins can delete any student's project directly via standard and admin deletion endpoints."""
+    ids = setup_users_and_projects(app)
+    admin_id = ids['admin_id']
+    p1_id = ids['p1_id']
+
+    with client.session_transaction() as sess:
+        sess['user_id'] = admin_id
+        sess['user_email'] = 'admin@bmsit.in'
+        sess['user_role'] = 'admin'
+
+    # Standard project deletion endpoint
+    res = client.post(f'/projects/{p1_id}/delete', follow_redirects=True)
+    assert res.status_code == 200
+    assert b"deleted successfully" in res.data
+
+    with app.app_context():
+        p = query_db("SELECT * FROM projects WHERE id = ?", (p1_id,), one=True, db_path=app.config['DATABASE'])
+        assert p is None
+
+
+def test_ownership_resolved_through_student_profiles(app, client):
+    """Projects where owner_id is stored as student_profiles.id resolve correctly to the profile owner."""
+    ids = setup_users_and_projects(app)
+    s2_id = ids['s2_id']
+    db_path = app.config['DATABASE']
+
+    # Create a user s3 and give their profile a high ID (9999) that does not collide with existing user IDs
+    legacy_prof_id = 9999
+    pw = generate_password_hash("pass123")
+    s3_id = execute_db("INSERT INTO users (email, password_hash, role, status) VALUES ('s3@bmsit.in', ?, 'student', 'active')", (pw,), db_path=db_path)
+    execute_db("INSERT INTO student_profiles (id, user_id, display_name, branch, year) VALUES (?, ?, 'Legacy Student', 'CSE', '4th Year')", (legacy_prof_id, s3_id), db_path=db_path)
+    p_legacy_id = execute_db("INSERT INTO projects (owner_id, title, description, category, status) VALUES (?, 'Legacy Profile Project', 'Desc', 'Web Development', 'published')", (legacy_prof_id,), db_path=db_path)
+
+    # 1. Real owner (s3) can edit it
+    with client.session_transaction() as sess:
+        sess['user_id'] = s3_id
+        sess['user_email'] = 's3@bmsit.in'
+        sess['user_role'] = 'student'
+
+    res_owner = client.post(f'/projects/{p_legacy_id}/edit', data={
+        'title': 'Legacy Project Updated by Real Owner',
+        'description': 'Desc',
+        'category': 'Web Development',
+        'action': 'save'
+    }, follow_redirects=True)
+    assert res_owner.status_code == 200
+    assert b"Project updated successfully" in res_owner.data
+
+    # 2. Other user (s2) is rejected
+    with client.session_transaction() as sess:
+        sess['user_id'] = s2_id
+        sess['user_email'] = 'student2@bmsit.in'
+        sess['user_role'] = 'student'
+
+    res_other = client.post(f'/projects/{p_legacy_id}/edit', data={
+        'title': 'Hacked Legacy Title',
+        'description': 'Desc',
+        'category': 'Web Development',
+        'action': 'save'
+    }, follow_redirects=True)
+    assert b"Unauthorized: You can only edit projects you created" in res_other.data

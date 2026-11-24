@@ -80,13 +80,11 @@ def is_project_owner(project, user_id=None, db_path=None, allow_admin=True):
     """
     if user_id is None and has_request_context():
         user_id = session.get('user_id')
-
-    if not user_id and has_request_context():
-        auth_hdr = request.headers.get('X-User-Id') or request.headers.get('Authorization', '')
-        if auth_hdr:
-            token = auth_hdr[7:].strip() if auth_hdr.startswith('Bearer ') else auth_hdr.strip()
-            if token.isdigit():
-                user_id = int(token)
+        if not user_id:
+            auth_header = request.headers.get('Authorization')
+            if auth_header and auth_header.startswith('Bearer '):
+                from app.routes.auth import verify_auth_token
+                user_id = verify_auth_token(auth_header[7:].strip())
 
     if not user_id:
         return False
@@ -98,18 +96,17 @@ def is_project_owner(project, user_id=None, db_path=None, allow_admin=True):
         u_int = None
 
     # Step 1: Priority Admin & Coordinator Override
-    # Unconditionally grants full access to admins and faculty coordinators
+    # Verified against the database; deactivated accounts are denied
     if allow_admin:
-        user_role = session.get('user_role') if has_request_context() else None
-        if not user_role and u_int is not None:
-            try:
-                u_rec = query_db("SELECT role FROM users WHERE id = ?", (u_int,), one=True, db_path=db_path)
-                if u_rec and u_rec.get('role'):
-                    user_role = u_rec.get('role')
-            except Exception:
-                pass
-        if user_role and str(user_role).strip().lower() in ('admin', 'coordinator'):
-            return True
+        try:
+            user_param = u_int if u_int is not None else u_str
+            u_rec = query_db("SELECT role, status FROM users WHERE id = ?", (user_param,), one=True, db_path=db_path)
+            if u_rec and u_rec.get('status') != 'deactivated':
+                db_role = u_rec.get('role', '')
+                if db_role and str(db_role).strip().lower() in ('admin', 'coordinator'):
+                    return True
+        except Exception:
+            pass
 
     if not project:
         return False
@@ -131,20 +128,24 @@ def is_project_owner(project, user_id=None, db_path=None, allow_admin=True):
         except (ValueError, TypeError):
             o_int = None
 
-        # Direct string or integer match
+        # Direct string or integer match (supports both numeric IDs and Supabase UUIDs)
         if o_str == u_str or (o_int is not None and u_int is not None and o_int == u_int):
             return True
 
-        # Check if owner_val is student_profiles.id matching user's account
-        if u_int is not None:
-            prof_by_user = query_db("SELECT id FROM student_profiles WHERE user_id = ?", (u_int,), one=True, db_path=db_path)
-            if prof_by_user and str(prof_by_user['id']) == o_str:
-                return True
+        u_param = u_int if u_int is not None else u_str
+        o_param = o_int if o_int is not None else o_str
 
-        # Check if user_id is student_profiles.id matching project's owner_id
-        if o_int is not None:
-            user_by_prof = query_db("SELECT user_id FROM student_profiles WHERE id = ?", (o_int,), one=True, db_path=db_path)
-            if user_by_prof and str(user_by_prof['user_id']) == u_str:
+        # Check if caller passed student_profiles.id matching project's owner_id
+        user_by_prof = query_db("SELECT user_id FROM student_profiles WHERE id = ?", (u_param,), one=True, db_path=db_path)
+        if user_by_prof and (str(user_by_prof['user_id']) == o_str or (o_int is not None and user_by_prof['user_id'] == o_int)):
+            return True
+
+        # Check if project's owner_id was stored as student_profiles.id matching caller's user_id
+        # (Only applicable when owner_id does not already belong to an existing user)
+        owner_as_user = query_db("SELECT id FROM users WHERE id = ?", (o_param,), one=True, db_path=db_path)
+        if not owner_as_user:
+            owner_by_prof = query_db("SELECT user_id FROM student_profiles WHERE id = ?", (o_param,), one=True, db_path=db_path)
+            if owner_by_prof and (str(owner_by_prof['user_id']) == u_str or (u_int is not None and owner_by_prof['user_id'] == u_int)):
                 return True
 
     # Check team_members table for role='owner'
@@ -296,6 +297,15 @@ def save_project_skills(project_id, skills_data, project_category='Other'):
 def landing():
     """Renders the modern SkillSync opening landing page."""
     try:
+        from app.supabase_client import is_cloud_enabled, sync_cloud_to_local_listings
+        if is_cloud_enabled():
+            p_cnt = query_db("SELECT COUNT(*) as count FROM projects", one=True)
+            if not p_cnt or p_cnt['count'] == 0:
+                sync_cloud_to_local_listings()
+    except Exception:
+        pass
+
+    try:
         featured_projects = query_db("""
             SELECT p.*,
                    COALESCE(sp.display_name, u.email, 'Student') as owner_name,
@@ -412,6 +422,15 @@ def compute_pagination(current_page, total_pages, delta=2):
 def list_projects():
     """List open and published projects with smart pagination, search, category filters, and sorting."""
     import math
+
+    try:
+        from app.supabase_client import is_cloud_enabled, sync_cloud_to_local_listings
+        if is_cloud_enabled():
+            p_cnt = query_db("SELECT COUNT(*) as count FROM projects", one=True)
+            if not p_cnt or p_cnt['count'] == 0:
+                sync_cloud_to_local_listings()
+    except Exception:
+        pass
 
     user_id = session.get('user_id')
     page = request.args.get('page', 1, type=int)
@@ -947,6 +966,21 @@ def create_project():
         finally:
             conn.close()
 
+        # Cloud database synchronization (non-blocking, non-fatal)
+        try:
+            from app.supabase_client import is_cloud_enabled, upsert_cloud_project, supabase_request
+            if is_cloud_enabled():
+                p_saved = query_db("SELECT * FROM projects WHERE id = ?", (proj_id,), one=True)
+                if p_saved:
+                    upsert_cloud_project(dict(p_saved))
+                    p_reqs = query_db("SELECT * FROM project_skill_requirements WHERE project_id = ?", (proj_id,))
+                    if p_reqs:
+                        supabase_request('project_skill_requirements', method='POST',
+                                         data=[dict(r) for r in p_reqs],
+                                         extra_headers={'Prefer': 'resolution=merge-duplicates'})
+        except Exception:
+            pass
+
         # Audit logging (non-fatal)
         try:
             if status == 'published':
@@ -1051,6 +1085,21 @@ def edit_project(project_id):
 
         if skills_data:
             save_project_skills(project_id, skills_data, category)
+
+        # Cloud database synchronization (non-blocking, non-fatal)
+        try:
+            from app.supabase_client import is_cloud_enabled, upsert_cloud_project, supabase_request
+            if is_cloud_enabled():
+                p_saved = query_db("SELECT * FROM projects WHERE id = ?", (project_id,), one=True)
+                if p_saved:
+                    upsert_cloud_project(dict(p_saved))
+                    p_reqs = query_db("SELECT * FROM project_skill_requirements WHERE project_id = ?", (project_id,))
+                    if p_reqs:
+                        supabase_request('project_skill_requirements', method='POST',
+                                         data=[dict(r) for r in p_reqs],
+                                         extra_headers={'Prefer': 'resolution=merge-duplicates'})
+        except Exception:
+            pass
 
         flash('Project updated successfully.', 'success')
         return redirect(url_for('projects.project_detail', project_id=project_id))
@@ -1680,6 +1729,21 @@ def publish_project(project_id):
     # 6. Update status to published
     execute_db("UPDATE projects SET status = 'published', updated_at = CURRENT_TIMESTAMP WHERE id = ?", (pid_int,))
     log_event('project_published', actor_id=user_id, target_type='project', target_id=pid_int)
+
+    # Cloud database synchronization (non-blocking, non-fatal)
+    try:
+        from app.supabase_client import is_cloud_enabled, upsert_cloud_project, supabase_request
+        if is_cloud_enabled():
+            p_saved = query_db("SELECT * FROM projects WHERE id = ?", (pid_int,), one=True)
+            if p_saved:
+                upsert_cloud_project(dict(p_saved))
+                p_reqs = query_db("SELECT * FROM project_skill_requirements WHERE project_id = ?", (pid_int,))
+                if p_reqs:
+                    supabase_request('project_skill_requirements', method='POST',
+                                     data=[dict(r) for r in p_reqs],
+                                     extra_headers={'Prefer': 'resolution=merge-duplicates'})
+    except Exception:
+        pass
 
     if is_ajax:
         return jsonify({

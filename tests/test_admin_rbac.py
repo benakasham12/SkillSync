@@ -335,3 +335,36 @@ def test_admin_dashboard_metrics_and_tables(app, client):
     assert b"Student 1 AI Project" in res.data
     assert b"Total Registered Users" in res.data
     assert b"Total Projects Created" in res.data
+
+
+def test_cloud_sync_endpoint_requires_admin_authorization(app, client):
+    """Verify that /api/cloud/sync requires secure admin authorization and rejects anonymous/normal users."""
+    ids = setup_users_and_projects(app)
+    admin_id = ids['admin_id']
+    student_id = ids['student1_id']
+
+    # 1. Unauthenticated request must return 401
+    res_anon = client.post('/api/cloud/sync', json={})
+    assert res_anon.status_code == 401
+    assert res_anon.get_json().get('error') == 'Authentication required'
+
+    # 2. Normal student request must return 403 Forbidden
+    with client.session_transaction() as sess:
+        sess['user_id'] = student_id
+        sess['user_role'] = 'student'
+        sess['user_email'] = 'student1@bmsit.in'
+
+    res_student = client.post('/api/cloud/sync', json={})
+    assert res_student.status_code == 403
+    assert res_student.get_json().get('error') == 'Administrator privileges required.'
+
+    # 3. Admin request is authorized
+    with client.session_transaction() as sess:
+        sess['user_id'] = admin_id
+        sess['user_role'] = 'admin'
+        sess['user_email'] = 'admin@bmsit.in'
+
+    # When cloud is not enabled in test environment, sync returns 500 or proper json response, but is NOT rejected with 401/403
+    res_admin = client.post('/api/cloud/sync', json={})
+    assert res_admin.status_code in (200, 500)
+    assert res_admin.status_code not in (401, 403)

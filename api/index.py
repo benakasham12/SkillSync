@@ -25,10 +25,33 @@ else:
 
 
 def initialize_environment():
-    """Initializes and seeds database safely if needed."""
+    """Initializes and seeds database safely if needed, syncing from Supabase when cloud is enabled."""
     try:
+        from app.supabase_client import is_cloud_enabled, sync_cloud_to_local_listings
+        cloud_active = is_cloud_enabled()
+
         if not os.path.exists(db_path) or os.path.getsize(db_path) == 0:
-            seed_database(db_path)
+            if cloud_active:
+                # Initialize SQLite schema and standard catalogs without wiping with demo cohort
+                init_db(db_path)
+                from app.seed_data import load_seed_json
+                from app.models import get_listings_db
+                data = load_seed_json()
+                conn = get_listings_db(db_path)
+                cur = conn.cursor()
+                skills_to_insert = [(s['name'], s['category']) for s in data.get('skills_catalog', [])]
+                cur.executemany("INSERT OR IGNORE INTO skills (name, category) VALUES (?, ?)", skills_to_insert)
+                interests_to_insert = [(i['name'], i['category']) for i in data.get('interests_catalog', [])]
+                cur.executemany("INSERT OR IGNORE INTO interests (name, category) VALUES (?, ?)", interests_to_insert)
+                conn.commit()
+                conn.close()
+                # Hydrate projects from persistent Supabase
+                sync_cloud_to_local_listings(db_path)
+            else:
+                seed_database(db_path)
+        elif cloud_active:
+            # Sync any new or updated cloud projects on warm start
+            sync_cloud_to_local_listings(db_path)
     except Exception as e:
         print(f"Database initialization warning: {e}")
         try:
