@@ -114,7 +114,8 @@ def is_project_owner(project, user_id=None, db_path=None, allow_admin=True):
     if not isinstance(project, dict):
         try:
             pid = int(project)
-            project = query_db("SELECT * FROM projects WHERE id = ?", (pid,), one=True, db_path=db_path)
+            from app.models import get_project_or_restore
+            project = get_project_or_restore(pid, db_path=db_path)
             if not project:
                 return False
         except (ValueError, TypeError):
@@ -971,6 +972,31 @@ def create_project():
 
             conn.commit()
 
+            # Cache in session so ephemeral serverless containers retain access
+            recent = session.get('recent_projects') or {}
+            recent[str(proj_id)] = {
+                'id': proj_id,
+                'owner_id': user_id,
+                'title': title,
+                'description': description,
+                'category': category,
+                'objectives': objectives,
+                'technologies': technologies,
+                'duration': duration,
+                'collaboration_mode': collaboration_mode,
+                'availability': availability,
+                'course_context': course_context,
+                'team_size_min': team_size_min,
+                'team_size_max': team_size_max,
+                'schedule_notes': schedule_notes,
+                'status': status
+            }
+            if len(recent) > 5:
+                oldest_key = list(recent.keys())[0]
+                del recent[oldest_key]
+            session['recent_projects'] = recent
+            session.modified = True
+
         except Exception as e:
             conn.rollback()
             err_msg = f"Database operation failed: {str(e)}"
@@ -979,7 +1005,8 @@ def create_project():
             flash(err_msg, 'danger')
             return render_create_template(form_data=request.form)
         finally:
-            conn.close()
+            if not has_request_context() and not has_app_context():
+                conn.close()
 
         # Cloud database synchronization (non-blocking, non-fatal)
         try:
@@ -1275,6 +1302,10 @@ def project_detail(project_id):
         FROM projects p
         WHERE p.id = ?
     """, (project_id,), one=True)
+
+    if not project:
+        from app.models import get_project_or_restore
+        project = get_project_or_restore(project_id)
 
     if not project:
         is_ajax = (
@@ -1801,10 +1832,15 @@ def close_project(project_id):
 def match_candidates(project_id):
     """Ranks candidates using explainable formula: Match Score = 0.65 * Skill + 0.25 * Availability + 0.10 * Interest"""
     user_id = session['user_id']
-    project = query_db("SELECT * FROM projects WHERE id = ?", (project_id,), one=True)
-    if not project or not is_project_owner(project, user_id):
+    from app.models import get_project_or_restore
+    project = get_project_or_restore(project_id)
+    if not project:
+        flash('Project not found.', 'danger')
+        return redirect(url_for('projects.list_projects'))
+
+    if not is_project_owner(project, user_id):
         flash('Only the project owner can view match recommendations for this project.', 'danger')
-        return redirect(url_for('projects.project_detail', project_id=project['id']) if project else url_for('projects.list_projects'))
+        return redirect(url_for('projects.project_detail', project_id=project['id']))
 
     filters = {
         'skill_id': request.args.get('skill_id'),
@@ -1837,9 +1873,12 @@ def match_candidates(project_id):
 def api_matches(project_id):
     """JSON API endpoint for matches."""
     user_id = session['user_id']
-    project = query_db("SELECT * FROM projects WHERE id = ?", (project_id,), one=True)
-    if not project or not is_project_owner(project, user_id):
-        return jsonify({'error': 'Unauthorized: Only the project owner can view match recommendations for this project.'}), 403
+    from app.models import get_project_or_restore
+    project = get_project_or_restore(project_id)
+    if not project:
+        return jsonify({'error': 'Project not found.', 'success': False}), 404
+    if not is_project_owner(project, user_id):
+        return jsonify({'error': 'Unauthorized: Only the project owner can view match recommendations for this project.', 'success': False}), 403
 
     filters = {
         'skill_id': request.args.get('skill_id'),

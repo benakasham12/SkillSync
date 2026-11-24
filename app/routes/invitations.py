@@ -53,8 +53,14 @@ def list_invitations():
 def send_invitation(project_id):
     """Send an invitation to a candidate (FR-10)."""
     user_id = session['user_id']
-    project = query_db("SELECT * FROM projects WHERE id = ?", (project_id,), one=True)
-    if not project or not is_project_owner(project, user_id):
+    from app.models import get_project_or_restore
+    project = get_project_or_restore(project_id)
+
+    if not project:
+        flash('Project not found.', 'danger')
+        return redirect(url_for('projects.list_projects'))
+
+    if not is_project_owner(project, user_id):
         flash('Unauthorized: Only the project owner can send invitations.', 'danger')
         return redirect(url_for('projects.project_detail', project_id=project_id))
 

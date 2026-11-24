@@ -86,6 +86,64 @@ def ensure_db_files_exist(listings_path=None, users_path=None):
                 pass
 
 
+def restore_project_from_session(project_id, db_path=None):
+    """
+    If a project is missing in ephemeral serverless instances (e.g. Vercel /tmp),
+    restore it from the user's session cache if available.
+    """
+    from flask import has_request_context
+    if not has_app_context() or not has_request_context():
+        return None
+    from flask import session
+    cached = session.get('recent_projects') or {}
+    p_data = cached.get(str(project_id))
+    if not p_data:
+        return None
+
+    try:
+        conn = get_db(db_path)
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT OR REPLACE INTO projects (
+                id, owner_id, title, description, category, objectives, technologies,
+                duration, collaboration_mode, availability, additional_requirements,
+                course_context, team_size_min, team_size_max, schedule_notes, status
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            p_data.get('id'), p_data.get('owner_id'), p_data.get('title'),
+            p_data.get('description', ''), p_data.get('category', 'Other'),
+            p_data.get('objectives', ''), p_data.get('technologies', ''),
+            p_data.get('duration', '2–3 Months'), p_data.get('collaboration_mode', 'Hybrid'),
+            p_data.get('availability', 'Flexible'), p_data.get('additional_requirements', ''),
+            p_data.get('course_context', 'Innovation & Design Thinking (IDT)'),
+            p_data.get('team_size_min', 2), p_data.get('team_size_max', 4),
+            p_data.get('schedule_notes', ''), p_data.get('status', 'published')
+        ))
+        cur.execute("""
+            INSERT OR IGNORE INTO team_members (project_id, user_id, role, joined_at)
+            VALUES (?, ?, 'owner', CURRENT_TIMESTAMP)
+        """, (p_data.get('id'), p_data.get('owner_id')))
+        conn.commit()
+        return query_db("SELECT * FROM projects WHERE id = ?", (project_id,), one=True, db_path=db_path)
+    except Exception:
+        return None
+
+
+def get_project_or_restore(project_id, db_path=None):
+    """Fetch project from database, or restore from session cache if running on ephemeral serverless."""
+    if not project_id:
+        return None
+    try:
+        pid = int(project_id)
+    except (ValueError, TypeError):
+        pid = project_id
+
+    project = query_db("SELECT * FROM projects WHERE id = ?", (pid,), one=True, db_path=db_path)
+    if not project:
+        project = restore_project_from_session(pid, db_path=db_path)
+    return project
+
+
 def resolve_db_paths(db_path=None):
     """
     Resolve listings and users database file paths from an optional db_path or app config.
