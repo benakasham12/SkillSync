@@ -72,7 +72,18 @@ def create_app(db_path=None, test_config=None):
         user_role = session.get('user_role')
 
         if uid:
-            res = query_db("SELECT COUNT(*) as cnt FROM invitations WHERE invitee_id = ? AND status = 'pending'", (uid,), one=True)
+            res = query_db("""
+                SELECT (
+                    (SELECT COUNT(*) FROM invitations 
+                     WHERE (invitee_id = ? OR invitee_id IN (SELECT id FROM student_profiles WHERE user_id = ?)) 
+                       AND status = 'pending')
+                    +
+                    (SELECT COUNT(*) FROM project_applications pa
+                     JOIN projects p ON pa.project_id = p.id
+                     WHERE (p.owner_id = ? OR p.owner_id IN (SELECT id FROM student_profiles WHERE user_id = ?))
+                       AND pa.application_status = 'pending')
+                ) as cnt
+            """, (uid, uid, uid, uid), one=True)
             unread_invites_count = res['cnt'] if res else 0
 
             res_m = query_db("""
