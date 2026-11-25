@@ -6,7 +6,8 @@ Invitations routes implementing PRD FR-10, FR-11:
 - Enforces team size limits
 """
 
-from flask import Blueprint, request, session, render_template, redirect, url_for, flash, jsonify
+from flask import Blueprint, request, session, render_template, redirect, url_for, flash, jsonify, current_app
+from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 from app.models import query_db, execute_db
 from app.routes.auth import login_required
 from app.routes.projects import is_project_owner
@@ -14,6 +15,49 @@ from app.matching import compute_team_skill_coverage
 from app.analytics import log_event
 
 invitations_bp = Blueprint('invitations', __name__)
+
+
+def sign_record_token(payload, salt='skillsync-record-token'):
+    """Create a tamper-proof signed token for serverless cross-container state recovery."""
+    try:
+        s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
+        return s.dumps(payload, salt=salt)
+    except Exception:
+        return ''
+
+
+def verify_record_token(token, salt='skillsync-record-token', max_age=86400 * 14):
+    """Verify and decode a signed state recovery token."""
+    if not token:
+        return None
+    try:
+        s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
+        return s.loads(token, salt=salt, max_age=max_age)
+    except (SignatureExpired, BadSignature, Exception):
+        return None
+
+
+def hydrate_invitations_from_session():
+    """Hydrate any invitations cached in the browser session into local SQLite."""
+    from app.models import get_project_or_restore
+    cached_invs = session.get('invitations_cache') or []
+    for inv in cached_invs:
+        try:
+            if inv.get('project_id'):
+                get_project_or_restore(inv.get('project_id'))
+            execute_db("""
+                INSERT OR IGNORE INTO invitations (id, project_id, inviter_id, invitee_id, status, message)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (
+                inv.get('id'),
+                inv.get('project_id'),
+                inv.get('inviter_id'),
+                inv.get('invitee_id'),
+                inv.get('status', 'pending'),
+                inv.get('message', '')
+            ))
+        except Exception:
+            pass
 
 
 def is_same_user_or_profile(user_id, target_id, db_path=None):
@@ -48,11 +92,15 @@ def list_invitations():
     """Display student's incoming/sent project invitations and incoming/outgoing join requests (applications)."""
     user_id = session['user_id']
 
-    # Hydrate any applications cached in the browser session (serverless cross-container consistency)
+    # Hydrate any invitations and applications cached in the browser session (serverless cross-container consistency)
+    hydrate_invitations_from_session()
     cached_apps = session.get('pending_applications_cache') or []
     if cached_apps:
+        from app.models import get_project_or_restore
         for a in cached_apps:
             try:
+                if a.get('project_id'):
+                    get_project_or_restore(a.get('project_id'))
                 execute_db("""
                     INSERT OR IGNORE INTO project_applications (id, project_id, applicant_id, introduction, application_status)
                     VALUES (?, ?, ?, ?, ?)
@@ -150,11 +198,41 @@ def list_invitations():
         ORDER BY (pa.application_status = 'pending') DESC, pa.created_at DESC
     """, (user_id, user_id))
 
+    # Attach signed recovery tokens to pending cards for serverless cross-container safety
+    incoming_enriched = []
+    for inv in incoming:
+        inv_d = dict(inv)
+        proj_snap = query_db("SELECT id, owner_id, title, team_size_min, team_size_max, status FROM projects WHERE id = ?", (inv_d['project_id'],), one=True)
+        inv_d['inv_token'] = sign_record_token({
+            'id': inv_d['id'],
+            'project_id': inv_d['project_id'],
+            'inviter_id': inv_d['inviter_id'],
+            'invitee_id': inv_d['invitee_id'],
+            'status': inv_d['status'],
+            'message': inv_d.get('message', ''),
+            'project': dict(proj_snap) if proj_snap else None
+        }, salt='skillsync-inv-token')
+        incoming_enriched.append(inv_d)
+
+    incoming_apps_enriched = []
+    for app_row in incoming_applications:
+        app_d = dict(app_row)
+        proj_snap = query_db("SELECT id, owner_id, title, team_size_min, team_size_max, status FROM projects WHERE id = ?", (app_d['project_id'],), one=True)
+        app_d['app_token'] = sign_record_token({
+            'id': app_d['id'],
+            'project_id': app_d['project_id'],
+            'applicant_id': app_d['applicant_id'],
+            'introduction': app_d.get('introduction', ''),
+            'application_status': app_d.get('application_status', 'pending'),
+            'project': dict(proj_snap) if proj_snap else None
+        }, salt='skillsync-app-token')
+        incoming_apps_enriched.append(app_d)
+
     return render_template(
         'invitations.html',
-        incoming=incoming,
+        incoming=incoming_enriched,
         outgoing=outgoing,
-        incoming_applications=incoming_applications,
+        incoming_applications=incoming_apps_enriched,
         outgoing_applications=outgoing_applications
     )
 
@@ -230,6 +308,22 @@ def send_invitation(project_id):
         VALUES (?, ?, ?, 'pending', ?)
     """, (project_id, user_id, invitee_id, message))
 
+    # Cache invitation in session for serverless multi-container consistency
+    try:
+        cached_invs = session.get('invitations_cache') or []
+        cached_invs.append({
+            'id': inv_id,
+            'project_id': project_id,
+            'inviter_id': user_id,
+            'invitee_id': invitee_id,
+            'status': 'pending',
+            'message': message
+        })
+        session['invitations_cache'] = cached_invs
+        session.modified = True
+    except Exception:
+        pass
+
     log_event('invitation_sent', actor_id=user_id, target_type='invitation', target_id=inv_id,
               metadata={'project_id': project_id, 'invitee_id': invitee_id})
 
@@ -244,7 +338,44 @@ def respond_invitation(invitation_id):
     user_id = session['user_id']
     action = request.form.get('action') # 'accept' or 'decline'
 
+    hydrate_invitations_from_session()
     invitation = query_db("SELECT * FROM invitations WHERE id = ?", (invitation_id,), one=True)
+
+    # Stateless signed token recovery if running on an isolated serverless container
+    if not invitation:
+        inv_token = request.form.get('inv_token')
+        token_data = verify_record_token(inv_token, salt='skillsync-inv-token')
+        if token_data and str(token_data.get('id')) == str(invitation_id):
+            proj_snap = token_data.get('project')
+            if proj_snap and proj_snap.get('id'):
+                try:
+                    execute_db("""
+                        INSERT OR IGNORE INTO projects (id, owner_id, title, team_size_min, team_size_max, status)
+                        VALUES (?, ?, ?, ?, ?, ?)
+                    """, (
+                        proj_snap.get('id'), proj_snap.get('owner_id'),
+                        proj_snap.get('title', 'Project'), proj_snap.get('team_size_min', 2),
+                        proj_snap.get('team_size_max', 4), proj_snap.get('status', 'published')
+                    ))
+                    execute_db("""
+                        INSERT OR IGNORE INTO team_members (project_id, user_id, role, joined_at)
+                        VALUES (?, ?, 'owner', CURRENT_TIMESTAMP)
+                    """, (proj_snap.get('id'), proj_snap.get('owner_id')))
+                except Exception:
+                    pass
+            try:
+                execute_db("""
+                    INSERT OR IGNORE INTO invitations (id, project_id, inviter_id, invitee_id, status, message)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                """, (
+                    token_data.get('id'), token_data.get('project_id'),
+                    token_data.get('inviter_id'), token_data.get('invitee_id'),
+                    token_data.get('status', 'pending'), token_data.get('message', '')
+                ))
+                invitation = query_db("SELECT * FROM invitations WHERE id = ?", (invitation_id,), one=True)
+            except Exception:
+                pass
+
     if not invitation:
         flash('Invitation not found.', 'danger')
         return redirect(request.referrer or url_for('invitations.list_invitations'))
@@ -303,6 +434,16 @@ def respond_invitation(invitation_id):
             WHERE id = ?
         """, (invitation_id,))
 
+        try:
+            cached_invs = session.get('invitations_cache') or []
+            for inv_c in cached_invs:
+                if str(inv_c.get('id')) == str(invitation_id):
+                    inv_c['status'] = 'accepted'
+            session['invitations_cache'] = cached_invs
+            session.modified = True
+        except Exception:
+            pass
+
         log_event('invitation_accepted', actor_id=user_id, target_type='invitation', target_id=invitation_id,
                   metadata={'project_id': project_id})
 
@@ -320,6 +461,16 @@ def respond_invitation(invitation_id):
             SET status = 'declined', responded_at = CURRENT_TIMESTAMP
             WHERE id = ?
         """, (invitation_id,))
+
+        try:
+            cached_invs = session.get('invitations_cache') or []
+            for inv_c in cached_invs:
+                if str(inv_c.get('id')) == str(invitation_id):
+                    inv_c['status'] = 'declined'
+            session['invitations_cache'] = cached_invs
+            session.modified = True
+        except Exception:
+            pass
 
         log_event('invitation_declined', actor_id=user_id, target_type='invitation', target_id=invitation_id,
                   metadata={'project_id': invitation['project_id']})

@@ -317,3 +317,66 @@ def test_multiple_students_accepted_both_appear_in_team_roster(client, app):
     # Team count must be 3 / 5 (3 spots filled, 2 spots open)
     assert '3 / 5' in html
 
+
+def test_accept_invitation_serverless_cold_container_recovery(client, app):
+    """
+    Regression test:
+    Simulate an invitation created on Container A, viewed by the invitee, and then
+    accepted on a cold Container B where the invitation and project rows are absent
+    from local SQLite (/tmp). Verify signed inv_token recovers state without
+    'Invitation not found.'.
+    """
+    import re
+    db_path = app.config['DATABASE']
+    pw = generate_password_hash('pass123')
+
+    inviter_id = execute_db("INSERT INTO users (email, password_hash) VALUES ('inviter_cold@bmsit.in', ?)", (pw,), db_path=db_path)
+    execute_db("INSERT INTO student_profiles (user_id, display_name, is_match_ready) VALUES (?, 'Inviter Cold', 1)", (inviter_id,), db_path=db_path)
+
+    invitee_id = execute_db("INSERT INTO users (email, password_hash) VALUES ('invitee_cold@bmsit.in', ?)", (pw,), db_path=db_path)
+    execute_db("INSERT INTO student_profiles (user_id, display_name, is_match_ready) VALUES (?, 'Invitee Cold', 1)", (invitee_id,), db_path=db_path)
+
+    proj_id = execute_db("""
+        INSERT INTO projects (owner_id, title, status, team_size_min, team_size_max)
+        VALUES (?, 'Serverless Sync Project', 'published', 2, 4)
+    """, (inviter_id,), db_path=db_path)
+
+    inv_id = execute_db("""
+        INSERT INTO invitations (project_id, inviter_id, invitee_id, status, message)
+        VALUES (?, ?, ?, 'pending', 'Join us!')
+    """, (proj_id, inviter_id, invitee_id), db_path=db_path)
+
+    # Invitee loads /invitations on Container A
+    with client.session_transaction() as sess:
+        sess['user_id'] = invitee_id
+        sess['user_email'] = 'invitee_cold@bmsit.in'
+        sess['user_name'] = 'Invitee Cold'
+        sess['user_role'] = 'student'
+
+    res_list = client.get('/invitations')
+    assert res_list.status_code == 200
+    html = res_list.data.decode('utf-8')
+    m = re.search(r'name="inv_token"\s+value="([^"]+)"', html)
+    assert m is not None
+    inv_token = m.group(1)
+
+    # Simulate cold Container B: delete invitation and project from local SQLite
+    execute_db("DELETE FROM invitations WHERE id = ?", (inv_id,), db_path=db_path)
+    execute_db("DELETE FROM projects WHERE id = ?", (proj_id,), db_path=db_path)
+
+    # Invitee clicks Accept on Container B
+    res_accept = client.post(
+        f'/invitations/{inv_id}/respond',
+        data={'action': 'accept', 'inv_token': inv_token},
+        follow_redirects=True
+    )
+    assert res_accept.status_code == 200
+    assert b"Invitation not found." not in res_accept.data
+    assert b"You have joined" in res_accept.data
+
+    # Verify membership was recorded on Container B
+    member = query_db("SELECT * FROM team_members WHERE project_id = ? AND user_id = ?", (proj_id, invitee_id), one=True, db_path=db_path)
+    assert member is not None
+    assert member['role'] == 'member'
+
+

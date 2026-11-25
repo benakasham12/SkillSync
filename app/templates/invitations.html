@@ -58,10 +58,12 @@
                 <div style="display: flex; gap: 0.5rem; border-top: 1px solid var(--border); padding-top: 0.75rem; align-items: center;">
                   <form method="POST" action="{{ url_for('projects.review_application', project_id=app.project_id, app_id=app.id) }}" style="display: inline;">
                     <input type="hidden" name="decision" value="accept">
+                    {% if app.app_token %}<input type="hidden" name="app_token" value="{{ app.app_token }}">{% endif %}
                     <button type="submit" class="btn btn-success btn-sm">&#10003; Accept to Team</button>
                   </form>
                   <form method="POST" action="{{ url_for('projects.review_application', project_id=app.project_id, app_id=app.id) }}" style="display: inline;">
                     <input type="hidden" name="decision" value="reject">
+                    {% if app.app_token %}<input type="hidden" name="app_token" value="{{ app.app_token }}">{% endif %}
                     <button type="submit" class="btn btn-outline-danger btn-sm">&#10007; Decline</button>
                   </form>
                   <a href="{{ url_for('projects.project_detail', project_id=app.project_id) }}" class="btn btn-secondary btn-sm" style="margin-left: auto;">View Project</a>
@@ -123,10 +125,12 @@
                 <div style="display: flex; gap: 0.5rem; border-top: 1px solid var(--border); padding-top: 0.75rem;">
                   <form method="POST" action="{{ url_for('invitations.respond_invitation', invitation_id=inv.id) }}" style="display: inline;">
                     <input type="hidden" name="action" value="accept">
+                    {% if inv.inv_token %}<input type="hidden" name="inv_token" value="{{ inv.inv_token }}">{% endif %}
                     <button type="submit" class="btn btn-success btn-sm">&#10003; Accept Invitation</button>
                   </form>
                   <form method="POST" action="{{ url_for('invitations.respond_invitation', invitation_id=inv.id) }}" style="display: inline;">
                     <input type="hidden" name="action" value="decline">
+                    {% if inv.inv_token %}<input type="hidden" name="inv_token" value="{{ inv.inv_token }}">{% endif %}
                     <button type="submit" class="btn btn-outline-danger btn-sm">&#10007; Decline</button>
                   </form>
                   <a href="{{ url_for('projects.project_detail', project_id=inv.project_id) }}" class="btn btn-secondary btn-sm" style="margin-left: auto;">View Project</a>

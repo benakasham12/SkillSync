@@ -1598,6 +1598,26 @@ def review_application(project_id, app_id):
     if not app_record:
         app_record = query_db("SELECT * FROM project_applications WHERE id = ?", (app_id,), one=True)
 
+    # Stateless signed token recovery if running on an isolated serverless container
+    if not app_record:
+        app_token = request.form.get('app_token')
+        if app_token:
+            from app.routes.invitations import verify_record_token
+            token_data = verify_record_token(app_token, salt='skillsync-app-token')
+            if token_data and str(token_data.get('id')) == str(app_id):
+                try:
+                    execute_db("""
+                        INSERT OR IGNORE INTO project_applications (id, project_id, applicant_id, introduction, application_status)
+                        VALUES (?, ?, ?, ?, ?)
+                    """, (
+                        token_data.get('id'), token_data.get('project_id', project_id),
+                        token_data.get('applicant_id'), token_data.get('introduction', ''),
+                        token_data.get('application_status', 'pending')
+                    ))
+                    app_record = query_db("SELECT * FROM project_applications WHERE id = ?", (app_id,), one=True)
+                except Exception:
+                    pass
+
     if not app_record:
         flash('Application not found.', 'danger')
         return redirect(request.referrer or url_for('invitations.list_invitations'))
